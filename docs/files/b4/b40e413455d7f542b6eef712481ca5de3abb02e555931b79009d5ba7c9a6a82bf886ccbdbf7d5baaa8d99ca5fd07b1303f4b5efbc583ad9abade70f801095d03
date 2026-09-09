@@ -1,0 +1,10 @@
+{
+  "villagerinventory:plugin": true,
+  "waila:core": true,
+  "waila:vanilla": true,
+  "waila:harvest": true,
+  "waila:extra": true,
+  "waila:neo": true,
+  "biomeswevegone:plugin": true,
+  "betternether:plugin": true
+}

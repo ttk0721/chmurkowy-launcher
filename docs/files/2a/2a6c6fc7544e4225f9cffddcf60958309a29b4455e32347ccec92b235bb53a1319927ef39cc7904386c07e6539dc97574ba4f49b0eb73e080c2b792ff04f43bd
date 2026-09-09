@@ -1,0 +1,15 @@
+[
+  {
+    "user": {
+      "type": "player",
+      "name": "ttk0721",
+      "uniqueId": "680691ca-95c5-41fc-96ae-4bb624c5da07"
+    },
+    "time": 1788970441836,
+    "type": "Profiler (live)",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/QTMrEfS6m6"
+    }
+  }
+]
