@@ -1,3 +1,7 @@
+// Bez tego na Windowsie obok okna launchera otwiera sie druga, czarna konsola.
+// W buildach debug zostawiamy ja celowo — tam wyjscie na stderr jest przydatne.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod app;
 mod theme;
 mod views;

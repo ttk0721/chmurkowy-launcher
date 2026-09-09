@@ -29,6 +29,10 @@ enum Polecenie {
         /// Wersja paczki, np. 2026.09.09-1.
         #[arg(long)]
         version: String,
+        /// Najnowsza wersja launchera — launcher porownuje ja ze swoja
+        /// i informuje gracza o dostepnej aktualizacji.
+        #[arg(long, default_value = "0.1.1")]
+        launcher_version: String,
     },
     /// Instaluje wszystko do wskazanego katalogu danych.
     Install {
@@ -62,7 +66,8 @@ async fn main() -> Result<()> {
             out,
             base_url,
             version,
-        } => pack_build(&instance, &out, &base_url, &version),
+            launcher_version,
+        } => pack_build(&instance, &out, &base_url, &version, &launcher_version),
         Polecenie::Install { manifest, data } => {
             przygotuj(&manifest, &data).await?;
             println!("Gotowe.");
@@ -179,7 +184,13 @@ async fn przygotuj(
     Ok((wersja, java))
 }
 
-fn pack_build(instance: &Path, out: &Path, base_url: &str, version: &str) -> Result<()> {
+fn pack_build(
+    instance: &Path,
+    out: &Path,
+    base_url: &str,
+    version: &str,
+    launcher_version: &str,
+) -> Result<()> {
     let mods = instance.join("mods");
     let index = mods.join(".index");
     if !index.is_dir() {
@@ -314,7 +325,13 @@ fn pack_build(instance: &Path, out: &Path, base_url: &str, version: &str) -> Res
         "java": { "major": 21, "distribution": "temurin" },
         "memory": { "min_mb": 512, "max_mb": 4096 },
         "auth": { "msa_client_id": "00000000402b5328" },
-        "launcher": { "latest_version": "0.1.0", "urls": {} },
+        "launcher": {
+            "latest_version": launcher_version,
+            "urls": {
+                "windows-x64": format!("https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-windows-x64.exe"),
+                "linux-x64": format!("https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-linux-x64")
+            }
+        },
         "mirror_dirs": ["mods"],
         "files": files,
     });
