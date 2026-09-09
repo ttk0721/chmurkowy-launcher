@@ -1,3 +1,5 @@
+pub mod msa;
+pub mod store;
 pub mod offline;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

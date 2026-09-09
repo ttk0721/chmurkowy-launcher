@@ -95,9 +95,21 @@ pub struct LibDownloads {
     pub artifact: Option<Artifact>,
 }
 
+/// Biblioteka na dysku. `path` mówi, gdzie ją położyć w `libraries/`.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Artifact {
     pub path: String,
+    pub sha1: String,
+    #[serde(default)]
+    pub size: u64,
+    pub url: String,
+}
+
+/// Pobranie bez ustalonego miejsca w drzewie — tak Mojang opisuje `downloads.client`.
+/// Ten wpis nie ma pola `path` i próba czytania go jako `Artifact` kończy się
+/// błędem „missing field path".
+#[derive(Debug, Clone, Deserialize)]
+pub struct Download {
     pub sha1: String,
     #[serde(default)]
     pub size: u64,
@@ -119,7 +131,7 @@ pub struct AssetIndex {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Downloads {
     #[serde(default)]
-    pub client: Option<Artifact>,
+    pub client: Option<Download>,
 }
 
 /// Wczytuje profil i rekurencyjnie dokleja to, po czym dziedziczy.
@@ -330,6 +342,24 @@ mod tests {
         // Nieznana zmienna zostaje jak byla — lepiej zobaczyc ja w logu
         // niz po cichu wstawic pusty ciag.
         assert_eq!(substitute("${nieznane}", &v), "${nieznane}");
+    }
+
+    #[test]
+    fn czyta_downloads_client_bez_pola_path() {
+        // Prawdziwy ksztalt z 1.21.1.json: downloads.client nie ma "path",
+        // w przeciwienstwie do libraries[].downloads.artifact. Wczesniejsza
+        // wersja wymagala path zawsze i wywracala cala instalacje.
+        let v: VersionJson = serde_json::from_str(
+            r#"{
+            "id":"1.21.1","mainClass":"net.minecraft.client.main.Main",
+            "downloads":{"client":{"sha1":"abc","size":26000000,
+                                   "url":"https://piston-data.mojang.com/client.jar"}},
+            "libraries":[]}"#,
+        )
+        .unwrap();
+        let k = v.downloads.unwrap().client.unwrap();
+        assert_eq!(k.sha1, "abc");
+        assert_eq!(k.url, "https://piston-data.mojang.com/client.jar");
     }
 
     #[test]
