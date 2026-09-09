@@ -31,7 +31,7 @@ enum Polecenie {
         version: String,
         /// Najnowsza wersja launchera — launcher porownuje ja ze swoja
         /// i informuje gracza o dostepnej aktualizacji.
-        #[arg(long, default_value = "0.1.4")]
+        #[arg(long, default_value = "0.2.0")]
         launcher_version: String,
     },
     /// Instaluje wszystko do wskazanego katalogu danych.
@@ -89,6 +89,7 @@ async fn main() -> Result<()> {
                 account: &konto,
                 min_mb: 512,
                 max_mb: 4096,
+                dodatkowe: &[],
             })?;
             println!("Uruchamiam grę…");
             let status = cmd.status()?;

@@ -1,5 +1,6 @@
 use crate::app::{App, Widok};
 use crate::theme;
+use chmurka_core::ustawienia::podziel_argumenty;
 
 pub fn rysuj(app: &mut App, ctx: &egui::Context) {
     egui::TopBottomPanel::top("gora-ust")
@@ -25,6 +26,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     .add(egui::Button::new("Wróć").min_size(egui::vec2(120.0, 44.0)))
                     .clicked()
                 {
+                    app.zapisz_ustawienia();
                     app.komunikat = None;
                     app.widok = Widok::Glowny;
                 }
@@ -44,18 +46,76 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 let instancja = app.data().join("instance");
                 let log = app.data().join("logs").join("game.log");
                 let mc = app.data().join("mc");
+                let mut zmienione = false;
 
+                // --- PAMIĘĆ ---
                 theme::naglowek_sekcji(ui, "PAMIĘĆ");
-                ui.add(
-                    egui::Slider::new(&mut app.pamiec_mb, 2048..=16384)
+                let wlasna_sterta = app.ustawienia.wlasny_rozmiar_sterty();
+                let suwak = ui.add_enabled(
+                    !wlasna_sterta,
+                    egui::Slider::new(&mut app.ustawienia.pamiec_mb, 2048..=16384)
                         .suffix(" MB")
                         .step_by(512.0),
                 );
+                zmienione |= suwak.changed();
+                ui.add_space(4.0);
+                if wlasna_sterta {
+                    ui.label(
+                        egui::RichText::new(
+                            "Suwak jest wyłączony, bo w parametrach Javy ustawiłeś własne -Xmx.",
+                        )
+                        .size(11.0)
+                        .color(theme::AKCENT),
+                    );
+                } else {
+                    ui.label(theme::drobny(
+                        "Paczka z 249 modami potrzebuje co najmniej 4 GB.",
+                    ));
+                }
+
+                // --- GRA ---
+                ui.add_space(theme::S4);
+                theme::naglowek_sekcji(ui, "GRA");
+                zmienione |= ui
+                    .checkbox(
+                        &mut app.ustawienia.ukryj_po_starcie,
+                        "Schowaj launcher do zasobnika po uruchomieniu gry",
+                    )
+                    .changed();
                 ui.add_space(4.0);
                 ui.label(theme::drobny(
-                    "Paczka z 249 modami potrzebuje co najmniej 4 GB.",
+                    "Launcher znika z ekranu i przestaje zabierać zasoby, ale nadal czuwa — \
+                     wróci sam, gdyby gra się zamknęła z błędem.",
                 ));
 
+                // --- PARAMETRY JAVY ---
+                ui.add_space(theme::S4);
+                theme::naglowek_sekcji(ui, "DODATKOWE PARAMETRY JAVY");
+                zmienione |= ui
+                    .add(
+                        egui::TextEdit::singleline(&mut app.ustawienia.dodatkowe_argumenty)
+                            .hint_text("np. -XX:+UseG1GC")
+                            .desired_width(ui.available_width().min(520.0))
+                            .margin(egui::Margin::symmetric(12, 11)),
+                    )
+                    .changed();
+                ui.add_space(4.0);
+                let liczba = podziel_argumenty(&app.ustawienia.dodatkowe_argumenty).len();
+                if liczba > 0 {
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "Rozpoznano {liczba} parametr(ów). Jeśli gra przestanie się uruchamiać, wyczyść to pole."
+                        ))
+                        .size(11.0)
+                        .color(theme::TEKST_PRZYGASZONY),
+                    );
+                } else {
+                    ui.label(theme::drobny(
+                        "Zostaw puste, jeśli nie wiesz, do czego to służy. Puste jest bezpieczne.",
+                    ));
+                }
+
+                // --- PLIKI ---
                 ui.add_space(theme::S4);
                 theme::naglowek_sekcji(ui, "PLIKI");
                 ui.horizontal(|ui| {
@@ -85,6 +145,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     }
                 });
 
+                // --- NAPRAWA ---
                 ui.add_space(theme::S4);
                 theme::naglowek_sekcji(ui, "NAPRAWA");
                 if super::przycisk_warunkowy(
@@ -114,6 +175,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     "Pobiera grę od nowa. Światy i ustawienia zostają.",
                 ));
 
+                // --- KONTO ---
                 if app.konto.is_some() {
                     ui.add_space(theme::S4);
                     theme::naglowek_sekcji(ui, "KONTO");
@@ -124,6 +186,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     }
                 }
 
+                // --- AKTUALIZACJA ---
                 if let Some(m) = &app.manifest {
                     if m.launcher.latest_version != env!("CARGO_PKG_VERSION") {
                         ui.add_space(theme::S4);
@@ -158,6 +221,12 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 }
 
                 ui.add_space(theme::S3);
+
+                // Zapis po każdej zmianie — ustawienia nie mogą znikać
+                // po zamknięciu launchera, jak działo się wcześniej.
+                if zmienione {
+                    app.zapisz_ustawienia();
+                }
             });
         });
 }

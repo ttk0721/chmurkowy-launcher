@@ -5,6 +5,7 @@
 mod app;
 mod theme;
 mod views;
+mod zasobnik;
 
 use anyhow::Result;
 

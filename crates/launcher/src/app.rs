@@ -1,14 +1,19 @@
-use chmurka_core::auth::{msa::DeviceCode, Account};
+use crate::zasobnik::{Zasobnik, ZdarzenieZasobnika};
+use chmurka_core::auth::{msa, msa::DeviceCode, Account};
+use chmurka_core::bledy::{BladLaunchera, BladUzytkownika};
 use chmurka_core::manifest::Manifest;
 use chmurka_core::progress::{Progress, Stage};
-use std::path::PathBuf;
+use chmurka_core::ustawienia::{podziel_argumenty, Ustawienia};
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Widok {
     Glowny,
     Logowanie,
     Ustawienia,
+    Blad,
 }
 
 /// Wiadomości płynące z zadań w tle do wątku rysującego.
@@ -16,9 +21,12 @@ pub enum Wiadomosc {
     Manifest(Box<Manifest>),
     Postep(Progress),
     Notatka(String),
-    Blad(String),
+    /// Błąd z kodem i instrukcją — pokazywany na własnym ekranie.
+    BladZKodem(Box<BladUzytkownika>),
     KodUrzadzenia(Box<DeviceCode>),
     Zalogowano(Box<Account>),
+    /// Gra ruszyła — czas schować okno, jeśli gracz sobie tego życzy.
+    GraWystartowala,
     GraZakonczona(Option<i32>),
 }
 
@@ -29,52 +37,83 @@ pub struct App {
     pub konto: Option<Account>,
     pub kod: Option<DeviceCode>,
     pub postep: Option<Progress>,
-    pub blad: Option<String>,
-    /// Krótka informacja zwrotna po akcji w ustawieniach — bez niej
-    /// przyciski wyglądały, jakby nic nie robiły.
+    pub blad_z_kodem: Option<BladUzytkownika>,
+    /// Krótka informacja zwrotna po akcji w ustawieniach.
     pub komunikat: Option<String>,
     pub log: Vec<String>,
     pub pokaz_szczegoly: bool,
-    pub nick_offline: String,
-    pub pamiec_mb: u32,
+    pub ustawienia: Ustawienia,
     pub zajety: bool,
+    /// Prawda od startu gry do jej zakończenia.
+    pub gra_dziala: bool,
+    schowaj_okno: bool,
+    przywroc_okno: bool,
+    zakoncz: bool,
     pub nadawca: Sender<Wiadomosc>,
-    pub odbiorca: Receiver<Wiadomosc>,
+    odbiorca: Receiver<Wiadomosc>,
+    odbiorca_zasobnika: Receiver<ZdarzenieZasobnika>,
+    /// Ikona żyje tak długo, jak ten uchwyt.
+    _zasobnik: Option<Zasobnik>,
+    /// Czy udało się założyć ikonę. Bez niej chowanie okna odcięłoby graczowi
+    /// dostęp do launchera, więc wtedy tylko minimalizujemy.
+    ma_zasobnik: bool,
     pub runtime: tokio::runtime::Runtime,
 }
 
 impl App {
     pub fn nowa(katalog: PathBuf) -> Self {
         let (nadawca, odbiorca) = std::sync::mpsc::channel();
+        let (nadawca_zas, odbiorca_zasobnika) = std::sync::mpsc::channel();
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .expect("runtime tokio");
 
+        let ustawienia = Ustawienia::wczytaj(&katalog.join("data").join("settings.json"));
+        // ksni zaklada dzialajacy runtime tokio, wiec ikone tworzymy w jego kontekscie.
+        let zasobnik = runtime.block_on(crate::zasobnik::utworz(nadawca_zas));
+
         let mut app = Self {
             katalog,
-            // Furtka do pracy nad wygladem: CHMURKA_WIDOK=logowanie|ustawienia
-            // pozwala otworzyc launcher od razu na danym ekranie.
+            // Furtka do pracy nad wyglądem: CHMURKA_WIDOK=logowanie|ustawienia
             widok: match std::env::var("CHMURKA_WIDOK").as_deref() {
                 Ok("logowanie") => Widok::Logowanie,
                 Ok("ustawienia") => Widok::Ustawienia,
+                Ok("blad") => Widok::Blad,
                 _ => Widok::Glowny,
             },
             manifest: None,
             konto: None,
             kod: None,
             postep: None,
-            blad: None,
+            blad_z_kodem: None,
             komunikat: None,
             log: Vec::new(),
             pokaz_szczegoly: false,
-            nick_offline: String::new(),
-            pamiec_mb: 4096,
+            ustawienia,
             zajety: false,
+            gra_dziala: false,
+            schowaj_okno: false,
+            przywroc_okno: false,
+            zakoncz: false,
             nadawca,
             odbiorca,
+            odbiorca_zasobnika,
+            ma_zasobnik: zasobnik.is_some(),
+            _zasobnik: zasobnik,
             runtime,
         };
+        // Podgląd ekranu błędu przy pracy nad wyglądem: CHMURKA_WIDOK=blad
+        if app.widok == Widok::Blad {
+            app.blad_z_kodem = Some(
+                BladLaunchera::GraPadla {
+                    kod: Some(1),
+                    ogon_logu: "java.lang.OutOfMemoryError: Java heap space\n\tat net.minecraft.client.main.Main.main(Main.java:1)".into(),
+                    wlasne_argumenty: false,
+                }
+                .dla_uzytkownika(),
+            );
+        }
         app.wczytaj_manifest();
         app.wznow_sesje();
         app
@@ -82,6 +121,13 @@ impl App {
 
     pub fn data(&self) -> PathBuf {
         self.katalog.join("data")
+    }
+
+    pub fn zapisz_ustawienia(&mut self) {
+        let sciezka = self.data().join("settings.json");
+        if let Err(e) = self.ustawienia.zapisz(&sciezka) {
+            self.komunikat = Some(format!("Nie udało się zapisać ustawień: {e}"));
+        }
     }
 
     fn wczytaj_manifest(&mut self) {
@@ -93,9 +139,7 @@ impl App {
                     let _ = n.send(Wiadomosc::Manifest(Box::new(m)));
                 }
                 Err(e) => {
-                    let _ = n.send(Wiadomosc::Blad(format!(
-                        "Nie udało się pobrać informacji o paczce: {e}"
-                    )));
+                    let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
                 }
             }
         });
@@ -110,9 +154,7 @@ impl App {
         };
         let n = self.nadawca.clone();
         self.runtime.spawn(async move {
-            use chmurka_core::auth::{msa, store};
-            // Manifest jeszcze się ściąga, więc używamy tego samego identyfikatora,
-            // który i tak w nim stoi. Odświeżanie nie może czekać na sieć dwa razy.
+            use chmurka_core::auth::store;
             let client_id = "00000000402b5328";
             let Ok(t) = msa::refresh(client_id, &zapis.refresh_token).await else {
                 return;
@@ -131,12 +173,16 @@ impl App {
     }
 
     fn odbierz(&mut self) {
+        while let Ok(z) = self.odbiorca_zasobnika.try_recv() {
+            match z {
+                ZdarzenieZasobnika::Pokaz => self.przywroc_okno = true,
+                ZdarzenieZasobnika::Zakoncz => self.zakoncz = true,
+            }
+        }
+
         while let Ok(w) = self.odbiorca.try_recv() {
             match w {
-                Wiadomosc::Manifest(m) => {
-                    self.pamiec_mb = m.memory.max_mb;
-                    self.manifest = Some(*m);
-                }
+                Wiadomosc::Manifest(m) => self.manifest = Some(*m),
                 Wiadomosc::Postep(p) => {
                     if p.stage == Stage::Ready {
                         self.log.push(p.label.clone());
@@ -144,50 +190,88 @@ impl App {
                     self.postep = Some(p);
                 }
                 Wiadomosc::Notatka(s) => self.log.push(s),
-                Wiadomosc::Blad(e) => {
+                Wiadomosc::BladZKodem(b) => {
                     self.zajety = false;
-                    self.log.push(format!("BŁĄD: {e}"));
-                    self.blad = Some(e);
+                    self.gra_dziala = false;
+                    self.postep = None;
+                    self.log.push(format!("BŁĄD {}: {}", b.kod, b.tytul));
+                    self.blad_z_kodem = Some(*b);
+                    self.widok = Widok::Blad;
+                    // Gra padła, gdy launcher siedział w zasobniku — okno musi
+                    // wrócić samo, inaczej gracz zobaczyłby tylko znikającą grę.
+                    self.przywroc_okno = true;
                 }
                 Wiadomosc::KodUrzadzenia(d) => self.kod = Some(*d),
                 Wiadomosc::Zalogowano(k) => {
                     self.kod = None;
                     self.zajety = false;
                     self.konto = Some(*k);
-                    self.widok = Widok::Glowny;
+                    if self.widok == Widok::Logowanie {
+                        self.widok = Widok::Glowny;
+                    }
+                }
+                Wiadomosc::GraWystartowala => {
+                    self.gra_dziala = true;
+                    if self.ustawienia.ukryj_po_starcie {
+                        self.schowaj_okno = true;
+                    }
                 }
                 Wiadomosc::GraZakonczona(kod) => {
                     self.zajety = false;
+                    self.gra_dziala = false;
                     self.postep = None;
-                    if !matches!(kod, Some(0)) {
-                        self.blad = Some(format!(
-                            "Gra zakończyła się kodem {}. Zajrzyj do szczegółów.",
-                            kod.map(|k| k.to_string()).unwrap_or_else(|| "nieznanym".into())
-                        ));
-                        self.pokaz_szczegoly = true;
-                    }
+                    self.przywroc_okno = true;
+                    self.log.push(format!(
+                        "Gra zakończyła się kodem {}",
+                        kod.map(|k| k.to_string()).unwrap_or_else(|| "nieznanym".into())
+                    ));
                 }
             }
         }
     }
 }
 
-async fn pobierz_manifest(adres: &str) -> anyhow::Result<Manifest> {
-    let tekst = reqwest::get(adres).await?.text().await?;
+async fn pobierz_manifest(adres: &str) -> Result<Manifest, BladLaunchera> {
+    let siec = |e: reqwest::Error| BladLaunchera::Logowanie(msa::AuthError::Siec(e.to_string()));
+    let tekst = reqwest::get(adres).await.map_err(siec)?.text().await.map_err(siec)?;
     Ok(chmurka_core::manifest::parse(&tekst)?)
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _f: &mut eframe::Frame) {
         self.odbierz();
-        // Zadania w tle nie budzą pętli rysującej same z siebie.
-        if self.zajety || self.kod.is_some() || self.manifest.is_none() {
+
+        if self.zakoncz {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            return;
+        }
+        if std::mem::take(&mut self.schowaj_okno) {
+            if self.ma_zasobnik {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
+            } else {
+                // Bez ikony w zasobniku ukryte okno byłoby nie do odzyskania.
+                ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+            }
+        }
+        if std::mem::take(&mut self.przywroc_okno) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
+
+        // W trakcie gry nic się nie zmienia aż do jej zakończenia, więc odpytujemy
+        // raz na sekundę — inaczej schowany launcher wciąż mieliłby procesor.
+        if self.gra_dziala {
+            ctx.request_repaint_after(std::time::Duration::from_secs(1));
+        } else if self.zajety || self.kod.is_some() || self.manifest.is_none() {
             ctx.request_repaint_after(std::time::Duration::from_millis(120));
         }
+
         match self.widok {
             Widok::Glowny => crate::views::main::rysuj(self, ctx),
             Widok::Logowanie => crate::views::login::rysuj(self, ctx),
             Widok::Ustawienia => crate::views::settings::rysuj(self, ctx),
+            Widok::Blad => crate::views::error::rysuj(self, ctx),
         }
     }
 }
@@ -199,17 +283,18 @@ pub fn zaloguj_microsoft(app: &mut App) {
     let n = app.nadawca.clone();
     let sciezka_auth = app.data().join("auth.json");
 
-    app.blad = None;
+    app.blad_z_kodem = None;
     app.zajety = true;
     app.runtime.spawn(async move {
-        use chmurka_core::auth::msa;
+        let zglos = |e: msa::AuthError, n: &Sender<Wiadomosc>| {
+            let _ = n.send(Wiadomosc::BladZKodem(Box::new(
+                BladLaunchera::Logowanie(e).dla_uzytkownika(),
+            )));
+        };
 
         let kod = match msa::begin(&client_id).await {
             Ok(k) => k,
-            Err(e) => {
-                let _ = n.send(Wiadomosc::Blad(e.to_string()));
-                return;
-            }
+            Err(e) => return zglos(e, &n),
         };
         let device_code = kod.device_code.clone();
         let mut odstep = kod.interval_s.max(1);
@@ -218,8 +303,7 @@ pub fn zaloguj_microsoft(app: &mut App) {
 
         loop {
             if std::time::Instant::now() > koniec {
-                let _ = n.send(Wiadomosc::Blad("Kod wygasł — spróbuj jeszcze raz.".into()));
-                return;
+                return zglos(msa::AuthError::Wygasl, &n);
             }
             tokio::time::sleep(std::time::Duration::from_secs(odstep)).await;
             match msa::poll_once(&client_id, &device_code).await {
@@ -228,7 +312,7 @@ pub fn zaloguj_microsoft(app: &mut App) {
                 // kończy się zablokowaniem całej sesji logowania.
                 Ok(msa::PollResult::Zwolnij) => odstep += 5,
                 Ok(msa::PollResult::Gotowe(t)) => {
-                    match msa::zaloguj_minecraft(&t).await {
+                    return match msa::zaloguj_minecraft(&t).await {
                         Ok(konto) => {
                             let _ = chmurka_core::auth::store::save(
                                 &sciezka_auth,
@@ -239,16 +323,10 @@ pub fn zaloguj_microsoft(app: &mut App) {
                             );
                             let _ = n.send(Wiadomosc::Zalogowano(Box::new(konto)));
                         }
-                        Err(e) => {
-                            let _ = n.send(Wiadomosc::Blad(e.to_string()));
-                        }
-                    }
-                    return;
+                        Err(e) => zglos(e, &n),
+                    };
                 }
-                Err(e) => {
-                    let _ = n.send(Wiadomosc::Blad(e.to_string()));
-                    return;
-                }
+                Err(e) => return zglos(e, &n),
             }
         }
     });
@@ -261,100 +339,125 @@ pub fn uruchom(app: &mut App) {
     };
     let data = app.data();
     let n = app.nadawca.clone();
-    let pamiec = app.pamiec_mb;
+    let ustawienia = app.ustawienia.clone();
 
-    app.blad = None;
+    app.blad_z_kodem = None;
     app.zajety = true;
     app.log.clear();
 
     app.runtime.spawn(async move {
-        use chmurka_core::*;
-        use std::sync::Arc;
-
         let n2 = n.clone();
-        let postep: Arc<dyn Fn(progress::Progress) + Send + Sync> = Arc::new(move |p| {
-            let _ = n2.send(Wiadomosc::Postep(p));
-        });
+        let postep: Arc<dyn Fn(Progress) + Send + Sync> =
+            Arc::new(move |p| {
+                let _ = n2.send(Wiadomosc::Postep(p));
+            });
 
-        let wynik = async {
-            let dl = net::Downloader::new(8);
-            let mc = data.join("mc");
-            let instancja = data.join("instance");
-            std::fs::create_dir_all(&instancja)?;
-
-            let java = java::ensure(&data, m.java.major, &dl, postep.clone()).await?;
-            let profil = game_install::ensure_loader(
-                &mc,
-                &java,
-                &m.pack.loader.kind,
-                &m.pack.loader.version,
-                &dl,
-                postep.clone(),
-            )
-            .await?;
-            let wersja = version::load(&mc.join("versions"), &profil)?;
-            game_install::ensure_libraries(&mc, &wersja, &dl, postep.clone()).await?;
-            game_install::ensure_assets(&mc, &wersja, &dl, postep.clone()).await?;
-
-            let sciezka_stanu = data.join("state.json");
-            let mut stan = state::State::load(&sciezka_stanu);
-            let akcje = pack_sync::plan(&m, &stan, &pack_sync::DiskProbe::new(&instancja));
-            let notatki =
-                pack_sync::apply(&m, &instancja, &mut stan, &akcje, &dl, postep.clone()).await?;
-            stan.save(&sciezka_stanu)?;
-            for x in notatki {
-                let _ = n.send(Wiadomosc::Notatka(x));
-            }
-
-            let mut cmd = launch::build_command(&launch::LaunchParams {
-                java: &java.java_bin,
-                mc_dir: &mc,
-                game_dir: &instancja,
-                version: &wersja,
-                account: &konto,
-                min_mb: m.memory.min_mb,
-                max_mb: pamiec,
-            })?;
-            let _ = n.send(Wiadomosc::Postep(progress::Progress::pliki(
-                progress::Stage::Ready,
-                1,
-                1,
-                "Uruchamiam grę",
-            )));
-
-            // Log gry trafia do pliku i do panelu „szczegóły".
-            // Testowanie paczki polega głównie na czytaniu crashy, więc
-            // wyjście procesu jest najcenniejszą rzeczą, jaką launcher produkuje.
-            let katalog_logow = data.join("logs");
-            std::fs::create_dir_all(&katalog_logow)?;
-            let wyjscie = cmd
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
-                .output()?;
-
-            let mut tresc = String::from_utf8_lossy(&wyjscie.stdout).into_owned();
-            tresc.push_str(&String::from_utf8_lossy(&wyjscie.stderr));
-            let plik_logu = katalog_logow.join("game.log");
-            std::fs::write(&plik_logu, &tresc)?;
-
-            if !wyjscie.status.success() {
-                let ogon: Vec<&str> = tresc.lines().rev().take(40).collect();
-                for linia in ogon.into_iter().rev() {
-                    let _ = n.send(Wiadomosc::Notatka(linia.to_string()));
-                }
-                let _ = n.send(Wiadomosc::Notatka(format!(
-                    "pełny log: {}",
-                    plik_logu.display()
-                )));
-            }
-
-            let _ = n.send(Wiadomosc::GraZakonczona(wyjscie.status.code()));
-            Ok::<(), anyhow::Error>(())
-        }
-        .await;
-
-        if let Err(e) = wynik {
-            let _ = n.send(Wiadomosc::Blad(e.to_string()));
+        if let Err(e) = przygotuj_i_odpal(&data, &m, &konto, &ustawienia, postep, &n).await {
+            let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
         }
     });
+}
+
+async fn przygotuj_i_odpal(
+    data: &Path,
+    m: &Manifest,
+    konto: &Account,
+    ustawienia: &Ustawienia,
+    postep: Arc<dyn Fn(Progress) + Send + Sync>,
+    n: &Sender<Wiadomosc>,
+) -> Result<(), BladLaunchera> {
+    use chmurka_core::*;
+
+    let plik = |sc: &Path| {
+        let sc = sc.display().to_string();
+        move |e: std::io::Error| BladLaunchera::Plik(sc.clone(), e)
+    };
+
+    let dl = net::Downloader::new(8);
+    let mc = data.join("mc");
+    let instancja = data.join("instance");
+    std::fs::create_dir_all(&instancja).map_err(plik(&instancja))?;
+
+    let java = java::ensure(data, m.java.major, &dl, postep.clone()).await?;
+    let profil = game_install::ensure_loader(
+        &mc,
+        &java,
+        &m.pack.loader.kind,
+        &m.pack.loader.version,
+        &dl,
+        postep.clone(),
+    )
+    .await?;
+    let wersja = version::load(&mc.join("versions"), &profil)?;
+    game_install::ensure_libraries(&mc, &wersja, &dl, postep.clone()).await?;
+    game_install::ensure_assets(&mc, &wersja, &dl, postep.clone()).await?;
+
+    let sciezka_stanu = data.join("state.json");
+    let mut stan = state::State::load(&sciezka_stanu);
+    let akcje = pack_sync::plan(m, &stan, &pack_sync::DiskProbe::new(&instancja));
+    let notatki = pack_sync::apply(m, &instancja, &mut stan, &akcje, &dl, postep.clone()).await?;
+    stan.save(&sciezka_stanu).map_err(plik(&sciezka_stanu))?;
+    for x in notatki {
+        let _ = n.send(Wiadomosc::Notatka(x));
+    }
+
+    let dodatkowe = podziel_argumenty(&ustawienia.dodatkowe_argumenty);
+    let mut cmd = launch::build_command(&launch::LaunchParams {
+        java: &java.java_bin,
+        mc_dir: &mc,
+        game_dir: &instancja,
+        version: &wersja,
+        account: konto,
+        min_mb: m.memory.min_mb,
+        max_mb: ustawienia.pamiec_mb,
+        dodatkowe: &dodatkowe,
+    })?;
+
+    // Log gry leci prosto do pliku, a nie do pamięci launchera. Dzięki temu
+    // launcher może schować się do zasobnika, a log i tak powstaje w całości.
+    let katalog_logow = data.join("logs");
+    std::fs::create_dir_all(&katalog_logow).map_err(plik(&katalog_logow))?;
+    let plik_logu = katalog_logow.join("game.log");
+    let uchwyt = std::fs::File::create(&plik_logu).map_err(plik(&plik_logu))?;
+    let uchwyt2 = uchwyt.try_clone().map_err(plik(&plik_logu))?;
+
+    let _ = n.send(Wiadomosc::Postep(Progress::trwa(
+        Stage::Ready,
+        "Uruchamiam grę…",
+    )));
+
+    let mut dziecko = cmd
+        .stdout(std::process::Stdio::from(uchwyt))
+        .stderr(std::process::Stdio::from(uchwyt2))
+        .spawn()
+        .map_err(|e| BladLaunchera::Plik("uruchomienie gry".into(), e))?;
+
+    let _ = n.send(Wiadomosc::GraWystartowala);
+
+    let status = tokio::task::spawn_blocking(move || dziecko.wait())
+        .await
+        .map_err(|e| BladLaunchera::Plik("oczekiwanie na grę".into(), std::io::Error::other(e)))?
+        .map_err(|e| BladLaunchera::Plik("oczekiwanie na grę".into(), e))?;
+
+    if status.success() {
+        let _ = n.send(Wiadomosc::GraZakonczona(status.code()));
+        return Ok(());
+    }
+
+    let tresc = std::fs::read_to_string(&plik_logu).unwrap_or_default();
+    let ogon: String = tresc
+        .lines()
+        .rev()
+        .take(60)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    Err(BladLaunchera::GraPadla {
+        kod: status.code(),
+        ogon_logu: ogon,
+        wlasne_argumenty: !dodatkowe.is_empty(),
+    })
 }

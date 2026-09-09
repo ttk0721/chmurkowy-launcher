@@ -18,6 +18,8 @@ pub struct LaunchParams<'a> {
     pub account: &'a Account,
     pub min_mb: u32,
     pub max_mb: u32,
+    /// Dodatkowe parametry Javy wpisane przez gracza w ustawieniach.
+    pub dodatkowe: &'a [String],
 }
 
 pub fn separator(os: Os) -> &'static str {
@@ -90,8 +92,17 @@ pub fn build_command(p: &LaunchParams) -> Result<std::process::Command, LaunchEr
     zmienne.insert("resolution_height".into(), "480".into());
 
     let mut cmd = std::process::Command::new(p.java);
-    cmd.arg(format!("-Xms{}M", p.min_mb));
-    cmd.arg(format!("-Xmx{}M", p.max_mb));
+
+    // Gdy gracz sam podał -Xmx, nasz suwak ustępuje. Dwa -Xmx w jednej komendzie
+    // są legalne (wygrywa ostatni), ale mylące przy diagnozowaniu problemów.
+    if !p.dodatkowe.iter().any(|a| a.starts_with("-Xmx")) {
+        cmd.arg(format!("-Xms{}M", p.min_mb));
+        cmd.arg(format!("-Xmx{}M", p.max_mb));
+    }
+    for a in p.dodatkowe {
+        cmd.arg(a);
+    }
+
     for a in rozwin(&p.version.arguments.jvm, os, &zmienne) {
         cmd.arg(a);
     }
@@ -171,6 +182,7 @@ mod tests {
             account: &k,
             min_mb: 512,
             max_mb: 4096,
+            dodatkowe: &[],
         })
         .unwrap();
 
@@ -187,6 +199,48 @@ mod tests {
         assert!(
             !args.iter().any(|a| a.contains("${")),
             "wszystkie zmienne musza byc podstawione"
+        );
+    }
+
+    fn argumenty(dodatkowe: &[String]) -> Vec<String> {
+        let v = wersja();
+        let k = konto();
+        let cmd = build_command(&LaunchParams {
+            java: std::path::Path::new("/tmp/java"),
+            mc_dir: std::path::Path::new("/tmp/mc"),
+            game_dir: std::path::Path::new("/tmp/gra"),
+            version: &v,
+            account: &k,
+            min_mb: 512,
+            max_mb: 4096,
+            dodatkowe,
+        })
+        .unwrap();
+        cmd.get_args()
+            .map(|a| a.to_string_lossy().to_string())
+            .collect()
+    }
+
+    #[test]
+    fn wlasne_parametry_trafiaja_do_komendy() {
+        let a = argumenty(&["-XX:+UseG1GC".to_string(), "-Dfoo=bar".to_string()]);
+        assert!(a.contains(&"-XX:+UseG1GC".to_string()));
+        assert!(a.contains(&"-Dfoo=bar".to_string()));
+        // Bez wlasnego -Xmx suwak nadal dziala.
+        assert!(a.contains(&"-Xmx4096M".to_string()));
+    }
+
+    #[test]
+    fn wlasny_xmx_wypiera_suwak() {
+        let a = argumenty(&["-Xmx8G".to_string()]);
+        assert!(a.contains(&"-Xmx8G".to_string()));
+        assert!(
+            !a.iter().any(|x| x == "-Xmx4096M"),
+            "nie moze byc dwoch -Xmx naraz"
+        );
+        assert!(
+            !a.iter().any(|x| x.starts_with("-Xms")),
+            "gdy gracz zarzadza sterta, nie dokladamy wlasnego -Xms"
         );
     }
 

@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod bledy;
 pub mod game_install;
 pub mod hash;
 pub mod java;
@@ -9,4 +10,5 @@ pub mod pack_sync;
 pub mod paths;
 pub mod progress;
 pub mod state;
+pub mod ustawienia;
 pub mod version;

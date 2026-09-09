@@ -68,11 +68,6 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 ui.add_space(theme::S1);
             }
 
-            if let Some(e) = &app.blad {
-                ui.label(egui::RichText::new(e).size(12.0).color(theme::BLAD));
-                ui.add_space(theme::S1);
-            }
-
             ui.horizontal(|ui| {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     let (ikona, opis) = if app.pokaz_szczegoly {

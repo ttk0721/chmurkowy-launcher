@@ -11,10 +11,6 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
     egui::TopBottomPanel::bottom("dol-log")
         .frame(theme::ramka())
         .show(ctx, |ui| {
-            if let Some(e) = &app.blad {
-                ui.label(egui::RichText::new(e).size(12.0).color(theme::BLAD));
-                ui.add_space(theme::S1);
-            }
             if ui
                 .add(egui::Button::new("Wróć").min_size(egui::vec2(120.0, 44.0)))
                 .clicked()
@@ -95,12 +91,12 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     // add_sized — tamto rozciągało ramkę, a tekst zostawał
                     // przyklejony do lewego górnego rogu.
                     ui.add(
-                        egui::TextEdit::singleline(&mut app.nick_offline)
+                        egui::TextEdit::singleline(&mut app.ustawienia.nick_offline)
                             .hint_text("nick")
                             .desired_width(200.0)
                             .margin(egui::Margin::symmetric(12, 11)),
                     );
-                    let mozna = !app.nick_offline.trim().is_empty();
+                    let mozna = !app.ustawienia.nick_offline.trim().is_empty();
                     if ui
                         .add_enabled(
                             mozna,
@@ -109,9 +105,9 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                         .on_disabled_hover_text("Najpierw wpisz nick.")
                         .clicked()
                     {
-                        let nick = app.nick_offline.trim().to_string();
+                        let nick = app.ustawienia.nick_offline.trim().to_string();
                         app.konto = Some(chmurka_core::auth::offline::offline_account(&nick));
-                        app.blad = None;
+                        app.zapisz_ustawienia();
                         app.widok = Widok::Glowny;
                     }
                 });
