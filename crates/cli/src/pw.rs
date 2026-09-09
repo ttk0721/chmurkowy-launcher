@@ -8,7 +8,11 @@ pub enum PwError {
 pub struct PwEntry {
     pub filename: String,
     pub url: Option<String>,
-    pub sha512: Option<String>,
+    /// Hash pliku, jaki leży pod adresem źródłowym — w formacie podanym
+    /// przez `hash_format`. Służy do sprawdzenia, czy plik na dysku
+    /// to naprawdę ten sam plik, który tester pobierze z sieci.
+    pub hash: Option<String>,
+    pub hash_format: Option<String>,
     pub cf_project: Option<u64>,
     pub cf_file: Option<u64>,
 }
@@ -19,11 +23,6 @@ pub struct PwEntry {
 /// kształcie, a pliki generuje PrismLauncher, więc format jest przewidywalny.
 pub fn parse_pw(tekst: &str) -> Result<PwEntry, PwError> {
     let filename = pole(tekst, "filename").ok_or(PwError::BrakNazwy)?;
-    let format_hasha = pole(tekst, "hash-format");
-    let sha512 = match format_hasha.as_deref() {
-        Some("sha512") => pole(tekst, "hash"),
-        _ => None,
-    };
 
     // PrismLauncher zapisuje dla modów z CurseForge `mode = 'metadata:curseforge'`
     // razem z pustym `url = ''`. Bez sprawdzenia trybu pusty ciąg trafiłby do
@@ -36,7 +35,8 @@ pub fn parse_pw(tekst: &str) -> Result<PwEntry, PwError> {
     Ok(PwEntry {
         filename,
         url,
-        sha512,
+        hash: pole(tekst, "hash"),
+        hash_format: pole(tekst, "hash-format"),
         cf_project: liczba(tekst, "project-id"),
         cf_file: liczba(tekst, "file-id"),
     })
@@ -120,7 +120,8 @@ project-id = 361579
             e.url.unwrap(),
             "https://cdn.modrinth.com/data/AANobbMI/versions/uMOpc5uV/sodium.jar"
         );
-        assert_eq!(e.sha512.unwrap(), "4f537696af95411e9daf15795fb5fcbc49913d48");
+        assert_eq!(e.hash.unwrap(), "4f537696af95411e9daf15795fb5fcbc49913d48");
+        assert_eq!(e.hash_format.unwrap(), "sha512");
     }
 
     #[test]
@@ -128,10 +129,7 @@ project-id = 361579
         let e = parse_pw(CURSEFORGE).unwrap();
         assert_eq!(e.filename, "spark-1.10.124-neoforge.jar");
         assert!(e.url.is_none(), "CurseForge nie podaje adresu wprost");
-        assert!(
-            e.sha512.is_none(),
-            "hash jest sha1, wiec nie nadaje sie jako sha512"
-        );
+        assert_eq!(e.hash_format.unwrap(), "sha1", "CurseForge podaje sha1");
         assert_eq!(e.cf_file.unwrap(), 6225208);
         assert_eq!(e.cf_project.unwrap(), 361579);
     }

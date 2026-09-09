@@ -1,7 +1,7 @@
 mod pw;
 
 use anyhow::{bail, Context, Result};
-use chmurka_core::hash::sha512_file;
+use chmurka_core::hash::{sha1_file, sha512_file};
 use clap::{Parser, Subcommand};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -37,6 +37,12 @@ enum Polecenie {
         #[arg(long, default_value = "data")]
         data: PathBuf,
     },
+    /// Sprawdza logowanie kontem Microsoft i wypisuje nick oraz UUID.
+    Login {
+        /// Identyfikator aplikacji. Domyślnie ten sam, którego używa oficjalny launcher.
+        #[arg(long, default_value = "00000000402b5328")]
+        client_id: String,
+    },
     /// Instaluje i uruchamia grę na koncie offline.
     Run {
         #[arg(long)]
@@ -62,6 +68,7 @@ async fn main() -> Result<()> {
             println!("Gotowe.");
             Ok(())
         }
+        Polecenie::Login { client_id } => logowanie(&client_id).await,
         Polecenie::Run {
             manifest,
             data,
@@ -82,6 +89,38 @@ async fn main() -> Result<()> {
             let status = cmd.status()?;
             println!("Gra zakończyła się kodem {:?}", status.code());
             Ok(())
+        }
+    }
+}
+
+/// Ręczna weryfikacja logowania Microsoft. To najbardziej niepewny fragment
+/// projektu — używamy identyfikatora aplikacji oficjalnego launchera, który
+/// Microsoft może w każdej chwili odciąć.
+async fn logowanie(client_id: &str) -> Result<()> {
+    use chmurka_core::auth::msa;
+
+    let kod = msa::begin(client_id).await?;
+    println!("Wejdź na {} i wpisz kod:", kod.verification_uri);
+    println!("\n    {}\n", kod.user_code);
+    println!("Czekam (kod ważny {} s)…", kod.expires_in_s);
+
+    let koniec = std::time::Instant::now() + std::time::Duration::from_secs(kod.expires_in_s);
+    let mut odstep = kod.interval_s.max(1);
+    loop {
+        if std::time::Instant::now() > koniec {
+            bail!("kod wygasł");
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(odstep)).await;
+        match msa::poll_once(client_id, &kod.device_code).await? {
+            msa::PollResult::Czekamy => {}
+            // Microsoft prosi o wolniejsze odpytywanie — zignorowanie tego
+            // konczy sie zablokowaniem calej sesji logowania.
+            msa::PollResult::Zwolnij => odstep += 5,
+            msa::PollResult::Gotowe(t) => {
+                let konto = msa::zaloguj_minecraft(&t).await?;
+                println!("Zalogowano: {} ({})", konto.name, konto.uuid);
+                return Ok(());
+            }
         }
     }
 }
@@ -184,19 +223,44 @@ fn pack_build(instance: &Path, out: &Path, base_url: &str, version: &str) -> Res
         bail!("mody bez metadanych, nie wiadomo skąd je pobrać: {brakujace:?}");
     }
 
+    let magazyn = out.join("files");
+    std::fs::create_dir_all(&magazyn)?;
+
     let mut files = Vec::new();
+    let mut wlasne_mody: Vec<String> = Vec::new();
 
     for nazwa in &jary {
         let meta = &wpisy_meta[nazwa];
         let sciezka = mods.join(nazwa);
-        let url = match (&meta.url, meta.cf_file) {
-            (Some(u), _) => u.clone(),
-            (None, Some(fid)) => pw::curseforge_url(fid, nazwa),
-            (None, None) => bail!("mod {nazwa} (projekt CurseForge {:?}) nie ma ani adresu, ani identyfikatora pliku", meta.cf_project),
-        };
-        // Hash z metadanych bywa sha1 (CurseForge), wiec liczymy wlasny sha512
-        // z pliku na dysku — to i tak jedyne zrodlo prawdy o tym, co gramy.
+        // Hash z metadanych bywa sha1 (CurseForge), wiec do manifestu liczymy
+        // wlasny sha512 z pliku na dysku — to jedyne zrodlo prawdy o tym, co gramy.
         let sha512 = sha512_file(&sciezka)?;
+
+        // Czy plik na dysku to naprawdę ten sam plik, który leży pod adresem
+        // źródłowym? Jeśli mod został lokalnie załatany, wskazanie CDN-u dałoby
+        // testerom inną paczkę niż ta, którą utrzymujący faktycznie sprawdził.
+        let zgodny_ze_zrodlem = match (&meta.hash, meta.hash_format.as_deref()) {
+            (Some(h), Some("sha512")) => sha512.eq_ignore_ascii_case(h),
+            (Some(h), Some("sha1")) => sha1_file(&sciezka)?.eq_ignore_ascii_case(h),
+            // Bez hasha nie mamy jak tego sprawdzić, więc hostujemy u siebie.
+            _ => false,
+        };
+
+        let url = if zgodny_ze_zrodlem {
+            match (&meta.url, meta.cf_file) {
+                (Some(u), _) => u.clone(),
+                (None, Some(fid)) => pw::curseforge_url(fid, nazwa),
+                (None, None) => bail!(
+                    "mod {nazwa} (projekt CurseForge {:?}) nie ma ani adresu, ani identyfikatora pliku",
+                    meta.cf_project
+                ),
+            }
+        } else {
+            wlasne_mody.push(nazwa.clone());
+            do_magazynu(&magazyn, &sciezka, &sha512)?;
+            adres_wlasny(base_url, &sha512)
+        };
+
         files.push(serde_json::json!({
             "path": format!("mods/{nazwa}"),
             "size": std::fs::metadata(&sciezka)?.len(),
@@ -206,9 +270,19 @@ fn pack_build(instance: &Path, out: &Path, base_url: &str, version: &str) -> Res
         }));
     }
 
+    if !wlasne_mody.is_empty() {
+        eprintln!(
+            "\nUWAGA: {} mod(ów) różni się od pliku pod adresem źródłowym — hostuję je u siebie,",
+            wlasne_mody.len()
+        );
+        eprintln!("żeby testerzy dostali dokładnie to, co masz w instancji:");
+        for m in &wlasne_mody {
+            eprintln!("  - {m}");
+        }
+        eprintln!("Jeśli to niezamierzone, pobierz te mody na nowo w PrismLauncherze.\n");
+    }
+
     // 4. Configi i options.txt trafiaja do naszego magazynu adresowanego trescia.
-    let magazyn = out.join("files");
-    std::fs::create_dir_all(&magazyn)?;
     let mut nasze: Vec<(String, PathBuf, &'static str)> = Vec::new();
     zbierz_configi(&instance.join("config"), "config", &mut nasze);
     let opcje = instance.join("options.txt");
@@ -218,18 +292,13 @@ fn pack_build(instance: &Path, out: &Path, base_url: &str, version: &str) -> Res
 
     for (rel, zrodlo, polityka) in nasze {
         let sha512 = sha512_file(&zrodlo)?;
-        let podkatalog = magazyn.join(&sha512[0..2]);
-        std::fs::create_dir_all(&podkatalog)?;
-        let cel = podkatalog.join(&sha512);
-        if !cel.exists() {
-            std::fs::copy(&zrodlo, &cel)?;
-        }
+        do_magazynu(&magazyn, &zrodlo, &sha512)?;
         files.push(serde_json::json!({
             "path": rel,
             "size": std::fs::metadata(&zrodlo)?.len(),
             "sha512": sha512,
             "policy": polityka,
-            "urls": [format!("{}/files/{}/{}", base_url.trim_end_matches('/'), &sha512[0..2], sha512)],
+            "urls": [adres_wlasny(base_url, &sha512)],
         }));
     }
 
@@ -262,6 +331,27 @@ fn pack_build(instance: &Path, out: &Path, base_url: &str, version: &str) -> Res
         out.display()
     );
     Ok(())
+}
+
+/// Kładzie plik w magazynie adresowanym treścią: `files/<2 znaki>/<pełny hash>`.
+/// Ten sam plik w kolejnych wersjach paczki zajmuje miejsce tylko raz.
+fn do_magazynu(magazyn: &Path, zrodlo: &Path, sha512: &str) -> Result<()> {
+    let podkatalog = magazyn.join(&sha512[0..2]);
+    std::fs::create_dir_all(&podkatalog)?;
+    let cel = podkatalog.join(sha512);
+    if !cel.exists() {
+        std::fs::copy(zrodlo, &cel)?;
+    }
+    Ok(())
+}
+
+fn adres_wlasny(base_url: &str, sha512: &str) -> String {
+    format!(
+        "{}/files/{}/{}",
+        base_url.trim_end_matches('/'),
+        &sha512[0..2],
+        sha512
+    )
 }
 
 fn zbierz_configi(katalog: &Path, prefiks: &str, out: &mut Vec<(String, PathBuf, &'static str)>) {
