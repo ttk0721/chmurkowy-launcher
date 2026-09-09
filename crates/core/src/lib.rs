@@ -1,6 +1,8 @@
+pub mod auth;
 pub mod game_install;
 pub mod hash;
 pub mod java;
+pub mod launch;
 pub mod manifest;
 pub mod net;
 pub mod pack_sync;
