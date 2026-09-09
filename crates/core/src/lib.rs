@@ -6,3 +6,4 @@ pub mod pack_sync;
 pub mod paths;
 pub mod progress;
 pub mod state;
+pub mod version;
