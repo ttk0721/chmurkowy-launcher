@@ -642,7 +642,7 @@ Pobieranie jest jedynym miejscem, przez które przechodzą wszystkie pliki: JRE,
 Run:
 ```bash
 cargo add tokio --features rt-multi-thread,macros,fs,process -p chmurka-core
-cargo add reqwest --no-default-features --features rustls-tls,stream -p chmurka-core
+cargo add reqwest --no-default-features --features rustls,stream,json,form,http2,charset -p chmurka-core
 cargo add futures-util -p chmurka-core
 cargo add tempfile --dev -p chmurka-core
 ```
@@ -3180,7 +3180,7 @@ async fn przygotuj(
 }
 ```
 
-Run: `cargo add reqwest --no-default-features --features rustls-tls -p chmurka-cli`
+Run: `cargo add reqwest --no-default-features --features rustls,json,form,http2,charset -p chmurka-cli`
 
 - [ ] **Step 7: Uruchom pełny przebieg lokalnie**
 
@@ -3630,7 +3630,7 @@ cargo add eframe -p chmurkowy-launcher
 cargo add egui -p chmurkowy-launcher
 cargo add chmurka-core --path crates/core -p chmurkowy-launcher
 cargo add tokio --features rt-multi-thread,macros -p chmurkowy-launcher
-cargo add reqwest --no-default-features --features rustls-tls -p chmurkowy-launcher
+cargo add reqwest --no-default-features --features rustls,json,form,http2,charset -p chmurkowy-launcher
 cargo add arboard open anyhow -p chmurkowy-launcher
 ```
 

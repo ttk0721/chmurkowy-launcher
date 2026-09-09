@@ -4,8 +4,14 @@ version = "0.1.0"
 edition.workspace = true
 
 [dependencies]
+futures-util = "0.3.34"
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "stream", "json", "form", "http2", "charset"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha1 = "0.11.0"
 sha2 = "0.11.0"
 thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "fs", "process", "time", "sync", "io-util"] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
