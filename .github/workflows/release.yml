@@ -85,8 +85,14 @@ jobs:
 
       # Opis wydania bierzemy z tresci adnotowanego tagu — dzieki temu changelog
       # powstaje razem z wersja i nie ma osobnego pliku, ktory mozna zapomniec.
+      # Bez jawnego pobrania tagow adnotowanych git widzi tag jako lekki
+      # i %(contents) zwraca tresc commita zamiast opisu wydania.
       - name: Treść wydania z opisu tagu
-        run: git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > notatki.md
+        run: |
+          git fetch --force --tags origin
+          git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > notatki.md
+          echo "--- treść wydania ---"
+          cat notatki.md
 
       - uses: softprops/action-gh-release@v2
         with:
