@@ -1,3 +1,4 @@
+pub mod game_install;
 pub mod hash;
 pub mod java;
 pub mod manifest;
