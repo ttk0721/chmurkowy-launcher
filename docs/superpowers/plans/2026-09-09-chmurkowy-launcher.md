@@ -1663,9 +1663,18 @@ pub fn parse_pw(tekst: &str) -> Result<PwEntry, PwError> {
         Some("sha512") => pole(tekst, "hash"),
         _ => None,
     };
+
+    // PrismLauncher zapisuje dla modów z CurseForge `mode = 'metadata:curseforge'`
+    // razem z pustym `url = ''`. Bez sprawdzenia trybu pusty ciąg trafiłby do
+    // manifestu jako prawdziwy adres i paczka byłaby nie do pobrania.
+    let url = match pole(tekst, "mode").as_deref() {
+        Some("url") => pole(tekst, "url").filter(|u| !u.is_empty()),
+        _ => None,
+    };
+
     Ok(PwEntry {
         filename,
-        url: pole(tekst, "url"),
+        url,
         sha512,
         cf_project: liczba(tekst, "project-id"),
         cf_file: liczba(tekst, "file-id"),
