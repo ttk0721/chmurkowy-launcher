@@ -78,6 +78,10 @@ pub enum BladLaunchera {
     Logowanie(#[from] AuthError),
     #[error("operacja na pliku {0}: {1}")]
     Plik(String, std::io::Error),
+    /// Siatka bezpieczeństwa: coś, czego nie potrafimy zaklasyfikować.
+    /// Nie powinno się zdarzyć — jeśli się zdarza, brakuje nam kategorii.
+    #[error("nierozpoznany błąd: {0}")]
+    Nieznany(String),
     /// Gra wystartowała, ale zakończyła się szybko i nienormalnie.
     #[error("gra zakończyła się kodem {kod:?}")]
     GraPadla {
@@ -118,6 +122,20 @@ impl BladLaunchera {
             BladLaunchera::Paczka(e) => z_paczki(e),
             BladLaunchera::Logowanie(e) => z_logowania(e),
             BladLaunchera::Plik(sciezka, e) => z_pliku(sciezka, e),
+            BladLaunchera::Nieznany(tresc) => BladUzytkownika::nowy(
+                "INNY-01",
+                "Coś poszło nie tak, ale nie wiemy co",
+                "Launcher natknął się na problem, którego nie potrafi rozpoznać. \
+                 To znaczy, że trafiłeś na coś naprawdę rzadkiego.",
+                &[
+                    "Uruchom launcher ponownie — czasem to wystarcza.",
+                    "Wejdź w Ustawienia i kliknij „Napraw instalację”.",
+                    "Skopiuj szczegóły przyciskiem poniżej i wyślij je administracji. \
+                     Ten błąd nie ma jeszcze własnego opisu, więc Twoje zgłoszenie \
+                     realnie pomoże go dodać.",
+                ],
+                tresc.clone(),
+            ),
             BladLaunchera::GraPadla {
                 kod,
                 ogon_logu,
@@ -594,6 +612,16 @@ mod tests {
                 assert!(!t.contains(slowo), "zargon '{slowo}' w tytule: {}", b.tytul);
             }
         }
+    }
+
+    #[test]
+    fn nierozpoznany_blad_tez_dostaje_kod() {
+        let b = BladLaunchera::Nieznany("cos zupelnie nowego".into()).dla_uzytkownika();
+        assert_eq!(b.kod, "INNY-01");
+        assert!(!b.co_zrobic.is_empty());
+        // Tresc techniczna musi przetrwac, bo to jedyny slad dla administracji.
+        assert!(b.szczegoly.contains("cos zupelnie nowego"));
+        assert!(b.do_schowka().contains("cos zupelnie nowego"));
     }
 
     #[test]

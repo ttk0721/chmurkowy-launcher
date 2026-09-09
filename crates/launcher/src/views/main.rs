@@ -20,6 +20,15 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     {
                         app.widok = Widok::Ustawienia;
                     }
+                    if ui
+                        .add(egui::Button::new(egui::RichText::new("Paczki").size(13.0)))
+                        .on_hover_text("Paczki zasobów i shadery")
+                        .clicked()
+                    {
+                        // Czytamy stan z plików gry — mógł się zmienić w samej grze.
+                        app.odswiez_paczki();
+                        app.widok = Widok::Paczki;
+                    }
                     let (etykieta, podpowiedz) = match &app.konto {
                         Some(k) => (k.name.clone(), "Zmień konto"),
                         None => ("Nie zalogowano".to_string(), "Kliknij, żeby się zalogować"),

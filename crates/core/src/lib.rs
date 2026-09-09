@@ -7,6 +7,8 @@ pub mod launch;
 pub mod manifest;
 pub mod net;
 pub mod pack_sync;
+pub mod paczki;
+pub mod pamiec;
 pub mod paths;
 pub mod progress;
 pub mod state;

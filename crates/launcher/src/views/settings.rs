@@ -71,6 +71,37 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     ui.label(theme::drobny(
                         "Paczka z 249 modami potrzebuje co najmniej 4 GB.",
                     ));
+                    // Propozycja dobrana do komputera. Pokazujemy ja tylko przy
+                    // wyraznej roznicy, zeby nie zaczepiac gracza bez powodu.
+                    if let Some(calkowita) = chmurka_core::pamiec::calkowita_mb() {
+                        let zalecana = chmurka_core::pamiec::zalecana_mb(calkowita);
+                        if chmurka_core::pamiec::warto_zaproponowac(
+                            app.ustawienia.pamiec_mb,
+                            zalecana,
+                        ) {
+                            ui.add_space(theme::S1);
+                            ui.horizontal(|ui| {
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "Twój komputer ma {} GB — proponujemy {} MB.",
+                                        calkowita / 1024,
+                                        zalecana
+                                    ))
+                                    .size(11.0)
+                                    .color(theme::AKCENT),
+                                );
+                                if ui
+                                    .add(egui::Button::new(
+                                        egui::RichText::new("Ustaw").size(11.0),
+                                    ))
+                                    .clicked()
+                                {
+                                    app.ustawienia.pamiec_mb = zalecana;
+                                    zmienione = true;
+                                }
+                            });
+                        }
+                    }
                 }
 
                 // --- GRA ---

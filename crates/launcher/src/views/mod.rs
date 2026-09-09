@@ -1,6 +1,7 @@
 pub mod error;
 pub mod login;
 pub mod main;
+pub mod packs;
 pub mod settings;
 
 use crate::theme::{self, Ikona};

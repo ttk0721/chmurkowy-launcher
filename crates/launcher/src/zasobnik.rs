@@ -17,9 +17,13 @@ pub enum ZdarzenieZasobnika {
 }
 
 /// Uchwyt utrzymujący ikonę przy życiu. Porzucenie go usuwa ikonę.
+///
+/// Celowo bez wymogu `Send`: na Windowsie `tray_icon::TrayIcon` trzyma w środku
+/// `Rc<RefCell<..>>` i `Send` nie spełnia. Uchwyt i tak nigdy nie opuszcza
+/// wątku interfejsu, a eframe nie wymaga `Send` od aplikacji.
 pub struct Zasobnik {
     #[allow(dead_code)]
-    trzymaj: Box<dyn std::any::Any + Send>,
+    trzymaj: Box<dyn std::any::Any>,
 }
 
 // ---------------------------------------------------------------- Linux

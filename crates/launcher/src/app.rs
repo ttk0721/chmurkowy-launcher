@@ -3,6 +3,7 @@ use chmurka_core::auth::{msa, msa::DeviceCode, Account};
 use chmurka_core::bledy::{BladLaunchera, BladUzytkownika};
 use chmurka_core::manifest::Manifest;
 use chmurka_core::progress::{Progress, Stage};
+use chmurka_core::paczki::{StanShaderow, StanZasobow};
 use chmurka_core::ustawienia::{podziel_argumenty, Ustawienia};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, Sender};
@@ -13,6 +14,7 @@ pub enum Widok {
     Glowny,
     Logowanie,
     Ustawienia,
+    Paczki,
     Blad,
 }
 
@@ -43,6 +45,10 @@ pub struct App {
     pub log: Vec<String>,
     pub pokaz_szczegoly: bool,
     pub ustawienia: Ustawienia,
+    /// Stan paczek czytany z plików gry przy każdym wejściu na ekran —
+    /// gracz mógł je pozmieniać w samej grze.
+    pub zasoby: StanZasobow,
+    pub shadery: StanShaderow,
     pub zajety: bool,
     /// Prawda od startu gry do jej zakończenia.
     pub gra_dziala: bool,
@@ -69,7 +75,17 @@ impl App {
             .build()
             .expect("runtime tokio");
 
-        let ustawienia = Ustawienia::wczytaj(&katalog.join("data").join("settings.json"));
+        let plik_ustawien = katalog.join("data").join("settings.json");
+        let pierwsze_uruchomienie = !plik_ustawien.is_file();
+        let mut ustawienia = Ustawienia::wczytaj(&plik_ustawien);
+
+        // Przy pierwszym uruchomieniu dobieramy pamięć do komputera. Później już
+        // nie ruszamy — to wybór gracza, nawet jeśli odbiega od zalecenia.
+        if pierwsze_uruchomienie {
+            if let Some(mb) = chmurka_core::pamiec::calkowita_mb() {
+                ustawienia.pamiec_mb = chmurka_core::pamiec::zalecana_mb(mb);
+            }
+        }
         // ksni zaklada dzialajacy runtime tokio, wiec ikone tworzymy w jego kontekscie.
         let zasobnik = runtime.block_on(crate::zasobnik::utworz(nadawca_zas));
 
@@ -80,6 +96,7 @@ impl App {
                 Ok("logowanie") => Widok::Logowanie,
                 Ok("ustawienia") => Widok::Ustawienia,
                 Ok("blad") => Widok::Blad,
+                Ok("paczki") => Widok::Paczki,
                 _ => Widok::Glowny,
             },
             manifest: None,
@@ -91,6 +108,8 @@ impl App {
             log: Vec::new(),
             pokaz_szczegoly: false,
             ustawienia,
+            zasoby: StanZasobow::default(),
+            shadery: StanShaderow::default(),
             zajety: false,
             gra_dziala: false,
             schowaj_okno: false,
@@ -114,6 +133,12 @@ impl App {
                 .dla_uzytkownika(),
             );
         }
+        if pierwsze_uruchomienie {
+            app.zapisz_ustawienia();
+        }
+        if app.widok == Widok::Paczki {
+            app.odswiez_paczki();
+        }
         app.wczytaj_manifest();
         app.wznow_sesje();
         app
@@ -121,6 +146,28 @@ impl App {
 
     pub fn data(&self) -> PathBuf {
         self.katalog.join("data")
+    }
+
+    /// Przeładowuje stan paczek z plików gry.
+    pub fn odswiez_paczki(&mut self) {
+        let instancja = self.data().join("instance");
+        self.zasoby = chmurka_core::paczki::wczytaj_zasoby(&instancja);
+        self.shadery = chmurka_core::paczki::wczytaj_shadery(&instancja);
+    }
+
+    pub fn zapisz_paczki(&mut self) {
+        let instancja = self.data().join("instance");
+        if let Err(e) = chmurka_core::paczki::zapisz_zasoby(&instancja, &self.zasoby) {
+            self.komunikat = Some(format!("Nie udało się zapisać paczek zasobów: {e}"));
+            return;
+        }
+        if let Err(e) = chmurka_core::paczki::zapisz_shadery(
+            &instancja,
+            self.shadery.wlaczone,
+            self.shadery.wybrany.as_deref(),
+        ) {
+            self.komunikat = Some(format!("Nie udało się zapisać shadera: {e}"));
+        }
     }
 
     pub fn zapisz_ustawienia(&mut self) {
@@ -217,6 +264,8 @@ impl App {
                     }
                 }
                 Wiadomosc::GraZakonczona(kod) => {
+                    // Gracz mógł w grze włączyć albo wyłączyć paczki — czytamy od nowa.
+                    self.odswiez_paczki();
                     self.zajety = false;
                     self.gra_dziala = false;
                     self.postep = None;
@@ -271,6 +320,7 @@ impl eframe::App for App {
             Widok::Glowny => crate::views::main::rysuj(self, ctx),
             Widok::Logowanie => crate::views::login::rysuj(self, ctx),
             Widok::Ustawienia => crate::views::settings::rysuj(self, ctx),
+            Widok::Paczki => crate::views::packs::rysuj(self, ctx),
             Widok::Blad => crate::views::error::rysuj(self, ctx),
         }
     }
