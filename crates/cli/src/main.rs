@@ -30,9 +30,26 @@ enum Polecenie {
         #[arg(long)]
         version: String,
     },
+    /// Instaluje wszystko do wskazanego katalogu danych.
+    Install {
+        #[arg(long)]
+        manifest: String,
+        #[arg(long, default_value = "data")]
+        data: PathBuf,
+    },
+    /// Instaluje i uruchamia grę na koncie offline.
+    Run {
+        #[arg(long)]
+        manifest: String,
+        #[arg(long, default_value = "data")]
+        data: PathBuf,
+        #[arg(long)]
+        nick: String,
+    },
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     match Cli::parse().polecenie {
         Polecenie::PackBuild {
             instance,
@@ -40,7 +57,87 @@ fn main() -> Result<()> {
             base_url,
             version,
         } => pack_build(&instance, &out, &base_url, &version),
+        Polecenie::Install { manifest, data } => {
+            przygotuj(&manifest, &data).await?;
+            println!("Gotowe.");
+            Ok(())
+        }
+        Polecenie::Run {
+            manifest,
+            data,
+            nick,
+        } => {
+            let (wersja, java) = przygotuj(&manifest, &data).await?;
+            let konto = chmurka_core::auth::offline::offline_account(&nick);
+            let mut cmd = chmurka_core::launch::build_command(&chmurka_core::launch::LaunchParams {
+                java: &java.java_bin,
+                mc_dir: &data.join("mc"),
+                game_dir: &data.join("instance"),
+                version: &wersja,
+                account: &konto,
+                min_mb: 512,
+                max_mb: 4096,
+            })?;
+            println!("Uruchamiam grę…");
+            let status = cmd.status()?;
+            println!("Gra zakończyła się kodem {:?}", status.code());
+            Ok(())
+        }
     }
+}
+
+/// Wspólna część install i run: pobiera manifest i doprowadza instalację do stanu gotowego.
+async fn przygotuj(
+    adres_manifestu: &str,
+    data: &Path,
+) -> Result<(
+    chmurka_core::version::VersionJson,
+    chmurka_core::java::JavaInstall,
+)> {
+    use chmurka_core::*;
+    use std::sync::Arc;
+
+    let postep: Arc<dyn Fn(progress::Progress) + Send + Sync> = Arc::new(|p| {
+        // Co setny plik wystarczy — przy 4000 zasobach pełny log zalewa konsolę.
+        if p.done % 100 == 0 || p.done == p.total {
+            println!("[{}] {}/{} {}", p.stage.opis(), p.done, p.total, p.label);
+        }
+    });
+
+    let tekst = reqwest::get(adres_manifestu).await?.text().await?;
+    let m = manifest::parse(&tekst)?;
+    println!("Paczka {} wersja {}", m.pack.name, m.pack.version);
+
+    let dl = net::Downloader::new(8);
+    let mc = data.join("mc");
+    let instancja = data.join("instance");
+    std::fs::create_dir_all(&instancja)?;
+
+    let java = java::ensure(data, m.java.major, &dl, postep.clone()).await?;
+    let profil = game_install::ensure_loader(
+        &mc,
+        &java,
+        &m.pack.loader.kind,
+        &m.pack.loader.version,
+        &dl,
+        postep.clone(),
+    )
+    .await?;
+    let wersja = version::load(&mc.join("versions"), &profil)?;
+
+    game_install::ensure_libraries(&mc, &wersja, &dl, postep.clone()).await?;
+    game_install::ensure_assets(&mc, &wersja, &dl, postep.clone()).await?;
+
+    let sciezka_stanu = data.join("state.json");
+    let mut stan = state::State::load(&sciezka_stanu);
+    let akcje = pack_sync::plan(&m, &stan, &pack_sync::DiskProbe::new(&instancja));
+    let notatki = pack_sync::apply(&m, &instancja, &mut stan, &akcje, &dl, postep.clone()).await?;
+    stan.save(&sciezka_stanu)?;
+    for n in notatki {
+        println!("  {n}");
+    }
+
+    Ok((wersja, java))
 }
 
 fn pack_build(instance: &Path, out: &Path, base_url: &str, version: &str) -> Result<()> {

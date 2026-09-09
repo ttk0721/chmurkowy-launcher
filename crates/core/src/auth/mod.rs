@@ -1,3 +1,5 @@
+pub mod offline;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccountKind {
     Msa,
