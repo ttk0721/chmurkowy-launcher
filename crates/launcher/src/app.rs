@@ -30,6 +30,9 @@ pub struct App {
     pub kod: Option<DeviceCode>,
     pub postep: Option<Progress>,
     pub blad: Option<String>,
+    /// Krótka informacja zwrotna po akcji w ustawieniach — bez niej
+    /// przyciski wyglądały, jakby nic nie robiły.
+    pub komunikat: Option<String>,
     pub log: Vec<String>,
     pub pokaz_szczegoly: bool,
     pub nick_offline: String,
@@ -50,12 +53,19 @@ impl App {
 
         let mut app = Self {
             katalog,
-            widok: Widok::Glowny,
+            // Furtka do pracy nad wygladem: CHMURKA_WIDOK=logowanie|ustawienia
+            // pozwala otworzyc launcher od razu na danym ekranie.
+            widok: match std::env::var("CHMURKA_WIDOK").as_deref() {
+                Ok("logowanie") => Widok::Logowanie,
+                Ok("ustawienia") => Widok::Ustawienia,
+                _ => Widok::Glowny,
+            },
             manifest: None,
             konto: None,
             kod: None,
             postep: None,
             blad: None,
+            komunikat: None,
             log: Vec::new(),
             pokaz_szczegoly: false,
             nick_offline: String::new(),

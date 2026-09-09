@@ -5949,7 +5949,7 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.1.1",
+    "latest_version": "0.1.2",
     "urls": {
       "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-linux-x64",
       "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-windows-x64.exe"
@@ -5970,7 +5970,7 @@
     },
     "minecraft": "1.21.1",
     "name": "Chmurkowy Serwer",
-    "version": "2026.09.09-2"
+    "version": "2026.09.09-3"
   },
   "schema": 1
 }
