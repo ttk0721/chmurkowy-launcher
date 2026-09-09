@@ -52,6 +52,18 @@ impl Downloader {
 
     /// Zwraca `true`, jeśli plik faktycznie pobrano, `false` jeśli już był poprawny.
     pub async fn fetch_one(&self, spec: &DownloadSpec) -> Result<bool, NetError> {
+        self.fetch_one_obserwowane(spec, None).await
+    }
+
+    /// Jak `fetch_one`, ale melduje postęp w bajtach.
+    ///
+    /// Potrzebne przy pojedynczych dużych plikach — JRE waży 45 MB, a licznik
+    /// „0 z 1" stał na zerze przez całe pobieranie i skakał od razu na koniec.
+    pub async fn fetch_one_obserwowane(
+        &self,
+        spec: &DownloadSpec,
+        obserwator: Option<(Stage, String, Arc<dyn Fn(Progress) + Send + Sync>)>,
+    ) -> Result<bool, NetError> {
         if pasuje(&spec.dest, &spec.expect) {
             return Ok(false);
         }
@@ -66,9 +78,28 @@ impl Downloader {
         let mut ostatni = String::from("brak prób");
 
         // Każdy adres dostaje pełny komplet prób, zanim przejdziemy do następnego.
+        // Meldunek co ~400 kB zamiast co kawałek — inaczej jedno pobranie
+        // wysyłałoby do interfejsu tysiące komunikatów na sekundę.
+        let melduj: Box<dyn Fn(u64, Option<u64>) + Send + Sync> = match &obserwator {
+            None => Box::new(|_, _| {}),
+            Some((stage, etykieta, on)) => {
+                let stage = *stage;
+                let etykieta = etykieta.clone();
+                let on = on.clone();
+                Box::new(move |pobrane, calosc| {
+                    on(Progress::bajty(
+                        stage,
+                        pobrane,
+                        calosc.unwrap_or(0),
+                        etykieta.clone(),
+                    ));
+                })
+            }
+        };
+
         for url in &spec.urls {
             for proba in 0..PROBY {
-                match self.raz(url, &czesciowy).await {
+                match self.raz(url, &czesciowy, &melduj).await {
                     Ok(()) => {
                         if pasuje(&czesciowy, &spec.expect) {
                             tokio::fs::rename(&czesciowy, &spec.dest)
@@ -93,8 +124,15 @@ impl Downloader {
         })
     }
 
-    async fn raz(&self, url: &str, czesciowy: &Path) -> Result<(), String> {
+    async fn raz(
+        &self,
+        url: &str,
+        czesciowy: &Path,
+        melduj: &(dyn Fn(u64, Option<u64>) + Send + Sync),
+    ) -> Result<(), String> {
         use tokio::io::AsyncWriteExt;
+
+        const CO_ILE: u64 = 400 * 1024;
 
         let odp = self
             .client
@@ -104,6 +142,14 @@ impl Downloader {
             .map_err(|e| e.to_string())?
             .error_for_status()
             .map_err(|e| e.to_string())?;
+
+        // Adoptium przekierowuje na GitHub, ktory podaje Content-Length.
+        // Gdyby go zabraklo, interfejs przechodzi w tryb nieokreslony.
+        let calosc = odp.content_length();
+        let mut pobrane: u64 = 0;
+        let mut ostatni_meldunek: u64 = 0;
+        melduj(0, calosc);
+
         let mut plik = tokio::fs::File::create(czesciowy)
             .await
             .map_err(|e| e.to_string())?;
@@ -111,8 +157,14 @@ impl Downloader {
         while let Some(kawalek) = strumien.next().await {
             let kawalek = kawalek.map_err(|e| e.to_string())?;
             plik.write_all(&kawalek).await.map_err(|e| e.to_string())?;
+            pobrane += kawalek.len() as u64;
+            if pobrane - ostatni_meldunek >= CO_ILE {
+                ostatni_meldunek = pobrane;
+                melduj(pobrane, calosc);
+            }
         }
         plik.flush().await.map_err(|e| e.to_string())?;
+        melduj(pobrane, calosc.or(Some(pobrane)));
         Ok(())
     }
 
@@ -124,11 +176,9 @@ impl Downloader {
     ) -> Result<(), NetError> {
         let total = specs.len() as u64;
         let done = Arc::new(AtomicU64::new(0));
-        let bajty = Arc::new(AtomicU64::new(0));
 
         let zadania = specs.into_iter().map(|spec| {
             let done = done.clone();
-            let bajty = bajty.clone();
             let on = on.clone();
             async move {
                 let etykieta = spec
@@ -137,19 +187,8 @@ impl Downloader {
                     .map(|s| s.to_string_lossy().to_string())
                     .unwrap_or_default();
                 self.fetch_one(&spec).await?;
-                let rozmiar = tokio::fs::metadata(&spec.dest)
-                    .await
-                    .map(|m| m.len())
-                    .unwrap_or(0);
                 let d = done.fetch_add(1, Ordering::Relaxed) + 1;
-                let b = bajty.fetch_add(rozmiar, Ordering::Relaxed) + rozmiar;
-                on(Progress {
-                    stage,
-                    done: d,
-                    total,
-                    bytes: b,
-                    label: etykieta,
-                });
+                on(Progress::pliki(stage, d, total, etykieta));
                 Ok::<(), NetError>(())
             }
         });

@@ -315,13 +315,12 @@ pub fn uruchom(app: &mut App) {
                 min_mb: m.memory.min_mb,
                 max_mb: pamiec,
             })?;
-            let _ = n.send(Wiadomosc::Postep(progress::Progress {
-                stage: progress::Stage::Ready,
-                done: 1,
-                total: 1,
-                bytes: 0,
-                label: "Uruchamiam grę".into(),
-            }));
+            let _ = n.send(Wiadomosc::Postep(progress::Progress::pliki(
+                progress::Stage::Ready,
+                1,
+                1,
+                "Uruchamiam grę",
+            )));
 
             // Log gry trafia do pliku i do panelu „szczegóły".
             // Testowanie paczki polega głównie na czytaniu crashy, więc

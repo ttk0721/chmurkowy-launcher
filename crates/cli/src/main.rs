@@ -31,7 +31,7 @@ enum Polecenie {
         version: String,
         /// Najnowsza wersja launchera — launcher porownuje ja ze swoja
         /// i informuje gracza o dostepnej aktualizacji.
-        #[arg(long, default_value = "0.1.3")]
+        #[arg(long, default_value = "0.1.4")]
         launcher_version: String,
     },
     /// Instaluje wszystko do wskazanego katalogu danych.
@@ -143,8 +143,22 @@ async fn przygotuj(
 
     let postep: Arc<dyn Fn(progress::Progress) + Send + Sync> = Arc::new(|p| {
         // Co setny plik wystarczy — przy 4000 zasobach pełny log zalewa konsolę.
-        if p.done % 100 == 0 || p.done == p.total {
-            println!("[{}] {}/{} {}", p.stage.opis(), p.done, p.total, p.label);
+        let warto = match p.jednostka {
+            progress::Jednostka::Pliki => p.done % 100 == 0 || p.done == p.total,
+            // Co cwierc pobrania — widac ruch, a konsola nie tonie w meldunkach.
+            progress::Jednostka::Bajty => {
+                let cwiartka = (p.total / 4).max(1);
+                p.done == p.total || p.done / cwiartka != (p.done.saturating_sub(400 * 1024)) / cwiartka
+            }
+            progress::Jednostka::Nieznana => true,
+        };
+        if warto {
+            let licznik = p.licznik();
+            if licznik.is_empty() {
+                println!("[{}] {}", p.stage.opis(), p.label);
+            } else {
+                println!("[{}] {} {}", p.stage.opis(), licznik, p.label);
+            }
         }
     });
 

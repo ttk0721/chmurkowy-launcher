@@ -57,20 +57,15 @@ pub async fn ensure_loader(
         return Ok(profil);
     }
 
-    on(Progress {
-        stage: Stage::Loader,
-        done: 0,
-        total: 1,
-        bytes: 0,
-        label: profil.clone(),
-    });
-
     let instalator = mc_dir.join(format!("{profil}-installer.jar"));
-    dl.fetch_one(&DownloadSpec {
-        urls: vec![neoforge_installer_url(loader_version)],
-        dest: instalator.clone(),
-        expect: Expect::Any,
-    })
+    dl.fetch_one_obserwowane(
+        &DownloadSpec {
+            urls: vec![neoforge_installer_url(loader_version)],
+            dest: instalator.clone(),
+            expect: Expect::Any,
+        },
+        Some((Stage::Loader, "Instalator NeoForge".to_string(), on.clone())),
+    )
     .await?;
 
     // Instalator odmawia pracy bez tego pliku — sprawdza go, zanim cokolwiek zrobi.
@@ -82,6 +77,13 @@ pub async fn ensure_loader(
             br#"{"profiles":{},"selectedProfile":"","clientToken":"","authenticationDatabase":{},"launcherVersion":{"name":"","format":21},"settings":{}}"#,
         )?;
     }
+
+    // Instalator mieli okolo minuty i nie raportuje postepu — mowimy o tym wprost,
+    // zeby pasek stojacy w miejscu nie wygladal na zawieszenie.
+    on(Progress::trwa(
+        Stage::Loader,
+        "Instaluję NeoForge — to potrwa około minuty",
+    ));
 
     let wyjscie = std::process::Command::new(&java.java_bin)
         .arg("-jar")
@@ -112,13 +114,7 @@ pub async fn ensure_loader(
             wyjscie: "instalator zakończył się sukcesem, ale nie powstał profil wersji".into(),
         });
     }
-    on(Progress {
-        stage: Stage::Loader,
-        done: 1,
-        total: 1,
-        bytes: 0,
-        label: "NeoForge gotowy".into(),
-    });
+    on(Progress::pliki(Stage::Loader, 1, 1, "NeoForge gotowy"));
     Ok(profil)
 }
 

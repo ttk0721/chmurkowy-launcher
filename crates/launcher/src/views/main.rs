@@ -41,24 +41,30 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
         .frame(theme::ramka())
         .show(ctx, |ui| {
             if let Some(p) = &app.postep {
-                let ulamek = if p.total > 0 {
-                    p.done as f32 / p.total as f32
-                } else {
-                    0.0
-                };
-                ui.label(theme::drobny(&format!(
-                    "{} — {}/{}",
-                    p.stage.opis(),
-                    p.done,
-                    p.total
-                )));
-                ui.add_space(4.0);
-                ui.add(
-                    egui::ProgressBar::new(ulamek)
-                        .show_percentage()
-                        .fill(theme::AKCENT_CIEMNY)
-                        .corner_radius(egui::CornerRadius::same(6)),
-                );
+                match p.ulamek() {
+                    Some(ulamek) => {
+                        ui.label(theme::drobny(&format!(
+                            "{} — {}",
+                            p.stage.opis(),
+                            p.licznik()
+                        )));
+                        ui.add_space(4.0);
+                        ui.add(
+                            egui::ProgressBar::new(ulamek)
+                                .show_percentage()
+                                .fill(theme::AKCENT_CIEMNY)
+                                .corner_radius(egui::CornerRadius::same(6)),
+                        );
+                    }
+                    // Etap bez mierzalnego postępu — kręciołek zamiast paska
+                    // stojącego uparcie na zerze.
+                    None => {
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Spinner::new().size(14.0).color(theme::AKCENT));
+                            ui.label(theme::drobny(&p.label));
+                        });
+                    }
+                }
                 ui.add_space(theme::S1);
             }
 

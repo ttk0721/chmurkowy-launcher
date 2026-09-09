@@ -80,25 +80,23 @@ pub async fn ensure(
         return Ok(JavaInstall { java_bin: b });
     }
 
-    on(Progress {
-        stage: Stage::Java,
-        done: 0,
-        total: 1,
-        bytes: 0,
-        label: format!("Java {major}"),
-    });
-
     let rozszerzenie = if os == Os::Windows { "zip" } else { "tar.gz" };
     let archiwum = root.join(format!("java-{major}.{rozszerzenie}"));
-    dl.fetch_one(&DownloadSpec {
-        urls: vec![adoptium_url(major, os, "x64")],
-        dest: archiwum.clone(),
-        // Adoptium nie podaje hasha w samym przekierowaniu, wiec ufamy TLS-owi,
-        // a wynik weryfikujemy przez znalezienie dzialajacej binarki nizej.
-        expect: Expect::Any,
-    })
+    dl.fetch_one_obserwowane(
+        &DownloadSpec {
+            urls: vec![adoptium_url(major, os, "x64")],
+            dest: archiwum.clone(),
+            // Adoptium nie podaje hasha w samym przekierowaniu, wiec ufamy TLS-owi,
+            // a wynik weryfikujemy przez znalezienie dzialajacej binarki nizej.
+            expect: Expect::Any,
+        },
+        Some((Stage::Java, format!("Java {major}"), on.clone())),
+    )
     .await?;
 
+    // Rozpakowanie ~180 MB potrafi zajac kilka sekund i nie da sie go zmierzyc
+    // z zewnatrz — lepiej powiedziec, co sie dzieje, niz zostawic pasek w miejscu.
+    on(Progress::trwa(Stage::Java, "Rozpakowuję Javę…"));
     std::fs::create_dir_all(&katalog)?;
     if os == Os::Windows {
         rozpakuj_zip(&archiwum, &katalog)?;
@@ -110,13 +108,7 @@ pub async fn ensure(
     let bin = znajdz_binarke(&katalog, os)
         .ok_or_else(|| JavaError::BrakBinarki(katalog.display().to_string()))?;
 
-    on(Progress {
-        stage: Stage::Java,
-        done: 1,
-        total: 1,
-        bytes: 0,
-        label: "Java gotowa".into(),
-    });
+    on(Progress::pliki(Stage::Java, 1, 1, "Java gotowa"));
     Ok(JavaInstall { java_bin: bin })
 }
 
