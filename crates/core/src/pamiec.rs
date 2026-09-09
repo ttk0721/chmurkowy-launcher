@@ -32,42 +32,21 @@ pub fn warto_zaproponowac(obecna_mb: u32, zalecana_mb: u32) -> bool {
     obecna_mb.abs_diff(zalecana_mb) >= 1024
 }
 
-#[cfg(target_os = "linux")]
 mod platforma {
+    /// Jedna implementacja na wszystkie systemy. Wcześniej były trzy warianty
+    /// pod `cfg`, przez co błąd w gałęzi windowsowej wychodził dopiero w CI —
+    /// bez zainstalowanego targetu Windows nie da się jej skompilować lokalnie.
     pub fn calkowita_mb() -> Option<u64> {
-        let tekst = std::fs::read_to_string("/proc/meminfo").ok()?;
-        for linia in tekst.lines() {
-            if let Some(reszta) = linia.strip_prefix("MemTotal:") {
-                let kb: u64 = reszta.trim().trim_end_matches("kB").trim().parse().ok()?;
-                return Some(kb / 1024);
-            }
+        use sysinfo::{MemoryRefreshKind, RefreshKind, System};
+        let system = System::new_with_specifics(
+            RefreshKind::nothing().with_memory(MemoryRefreshKind::nothing().with_ram()),
+        );
+        let bajty = system.total_memory();
+        if bajty == 0 {
+            None
+        } else {
+            Some(bajty / 1_048_576)
         }
-        None
-    }
-}
-
-#[cfg(target_os = "windows")]
-mod platforma {
-    pub fn calkowita_mb() -> Option<u64> {
-        use windows_sys::Win32::System::SystemInformation::{
-            GlobalMemoryStatusEx, MEMORYSTATUSEX,
-        };
-        let mut stan: MEMORYSTATUSEX = unsafe { std::mem::zeroed() };
-        stan.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
-        // SAFETY: struktura jest wyzerowana i ma poprawnie ustawione dwLength,
-        // czego wymaga dokumentacja funkcji.
-        let ok = unsafe { GlobalMemoryStatusEx(&mut stan) };
-        if ok == 0 {
-            return None;
-        }
-        Some(stan.ullTotalPhys / 1_048_576)
-    }
-}
-
-#[cfg(not(any(target_os = "linux", target_os = "windows")))]
-mod platforma {
-    pub fn calkowita_mb() -> Option<u64> {
-        None
     }
 }
 
