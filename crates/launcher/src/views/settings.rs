@@ -3,7 +3,7 @@ use crate::theme;
 
 pub fn rysuj(app: &mut App, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {
-        super::pasek_tytulu(ui, ctx, "☁ Ustawienia");
+        super::pasek_tytulu(ui, ctx, "Ustawienia");
         ui.add_space(20.0);
 
         ui.label(egui::RichText::new("Pamięć dla gry").color(theme::TEKST));
@@ -74,7 +74,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
         }
 
         ui.add_space(18.0);
-        if ui.small_button("← Wróć").clicked() {
+        if ui.small_button("Wróć").clicked() {
             app.widok = Widok::Glowny;
         }
     });

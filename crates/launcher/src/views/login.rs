@@ -3,7 +3,7 @@ use crate::theme;
 
 pub fn rysuj(app: &mut App, ctx: &egui::Context) {
     egui::CentralPanel::default().show(ctx, |ui| {
-        super::pasek_tytulu(ui, ctx, "☁ Zaloguj się");
+        super::pasek_tytulu(ui, ctx, "Zaloguj się");
         ui.add_space(26.0);
 
         ui.vertical_centered(|ui| {
@@ -52,7 +52,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
             }
 
             ui.add_space(24.0);
-            ui.label(egui::RichText::new("── albo ──").color(theme::TEKST_PRZYGASZONY));
+            ui.label(egui::RichText::new("—— albo ——").color(theme::TEKST_PRZYGASZONY));
             ui.add_space(16.0);
 
             ui.label(egui::RichText::new("Tryb offline (do testów)").color(theme::TEKST));
@@ -81,7 +81,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
             );
 
             ui.add_space(20.0);
-            if ui.small_button("← Wróć").clicked() {
+            if ui.small_button("Wróć").clicked() {
                 app.widok = Widok::Glowny;
             }
 

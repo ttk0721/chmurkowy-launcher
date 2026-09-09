@@ -1,0 +1,66 @@
+name: Wydanie
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            nazwa: ChmurkowyLauncher
+            artefakt: ChmurkowyLauncher-linux-x64
+          - os: windows-latest
+            nazwa: ChmurkowyLauncher.exe
+            artefakt: ChmurkowyLauncher-windows-x64.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # eframe na Linuksie linkuje sie z bibliotekami okien i dzwieku.
+      - name: Zależności systemowe (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libxkbcommon-dev libssl-dev libasound2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Testy
+        run: cargo test --workspace
+
+      - name: Budowanie
+        env:
+          # Ustaw w repozytorium: Settings → Secrets and variables → Actions → Variables
+          CHMURKA_MANIFEST_URL: ${{ vars.CHMURKA_MANIFEST_URL }}
+        run: cargo build --release -p chmurkowy-launcher
+
+      - name: Zmiana nazwy
+        shell: bash
+        run: cp "target/release/${{ matrix.nazwa }}" "${{ matrix.artefakt }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artefakt }}
+          path: ${{ matrix.artefakt }}
+
+  wydanie:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: ChmurkowyLauncher-*

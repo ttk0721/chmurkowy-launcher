@@ -10,7 +10,7 @@ pub fn pasek_tytulu(ui: &mut egui::Ui, ctx: &egui::Context, tytul: &str) {
         .horizontal(|ui| {
             ui.label(egui::RichText::new(tytul).size(16.0).color(theme::TEKST));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("✕").on_hover_text("Zamknij").clicked() {
+                if ui.button("✖").on_hover_text("Zamknij").clicked() {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 }
                 if ui.button("—").on_hover_text("Zminimalizuj").clicked() {

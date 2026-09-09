@@ -6,8 +6,8 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
         let tytul = app
             .manifest
             .as_ref()
-            .map(|m| format!("☁ {}", m.pack.name))
-            .unwrap_or_else(|| "☁ Chmurkowy Launcher".to_string());
+            .map(|m| m.pack.name.clone())
+            .unwrap_or_else(|| "Chmurkowy Launcher".to_string());
         super::pasek_tytulu(ui, ctx, &tytul);
 
         ui.horizontal(|ui| {
@@ -94,9 +94,9 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
         ui.horizontal(|ui| {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let napis = if app.pokaz_szczegoly {
-                    "szczegóły ▴"
+                    "szczegóły ⏶"
                 } else {
-                    "szczegóły ▾"
+                    "szczegóły ⏷"
                 };
                 if ui.small_button(napis).clicked() {
                     app.pokaz_szczegoly = !app.pokaz_szczegoly;
