@@ -29,27 +29,36 @@ na serwerze z `online-mode=false`.
 
 ## Dla utrzymującego paczkę
 
-Po zmianie modów w PrismLauncherze przebuduj manifest:
+Paczka jest serwowana z katalogu `docs/` przez GitHub Pages pod adresem
+<https://ttk0721.github.io/chmurkowy-launcher/>.
+
+Po zmianie modów w PrismLauncherze:
 
 ```bash
 cargo run --release -p chmurka-cli --bin chmurka -- pack-build \
   --instance "$HOME/.local/share/PrismLauncher/instances/Chmurkowy serwer edycja 2026-2027/minecraft" \
-  --out dist \
-  --base-url "https://TWOJ-LOGIN.github.io/chmurka-pack" \
+  --out docs \
+  --base-url "https://ttk0721.github.io/chmurkowy-launcher" \
   --version "$(date +%Y.%m.%d)-1"
+
+git add docs && git commit -m "Paczka $(date +%Y.%m.%d)" && git push
 ```
 
-Potem wypchnij zawartość `dist/` do repozytorium obsługującego GitHub Pages.
-Testerzy dostaną różnicę przy następnym uruchomieniu launchera.
+I tyle. Testerzy dostaną samą różnicę przy następnym uruchomieniu launchera —
+nie muszą pobierać launchera na nowo.
+
+Stare pliki zostają w `docs/files/`, bo są adresowane hashem. Dzięki temu
+poprzednie wersje paczki pozostają pobieralne, a nowa wersja dokłada tylko
+to, co się faktycznie zmieniło.
 
 ### Co właściwie hostujesz
 
-Prawie nic. Mody pobierane są prosto z Modrinth i CurseForge — hostujesz
-tylko configi, czyli około 3 MB.
+Prawie nic. 246 z 249 modów pobieranych jest prosto z Modrinth i CurseForge.
+Configi to około 3 MB.
 
 Wyjątkiem są mody, których plik na dysku **różni się** od tego pod adresem
 źródłowym (bo zostały lokalnie załatane). Packer wykrywa to, porównując hash
-z metadanych PrismLaunchera, i takie mody kopiuje do `dist/`, wypisując
+z metadanych PrismLaunchera, i takie mody kopiuje do `docs/`, wypisując
 ostrzeżenie. Dzięki temu testerzy zawsze dostają dokładnie tę paczkę,
 którą masz u siebie. Jeśli któraś rozbieżność jest niezamierzona, pobierz
 ten mod na nowo w PrismLauncherze i przebuduj manifest.
@@ -59,13 +68,18 @@ ten mod na nowo w PrismLauncherze i przebuduj manifest.
 Adres manifestu jest wkompilowany. Ustaw go przy budowaniu:
 
 ```bash
-CHMURKA_MANIFEST_URL="https://TWOJ-LOGIN.github.io/chmurka-pack/manifest.json" \
+CHMURKA_MANIFEST_URL="https://ttk0721.github.io/chmurkowy-launcher/manifest.json" \
   cargo build --release -p chmurkowy-launcher
 ```
 
-W GitHub Actions ustaw zmienną repozytorium `CHMURKA_MANIFEST_URL`
-(Settings → Secrets and variables → Actions → Variables). Tag `v*` zbuduje
-wtedy binarki dla Windowsa i Linuksa i wrzuci je do Releases.
+W GitHub Actions jest już ustawiona zmienna repozytorium `CHMURKA_MANIFEST_URL`
+(Settings → Secrets and variables → Actions → Variables). Nowe wydanie:
+
+```bash
+git tag -a v0.2.0 -m "opis" && git push origin v0.2.0
+```
+
+Workflow zbuduje binarki dla Windowsa i Linuksa i wrzuci je do Releases.
 
 ## Jak to działa
 
@@ -75,7 +89,7 @@ wtedy binarki dla Windowsa i Linuksa i wrzuci je do Releases.
 | Minecraft + NeoForge | instalator NeoForge (bezobsługowo) | 121 MB |
 | Biblioteki i zasoby | CDN Mojanga | ~875 MB |
 | Mody | Modrinth i CurseForge | ~670 MB |
-| Configi | Twój GitHub Pages | ~3 MB |
+| Configi i mody załatane lokalnie | Twój GitHub Pages | ~65 MB |
 
 Układ folderów u gracza:
 
