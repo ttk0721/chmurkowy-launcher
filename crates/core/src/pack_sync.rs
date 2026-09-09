@@ -85,6 +85,126 @@ pub fn plan(m: &Manifest, st: &State, probe: &dyn FileProbe) -> Vec<Action> {
     akcje
 }
 
+use crate::hash::sha512_file;
+use crate::net::{DownloadSpec, Downloader, Expect, NetError};
+use crate::paths::{join_within, PathError};
+use crate::progress::{Progress, Stage};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+#[derive(Debug, thiserror::Error)]
+pub enum SyncError {
+    #[error(transparent)]
+    Net(#[from] NetError),
+    #[error("nieprawidłowa ścieżka w manifeście: {0}")]
+    Path(#[from] PathError),
+    #[error("błąd operacji na pliku {0}: {1}")]
+    Io(String, std::io::Error),
+}
+
+pub struct DiskProbe {
+    root: PathBuf,
+}
+
+impl DiskProbe {
+    pub fn new(root: &Path) -> Self {
+        Self {
+            root: root.to_path_buf(),
+        }
+    }
+}
+
+impl FileProbe for DiskProbe {
+    fn hash_of(&self, rel: &str) -> Option<String> {
+        let p = join_within(&self.root, rel).ok()?;
+        sha512_file(&p).ok()
+    }
+
+    fn list(&self, dir: &str) -> Vec<String> {
+        let baza = match join_within(&self.root, dir) {
+            Ok(p) => p,
+            Err(_) => return Vec::new(),
+        };
+        let mut out = Vec::new();
+        zbierz(&baza, dir, &mut out);
+        out
+    }
+}
+
+fn zbierz(katalog: &Path, prefiks: &str, out: &mut Vec<String>) {
+    let Ok(wpisy) = std::fs::read_dir(katalog) else {
+        return;
+    };
+    for wpis in wpisy.flatten() {
+        let nazwa = wpis.file_name().to_string_lossy().to_string();
+        // Katalog .index to metadane PrismLaunchera, nie nasza sprawa.
+        if nazwa.starts_with('.') {
+            continue;
+        }
+        let rel = format!("{prefiks}/{nazwa}");
+        if wpis.path().is_dir() {
+            zbierz(&wpis.path(), &rel, out);
+        } else {
+            out.push(rel);
+        }
+    }
+}
+
+pub async fn apply(
+    m: &Manifest,
+    root: &Path,
+    st: &mut State,
+    actions: &[Action],
+    dl: &Downloader,
+    on: Arc<dyn Fn(Progress) + Send + Sync>,
+) -> Result<Vec<String>, SyncError> {
+    let mut notatki = Vec::new();
+    let mut do_pobrania = Vec::new();
+
+    for akcja in actions {
+        match akcja {
+            Action::Download { index } => {
+                let wpis = &m.files[*index];
+                do_pobrania.push((
+                    wpis.path.clone(),
+                    wpis.sha512.clone(),
+                    DownloadSpec {
+                        urls: wpis.urls.clone(),
+                        dest: join_within(root, &wpis.path)?,
+                        expect: Expect::Sha512(wpis.sha512.clone()),
+                    },
+                ));
+            }
+            Action::Delete { path } => {
+                let p = join_within(root, path)?;
+                if p.exists() {
+                    std::fs::remove_file(&p).map_err(|e| SyncError::Io(path.clone(), e))?;
+                }
+                st.written.remove(path);
+                notatki.push(format!("usunięto obcy plik: {path}"));
+            }
+            Action::Record { path, sha512 } => {
+                st.written.insert(path.clone(), sha512.clone());
+            }
+            Action::SkipModified { path } => {
+                notatki.push(format!("pomijam {path} — plik został zmieniony ręcznie"));
+            }
+            Action::SkipUnknown { path } => {
+                notatki.push(format!("pomijam {path} — nie wiadomo, skąd pochodzi"));
+            }
+        }
+    }
+
+    let specyfikacje: Vec<DownloadSpec> = do_pobrania.iter().map(|(_, _, s)| s.clone()).collect();
+    dl.fetch_many(specyfikacje, Stage::Pack, on).await?;
+
+    // Stan zapisujemy dopiero po udanym pobraniu wszystkiego.
+    for (sciezka, hash, _) in do_pobrania {
+        st.written.insert(sciezka, hash);
+    }
+    Ok(notatki)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
