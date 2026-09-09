@@ -14,7 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          # Celowo starszy runner: binarka wymaga glibc w wersji z systemu,
+          # na ktorym powstala. ubuntu-latest (24.04) dawal GLIBC_2.39, przez co
+          # plik nie startowal na Ubuntu 22.04, Debianie 12, Mincie 21 ani Fedorze 39.
+          # 22.04 to glibc 2.35 — pokrywa wszystko od 2022 roku wzwyz.
+          - os: ubuntu-22.04
             nazwa: ChmurkowyLauncher
             artefakt: ChmurkowyLauncher-linux-x64
           - os: windows-latest
@@ -43,6 +47,19 @@ jobs:
           # Ustaw w repozytorium: Settings → Secrets and variables → Actions → Variables
           CHMURKA_MANIFEST_URL: ${{ vars.CHMURKA_MANIFEST_URL }}
         run: cargo build --release -p chmurkowy-launcher
+
+      # Wersja glibc decyduje o tym, na ilu dystrybucjach binarka w ogole ruszy.
+      # Bez tej kontroli podbicie runnera cicho odcieloby starsze systemy.
+      - name: Kontrola zgodnosci glibc (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          MAX=$(objdump -T target/release/ChmurkowyLauncher \
+            | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sort -uV | tail -1)
+          echo "Najwyzsza wymagana wersja: $MAX"
+          if [ "$(printf '%s\nGLIBC_2.35\n' "$MAX" | sort -uV | tail -1)" != "GLIBC_2.35" ]; then
+            echo "::error::Binarka wymaga $MAX, a limit to GLIBC_2.35 — nie ruszy na Ubuntu 22.04, Debianie 12 ani Mincie 21."
+            exit 1
+          fi
 
       - name: Zmiana nazwy
         shell: bash

@@ -15,6 +15,12 @@ w systemie, rejestrze ani w `~/.minecraft`.
 Wrzuć plik do pustego folderu i uruchom. Pierwsze uruchomienie pobiera
 około 1,8 GB, kolejne startują od razu.
 
+Wersja linuksowa to zwykły plik wykonywalny — nie AppImage ani Flatpak.
+Budowana jest na Ubuntu 22.04, więc wymaga glibc 2.35 lub nowszego
+(Ubuntu 22.04+, Debian 12+, Fedora 36+, Mint 21+, Arch). Poza glibc potrzebuje
+tylko bibliotek graficznych i dźwiękowych, które są w każdym środowisku
+graficznym — reszta ładuje się dopiero w czasie działania.
+
 ## Co jest w środku
 
 | Crate | Odpowiedzialność |
