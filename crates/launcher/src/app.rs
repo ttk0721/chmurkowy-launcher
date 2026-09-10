@@ -64,6 +64,9 @@ pub struct App {
     pub pokaz_szczegoly: bool,
     /// Czy pokazać okno potwierdzenia odinstalowania.
     pub pyta_o_odinstalowanie: bool,
+    /// Kiedy ostatnio udało się pobrać manifest. Przycisk „Sprawdź ponownie"
+    /// odpowiada z pamięci, dopóki ten czas jest świeży.
+    pub ostatnie_sprawdzenie: Option<std::time::Instant>,
     pub ustawienia: Ustawienia,
     /// Stan paczek czytany z plików gry przy każdym wejściu na ekran —
     /// gracz mógł je pozmieniać w samej grze.
@@ -169,6 +172,7 @@ impl App {
             log: Vec::new(),
             pokaz_szczegoly: false,
             pyta_o_odinstalowanie: false,
+            ostatnie_sprawdzenie: None,
             ustawienia,
             zasoby: StanZasobow::default(),
             shadery: StanShaderow::default(),
@@ -374,6 +378,24 @@ impl App {
     /// Wywoływane samo, gdy przyjdzie manifest.
     fn zaktualizuj_sie(&mut self) {
         self.zaktualizuj(false);
+    }
+
+    /// Odpowiada na „Sprawdź ponownie".
+    ///
+    /// Pyta serwer tylko wtedy, gdy od ostatniego sprawdzenia minęło dość
+    /// czasu. Wcześniej odpowiada tym, co już wie — kilka kliknięć pod rząd
+    /// nie ma po co obciążać hostingu, skoro odpowiedź będzie ta sama.
+    pub fn sprawdz_aktualizacje(&mut self) {
+        let od_ostatniego = self.ostatnie_sprawdzenie.map(|t| t.elapsed());
+        if chmurka_core::aktualizacja::warto_sprawdzic(od_ostatniego) {
+            self.komunikat = Some("Sprawdzam…".into());
+            self.wczytaj_manifest();
+        } else {
+            self.komunikat = Some(format!(
+                "Sprawdzano przed chwilą — masz najnowszą wersję ({}).",
+                env!("CARGO_PKG_VERSION")
+            ));
+        }
     }
 
     /// Wywoływane z Ustawień, gdy gracz kliknie „Zaktualizuj teraz”.
@@ -601,6 +623,7 @@ impl App {
             match w {
                 Wiadomosc::Manifest(m) => {
                     self.manifest = Some(*m);
+                    self.ostatnie_sprawdzenie = Some(std::time::Instant::now());
                     self.zaktualizuj_sie();
                 }
                 Wiadomosc::Postep(p) => {

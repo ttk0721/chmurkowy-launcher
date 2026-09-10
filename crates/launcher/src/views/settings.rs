@@ -280,26 +280,53 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 }
 
                 // --- AKTUALIZACJA ---
-                if let Some(m) = &app.manifest {
-                    // Porownanie wersji, a NIE „rozne od". Przy zwyklym !=
-                    // manifest ogloszony chwilowo na starsza wersje wygladal
-                    // na aktualizacje: launcher 0.4.17 pisal „dostepna nowsza:
-                    // 0.4.14" i proponowal cofniecie sie wstecz.
-                    if chmurka_core::aktualizacja::nowsza(
-                        env!("CARGO_PKG_VERSION"),
-                        &m.launcher.latest_version,
-                    ) {
-                        ui.add_space(theme::S4);
-                        theme::naglowek_sekcji(ui, "AKTUALIZACJA");
-                        ui.label(
-                            egui::RichText::new(format!(
-                                "Dostępna nowsza wersja: {}",
-                                m.launcher.latest_version
-                            ))
-                            .size(13.0)
-                            .color(theme::AKCENT),
+                //
+                // Sekcja pokazuje się ZAWSZE. Wcześniej całość siedziała pod
+                // warunkiem „jest nowsza wersja", więc po zaktualizowaniu
+                // znikała bez śladu — razem z przyciskiem i z informacją,
+                // jaką wersję się w ogóle ma. Stan aktualizacji musi być
+                // widoczny niezależnie od tego, czy akurat jest co pobierać.
+                ui.add_space(theme::S4);
+                theme::naglowek_sekcji(ui, "AKTUALIZACJA");
+
+                match &app.manifest {
+                    None => {
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Spinner::new().size(12.0).color(theme::AKCENT));
+                            ui.label(theme::drobny("Sprawdzam, czy jest nowsza wersja…"));
+                        });
+                    }
+                    Some(m) => {
+                        // Porównanie wersji, a NIE „różne od". Przy zwykłym !=
+                        // manifest ogłoszony chwilowo na starszą wersję wyglądał
+                        // na aktualizację: launcher 0.4.17 pisał „dostępna nowsza:
+                        // 0.4.14" i proponował cofnięcie się wstecz.
+                        let jest_nowsza = chmurka_core::aktualizacja::nowsza(
+                            env!("CARGO_PKG_VERSION"),
+                            &m.launcher.latest_version,
                         );
+
+                        if jest_nowsza {
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "Dostępna nowsza wersja: {}",
+                                    m.launcher.latest_version
+                                ))
+                                .size(13.0)
+                                .color(theme::AKCENT),
+                            );
+                        } else {
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "Masz najnowszą wersję ({}).",
+                                    env!("CARGO_PKG_VERSION")
+                                ))
+                                .size(13.0)
+                                .color(theme::SUKCES),
+                            );
+                        }
                         ui.add_space(theme::S1);
+
                         // Wcześniej stał tu przycisk otwierający przeglądarkę
                         // z linkiem do GitHuba — zaszłość sprzed samoaktualizacji.
                         // Gracz miał wtedy sam pobrać plik i podmienić go ręcznie,
@@ -308,11 +335,18 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                             .launcher
                             .urls
                             .contains_key(chmurka_core::aktualizacja::klucz_systemu());
+                        let napis = if jest_nowsza {
+                            "Zaktualizuj teraz"
+                        } else {
+                            "Sprawdź ponownie"
+                        };
+                        let aktywny = !app.zajety && (ma_plik || !jest_nowsza);
+
                         if super::przycisk_warunkowy(
                             ui,
-                            "Zaktualizuj teraz",
-                            ma_plik && !app.zajety,
-                            if ma_plik {
+                            napis,
+                            aktywny,
+                            if app.zajety {
                                 "Poczekaj, aż launcher skończy to, co teraz robi."
                             } else {
                                 "Dla tego systemu nie ma jeszcze gotowego pliku."
@@ -320,13 +354,23 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                         )
                         .clicked()
                         {
-                            app.zaktualizuj_recznie();
+                            if jest_nowsza {
+                                app.zaktualizuj_recznie();
+                            } else {
+                                // Pyta serwer tylko wtedy, gdy od ostatniego
+                                // sprawdzenia minęło dość czasu — inaczej
+                                // odpowiada tym, co już wie.
+                                app.sprawdz_aktualizacje();
+                            }
                         }
                         ui.add_space(4.0);
-                        ui.label(theme::drobny(
+                        ui.label(theme::drobny(if jest_nowsza {
                             "Launcher pobierze nową wersję, podmieni się i uruchomi ponownie. \
-                             Nic nie musisz robić, a folder data zostaje nietknięty.",
-                        ));
+                             Nic nie musisz robić, a folder data zostaje nietknięty."
+                        } else {
+                            "Launcher sprawdza to sam przy każdym uruchomieniu. Ten przycisk \
+                             jest na wypadek, gdyby poprawka wyszła w trakcie grania."
+                        }));
                     }
                 }
 

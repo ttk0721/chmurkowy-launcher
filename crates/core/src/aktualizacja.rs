@@ -71,6 +71,24 @@ pub fn nowsza(biezaca: &str, zdalna: &str) -> bool {
     }
 }
 
+/// Jak długo odpowiadamy z pamięci zamiast pytać serwer jeszcze raz.
+///
+/// Przycisk „Sprawdź ponownie" bywa klikany po kilka razy pod rząd — zwłaszcza
+/// gdy ktoś czeka na poprawkę. Bez tego progu każde kliknięcie szłoby po
+/// manifest, a odpowiedź i tak byłaby ta sama.
+pub const ODSTEP_SPRAWDZANIA: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Czy pytać serwer o manifest, czy wystarczy to, co już wiemy.
+///
+/// `od_ostatniego` to czas, jaki minął od ostatniego udanego sprawdzenia,
+/// albo `None`, gdy jeszcze nie sprawdzaliśmy.
+pub fn warto_sprawdzic(od_ostatniego: Option<std::time::Duration>) -> bool {
+    match od_ostatniego {
+        None => true,
+        Some(ile) => ile >= ODSTEP_SPRAWDZANIA,
+    }
+}
+
 fn plik_znacznika(data: &Path) -> PathBuf {
     data.join("aktualizacja.txt")
 }
@@ -278,6 +296,30 @@ pub fn uruchom_ponownie(exe: &Path) -> Result<(), BladAktualizacji> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Pierwsze klikniecie zawsze pyta serwer — nie mamy jeszcze niczego
+    /// w pamieci.
+    #[test]
+    fn bez_wczesniejszego_sprawdzenia_pytamy_serwer() {
+        assert!(warto_sprawdzic(None));
+    }
+
+    /// Klikniecie zaraz po sprawdzeniu ma odpowiedziec z pamieci. Dziecko
+    /// czekajace na poprawke klika po kilka razy pod rzad, a odpowiedz
+    /// i tak bylaby ta sama.
+    #[test]
+    fn zaraz_po_sprawdzeniu_odpowiadamy_z_pamieci() {
+        assert!(!warto_sprawdzic(Some(std::time::Duration::from_secs(0))));
+        assert!(!warto_sprawdzic(Some(std::time::Duration::from_secs(5))));
+        assert!(!warto_sprawdzic(Some(std::time::Duration::from_secs(29))));
+    }
+
+    #[test]
+    fn po_uplywie_odstepu_pytamy_znowu() {
+        assert!(warto_sprawdzic(Some(ODSTEP_SPRAWDZANIA)));
+        assert!(warto_sprawdzic(Some(std::time::Duration::from_secs(31))));
+        assert!(warto_sprawdzic(Some(std::time::Duration::from_secs(3600))));
+    }
 
     #[test]
     fn nowsza_wersja_wygrywa() {
