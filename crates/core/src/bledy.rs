@@ -58,6 +58,58 @@ impl BladUzytkownika {
     }
 }
 
+/// Co launcher może zrobić sam, zanim w ogóle pokaże graczowi błąd.
+///
+/// Rady w katalogu błędów są poprawne, ale ludzie nie czytają okien —
+/// „wejdź w Ustawienia i kliknij Napraw instalację" jest dla dziesięciolatka
+/// jedną wielką ścianą tekstu. Więc launcher wykonuje tę radę sam i pokazuje
+/// błąd dopiero wtedy, gdy to nie pomogło.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Samonaprawa {
+    /// Nic nie ruszamy, po prostu próbujemy jeszcze raz. Chwilowy problem
+    /// z siecią albo z zapisem pliku często mija sam.
+    Ponow,
+    /// Kasujemy pobraną Javę i bierzemy ją od nowa.
+    JavaOdNowa,
+    /// Kasujemy pliki gry i instalujemy je od nowa. Światy, ustawienia gry
+    /// i paczka modów leżą w osobnym katalogu i zostają nietknięte.
+    GraOdNowa,
+    /// Tego launcher sam nie naprawi — dopiero tu ma sens pokazanie błędu.
+    Nic,
+}
+
+impl BladUzytkownika {
+    /// Lekarstwo dobrane po kodzie błędu.
+    ///
+    /// Celowo po kodzie, a nie po typie wyjątku: kod jest tym, co widzi gracz
+    /// i co trafia do administracji, więc reguła i komunikat nie rozjadą się
+    /// przy kolejnej zmianie w środku.
+    pub fn samonaprawa(&self) -> Samonaprawa {
+        match self.kod.as_str() {
+            // Sieć i zapis pliku — powtórka bywa wszystkim, czego trzeba.
+            "SIE-01" | "SIE-02" | "SIE-03" | "SIE-04" | "PLIK-03" => Samonaprawa::Ponow,
+            // Java pobrała się niekompletnie.
+            "INST-01" => Samonaprawa::JavaOdNowa,
+            // Pliki gry są niekompletne albo popsute.
+            "INST-02" | "INST-03" | "INST-04" => Samonaprawa::GraOdNowa,
+            // Dysk pełny, brak uprawnień, logowanie, padnięta gra, zła paczka:
+            // powtórka nic nie zmieni, a kasowanie plików tylko zaszkodzi.
+            _ => Samonaprawa::Nic,
+        }
+    }
+
+    /// Zdanie pokazywane graczowi, gdy launcher naprawia coś sam.
+    /// Ma uspokajać, a nie tłumaczyć — szczegóły i tak nikt nie czyta.
+    pub fn opis_samonaprawy(&self) -> &'static str {
+        match self.samonaprawa() {
+            Samonaprawa::Ponow => "Coś się nie udało. Próbuję jeszcze raz…",
+            Samonaprawa::JavaOdNowa => "Coś się nie udało. Pobieram Javę od nowa…",
+            Samonaprawa::GraOdNowa => "Coś się nie udało. Pobieram pliki gry od nowa…",
+            Samonaprawa::Nic => "",
+        }
+    }
+}
+
 /// Wszystko, co może pójść nie tak po drodze do uruchomionej gry.
 #[derive(Debug, thiserror::Error)]
 pub enum BladLaunchera {
@@ -658,6 +710,53 @@ mod tests {
             !s.contains("0.1.0"),
             "wersja biblioteki nie ma prawa trafic do raportu: {s}"
         );
+    }
+
+    /// Kasowanie plikow to najostrzejszy lek, jaki launcher ma. Nie wolno go
+    /// zastosowac tam, gdzie problem lezy poza plikami gry: przy pelnym dysku
+    /// skasowalby 2 GB i nadal nie mial gdzie ich zapisac, a przy braku
+    /// uprawnien albo wygaslym logowaniu nie zmienilby zupelnie nic.
+    #[test]
+    fn samonaprawa_nie_kasuje_plikow_gdy_to_nie_pomoze() {
+        for kod in [
+            "PLIK-01", "PLIK-02", "KONTO-01", "KONTO-02", "KONTO-03", "KONTO-04", "KONTO-05",
+            "GRA-01", "GRA-02", "GRA-03", "GRA-04", "PACZKA-01", "PACZKA-02", "INNY-01",
+        ] {
+            let b = BladUzytkownika::nowy(kod, "t", "c", &["r"], "s");
+            assert_eq!(
+                b.samonaprawa(),
+                Samonaprawa::Nic,
+                "{kod} nie moze uruchamiac zadnej samonaprawy"
+            );
+        }
+    }
+
+    #[test]
+    fn problemy_z_plikami_gry_launcher_naprawia_sam() {
+        for kod in ["INST-02", "INST-03", "INST-04"] {
+            let b = BladUzytkownika::nowy(kod, "t", "c", &["r"], "s");
+            assert_eq!(b.samonaprawa(), Samonaprawa::GraOdNowa, "{kod}");
+        }
+        let java = BladUzytkownika::nowy("INST-01", "t", "c", &["r"], "s");
+        assert_eq!(java.samonaprawa(), Samonaprawa::JavaOdNowa);
+    }
+
+    #[test]
+    fn problemy_z_siecia_konczy_sie_zwykla_powtorka() {
+        for kod in ["SIE-01", "SIE-02", "SIE-03", "SIE-04", "PLIK-03"] {
+            let b = BladUzytkownika::nowy(kod, "t", "c", &["r"], "s");
+            assert_eq!(b.samonaprawa(), Samonaprawa::Ponow, "{kod}");
+        }
+    }
+
+    /// Kazdy lek musi miec co pokazac graczowi, inaczej pasek postepu
+    /// zamilkby w polowie naprawy i wygladal na zawieszenie.
+    #[test]
+    fn kazda_samonaprawa_ma_swoje_zdanie() {
+        for kod in ["SIE-02", "INST-01", "INST-03"] {
+            let b = BladUzytkownika::nowy(kod, "t", "c", &["r"], "s");
+            assert!(!b.opis_samonaprawy().is_empty(), "{kod}");
+        }
     }
 
     /// Instalator, ktory nie dosiegnal serwerow, to problem z siecia,

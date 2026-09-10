@@ -6,6 +6,7 @@ use chmurka_core::progress::{Progress, Stage};
 use chmurka_core::paczki::{StanShaderow, StanZasobow};
 use chmurka_core::ustawienia::{podziel_argumenty, Ustawienia};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 
@@ -402,12 +403,83 @@ pub fn uruchom(app: &mut App) {
                 let _ = n2.send(Wiadomosc::Postep(p));
             });
 
-        if let Err(e) = przygotuj_i_odpal(&data, &m, &konto, &ustawienia, postep, &n).await {
-            let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
-        }
+        odpal_z_samonaprawa(&data, &m, &konto, &ustawienia, postep, &n).await;
     });
 }
 
+/// Uruchamia grę, a po drodze naprawia to, co potrafi naprawić sam.
+///
+/// Gracz ma kliknąć „GRAJ" i tyle. Rada „wejdź w Ustawienia i kliknij Napraw
+/// instalację" jest poprawna, ale nikt jej nie wykonuje — więc launcher robi
+/// to za niego. Okno błędu zostaje na to, czego sam nie ruszy: pełny dysk,
+/// brak uprawnień, wygasłe logowanie.
+///
+/// Gdy gra już wystartowała, nie ponawiamy niczego — drugie okno Minecrafta
+/// byłoby gorsze od każdego błędu.
+async fn odpal_z_samonaprawa(
+    data: &Path,
+    m: &Manifest,
+    konto: &Account,
+    ustawienia: &Ustawienia,
+    postep: Arc<dyn Fn(Progress) + Send + Sync>,
+    n: &Sender<Wiadomosc>,
+) {
+    use chmurka_core::bledy::Samonaprawa;
+
+    const PODEJSCIA: u32 = 3;
+    for podejscie in 1..=PODEJSCIA {
+        let ruszyla = Arc::new(AtomicBool::new(false));
+        let e = match przygotuj_i_odpal(
+            data,
+            m,
+            konto,
+            ustawienia,
+            postep.clone(),
+            n,
+            &ruszyla,
+        )
+        .await
+        {
+            Ok(()) => return,
+            Err(e) => e,
+        };
+
+        let b = e.dla_uzytkownika();
+        let lek = b.samonaprawa();
+        let ostatnie = podejscie == PODEJSCIA;
+
+        if ruszyla.load(Ordering::SeqCst) || lek == Samonaprawa::Nic || ostatnie {
+            let _ = n.send(Wiadomosc::BladZKodem(Box::new(b)));
+            return;
+        }
+
+        let _ = n.send(Wiadomosc::Notatka(format!(
+            "{} (kod {}, podejście {} z {})",
+            b.opis_samonaprawy(),
+            b.kod,
+            podejscie + 1,
+            PODEJSCIA
+        )));
+        postep(Progress::trwa(Stage::Loader, b.opis_samonaprawy()));
+
+        match lek {
+            Samonaprawa::JavaOdNowa => {
+                let _ = std::fs::remove_dir_all(data.join("java"));
+            }
+            Samonaprawa::GraOdNowa => {
+                let _ = std::fs::remove_dir_all(data.join("mc"));
+            }
+            // Powtórka bez kasowania czegokolwiek. Chwila przerwy, bo problem
+            // bywa chwilowy i natychmiastowy nawrót trafiłby w to samo.
+            Samonaprawa::Ponow => {
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            }
+            Samonaprawa::Nic => unreachable!("obsłużone wyżej"),
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn przygotuj_i_odpal(
     data: &Path,
     m: &Manifest,
@@ -415,6 +487,7 @@ async fn przygotuj_i_odpal(
     ustawienia: &Ustawienia,
     postep: Arc<dyn Fn(Progress) + Send + Sync>,
     n: &Sender<Wiadomosc>,
+    ruszyla: &AtomicBool,
 ) -> Result<(), BladLaunchera> {
     use chmurka_core::*;
 
@@ -496,6 +569,9 @@ async fn przygotuj_i_odpal(
         .spawn()
         .map_err(|e| BladLaunchera::Plik("uruchomienie gry".into(), e))?;
 
+    // Od tego momentu nie wolno juz niczego ponawiac ani kasowac — proces gry
+    // dziala i drugie okno Minecrafta byloby gorsze od kazdego bledu.
+    ruszyla.store(true, Ordering::SeqCst);
     let _ = n.send(Wiadomosc::GraWystartowala);
 
     let status = tokio::task::spawn_blocking(move || dziecko.wait())

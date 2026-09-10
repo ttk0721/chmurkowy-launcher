@@ -31,7 +31,7 @@ enum Polecenie {
         version: String,
         /// Najnowsza wersja launchera — launcher porownuje ja ze swoja
         /// i informuje gracza o dostepnej aktualizacji.
-        #[arg(long, default_value = "0.4.4")]
+        #[arg(long, default_value = "0.4.5")]
         launcher_version: String,
     },
     /// Instaluje wszystko do wskazanego katalogu danych.
@@ -412,13 +412,27 @@ fn adres_wlasny(base_url: &str, sha512: &str) -> String {
     )
 }
 
+/// Czy to plik roboczy, który powstał u utrzymującego i nie ma czego szukać
+/// w paczce?
+///
+/// NeoForge odkłada obok configów kopie `*.toml_backup1`, `*.toml_backup2`
+/// i tak dalej. Trafiały do manifestu razem z resztą i tylko zajmowały miejsce,
+/// a dwie kopie o wspólnym trzonie nazwy wywracały pobieranie u testerów.
+fn smiec_roboczy(nazwa: &str) -> bool {
+    nazwa.ends_with(".bak")
+        || nazwa.ends_with(".part")
+        || nazwa.ends_with('~')
+        || nazwa.contains(".toml_backup")
+        || nazwa.contains(".json_backup")
+}
+
 fn zbierz_configi(katalog: &Path, prefiks: &str, out: &mut Vec<(String, PathBuf, &'static str)>) {
     let Ok(wpisy) = std::fs::read_dir(katalog) else {
         return;
     };
     for w in wpisy.flatten() {
         let nazwa = w.file_name().to_string_lossy().to_string();
-        if nazwa.starts_with('.') {
+        if nazwa.starts_with('.') || smiec_roboczy(&nazwa) {
             continue;
         }
         let rel = format!("{prefiks}/{nazwa}");
@@ -427,5 +441,31 @@ fn zbierz_configi(katalog: &Path, prefiks: &str, out: &mut Vec<(String, PathBuf,
         } else {
             out.push((rel, w.path(), "smart"));
         }
+    }
+}
+
+#[cfg(test)]
+mod testy_paczowania {
+    use super::*;
+
+    /// Te dwa pliki naprawde pojechaly do testerow i wywrocily im instalacje.
+    #[test]
+    fn kopie_configow_neoforge_nie_jada_do_paczki() {
+        assert!(smiec_roboczy("chloride-client.toml_backup1"));
+        assert!(smiec_roboczy("chloride-client.toml_backup2"));
+    }
+
+    #[test]
+    fn zwykle_configi_zostaja() {
+        assert!(!smiec_roboczy("chloride-client.toml"));
+        assert!(!smiec_roboczy("iris.properties"));
+        assert!(!smiec_roboczy("options.txt"));
+    }
+
+    #[test]
+    fn inne_pliki_robocze_tez_odpadaja() {
+        assert!(smiec_roboczy("create.jar.bak"));
+        assert!(smiec_roboczy("cos.part"));
+        assert!(smiec_roboczy("notatki.txt~"));
     }
 }

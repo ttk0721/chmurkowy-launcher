@@ -27,6 +27,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Pelna historia i tagi — opis wydania bierzemy z tresci tagu,
+          # a Linux publikuje je juz z tego zadania.
+          fetch-depth: 0
 
       # eframe na Linuksie linkuje sie z bibliotekami okien i dzwieku.
       - name: Zależności systemowe (Linux)
@@ -70,7 +74,40 @@ jobs:
           name: ${{ matrix.artefakt }}
           path: ${{ matrix.artefakt }}
 
-  wydanie:
+      # --- Wydanie rusza od razu po Linuksie ---
+      #
+      # Linux kompiluje sie w ~6 minut, Windows w ~11. Czekanie na oba trzymalo
+      # gotowa binarke w szufladzie przez te dodatkowe minuty, choc nikomu nie
+      # byla do niczego potrzebna. Publikujemy wiec od razu, z adnotacja,
+      # ze plik dla Windowsa jeszcze sie kompiluje — dokleja go zadanie ponizej.
+      #
+      # Opis wydania bierzemy z tresci adnotowanego tagu: changelog powstaje
+      # razem z wersja i nie ma osobnego pliku, ktory mozna zapomniec. Bez
+      # jawnego pobrania tagow adnotowanych git widzi tag jako lekki
+      # i %(contents) zwraca tresc commita zamiast opisu wydania.
+      - name: Treść wydania z opisu tagu (Linux)
+        if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          git fetch --force --tags origin
+          git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > notatki.md
+          cat >> notatki.md <<'STOPKA'
+
+          ---
+          ⏳ **Wersja na Windowsa jeszcze się kompiluje.** Pojawi się tutaj za
+          kilka minut — odśwież wtedy tę stronę.
+          STOPKA
+          echo "--- treść wydania ---"
+          cat notatki.md
+
+      - name: Wydanie z binarką Linuksa
+        if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: notatki.md
+          files: ${{ matrix.artefakt }}
+
+  # Windows dolacza do gotowego juz wydania i zdejmuje adnotacje o czekaniu.
+  dolacz-windowsa:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
@@ -81,20 +118,45 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          merge-multiple: true
+          name: ChmurkowyLauncher-windows-x64.exe
 
-      # Opis wydania bierzemy z tresci adnotowanego tagu — dzieki temu changelog
-      # powstaje razem z wersja i nie ma osobnego pliku, ktory mozna zapomniec.
-      # Bez jawnego pobrania tagow adnotowanych git widzi tag jako lekki
-      # i %(contents) zwraca tresc commita zamiast opisu wydania.
       - name: Treść wydania z opisu tagu
         run: |
           git fetch --force --tags origin
           git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > notatki.md
-          echo "--- treść wydania ---"
-          cat notatki.md
 
       - uses: softprops/action-gh-release@v2
         with:
           body_path: notatki.md
-          files: ChmurkowyLauncher-*
+          files: ChmurkowyLauncher-windows-x64.exe
+
+  # Gdy Windows nie wyszedl, a Linux zdazyl juz opublikowac wydanie, w opisie
+  # zostalaby obietnica pliku, ktory nigdy nie przyjdzie. Prostujemy ja sami,
+  # zeby nikt nie odswiezal strony w nieskonczonosc.
+  sprostuj-windowsa:
+    needs: build
+    runs-on: ubuntu-latest
+    if: failure() && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sprostowanie w opisie wydania
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Brak wydania znaczy, ze Linux tez nie wyszedl — nie ma czego prostowac.
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Wydanie nie powstalo — nie ma czego prostowac."
+            exit 0
+          fi
+          git fetch --force --tags origin
+          git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > notatki.md
+          cat >> notatki.md <<'STOPKA'
+
+          ---
+          ⚠️ **Budowanie wersji na Windowsa nie powiodło się.** Na razie jest tu
+          tylko plik dla Linuksa.
+          STOPKA
+          gh release edit "$GITHUB_REF_NAME" --notes-file notatki.md

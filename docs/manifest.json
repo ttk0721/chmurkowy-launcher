@@ -2749,24 +2749,6 @@
       ]
     },
     {
-      "path": "config/chloride-client.toml_backup2",
-      "policy": "smart",
-      "sha512": "d7a0a077aaa0e8bde9316d7b88d1678118ed286bfd6c9dd70174bfedabcf2f2cc6ce6c71fab7f8fac7b82b83e5e8beb4a963681357b284601b9fbf61d6b23e58",
-      "size": 5191,
-      "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/d7/d7a0a077aaa0e8bde9316d7b88d1678118ed286bfd6c9dd70174bfedabcf2f2cc6ce6c71fab7f8fac7b82b83e5e8beb4a963681357b284601b9fbf61d6b23e58"
-      ]
-    },
-    {
-      "path": "config/chloride-client.toml_backup1",
-      "policy": "smart",
-      "sha512": "41999f463f17f48ce1f2e78f4e42a7ecfa97074ee3e3a225042fb48a3a74831f3616d7bb616711dc57dcca93c1c3b7e3c5948b4ede523e1d6f4252c28efac46f",
-      "size": 5191,
-      "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/41/41999f463f17f48ce1f2e78f4e42a7ecfa97074ee3e3a225042fb48a3a74831f3616d7bb616711dc57dcca93c1c3b7e3c5948b4ede523e1d6f4252c28efac46f"
-      ]
-    },
-    {
       "path": "config/betteradvancements-client.toml",
       "policy": "smart",
       "sha512": "90f6fc8c197d9884954a63ecb670ba39d74f506f16f13a6af6226501054ed4abd45797ac261a46b5131cc0eb215c896a003f05a7a8c780247964397c530c9a0a",
@@ -6228,7 +6210,7 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.4.4",
+    "latest_version": "0.4.5",
     "urls": {
       "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-linux-x64",
       "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-windows-x64.exe"
@@ -6271,7 +6253,7 @@
     },
     "minecraft": "1.21.1",
     "name": "Chmurkowy Serwer",
-    "version": "2026.09.10-7"
+    "version": "2026.09.10-8"
   },
   "schema": 1
 }

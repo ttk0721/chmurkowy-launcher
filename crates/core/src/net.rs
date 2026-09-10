@@ -74,7 +74,7 @@ impl Downloader {
                 .await
                 .map_err(|e| NetError::Io(rodzic.display().to_string(), e))?;
         }
-        let czesciowy = spec.dest.with_extension("part");
+        let czesciowy = plik_czesciowy(&spec.dest);
         let mut ostatni = String::from("brak prób");
 
         // Każdy adres dostaje pełny komplet prób, zanim przejdziemy do następnego.
@@ -202,6 +202,22 @@ impl Downloader {
     }
 }
 
+/// Nazwa pliku roboczego dla pobierania: pełna nazwa docelowa plus `.part`.
+///
+/// Kiedyś było tu `with_extension("part")`, które **podmienia** rozszerzenie.
+/// Dwa pliki w jednym katalogu o tym samym trzonie dostawały przez to wspólny
+/// plik roboczy: `chloride-client.toml_backup1` i `…_backup2` walczyły oba
+/// o `chloride-client.part`. Pobierają się równolegle, więc jedno zadanie
+/// przenosiło plik na miejsce, a drugie chwilę później próbowało przenieść coś,
+/// czego już nie było — gracz dostawał PLIK-03 „No such file or directory”.
+fn plik_czesciowy(cel: &Path) -> PathBuf {
+    let nazwa = cel
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "pobieranie".to_string());
+    cel.with_file_name(format!("{nazwa}.part"))
+}
+
 fn pasuje(sciezka: &Path, oczekiwane: &Expect) -> bool {
     if !sciezka.exists() {
         return false;
@@ -222,6 +238,36 @@ mod tests {
     use super::*;
     use std::io::{Read, Write};
     use std::net::TcpListener;
+
+    /// Dokladnie ta para wywrocila instalacje u testera: dwa pliki NeoForge'a
+    /// w jednym katalogu, roznica tylko w koncowce. Pobieraja sie rownolegle,
+    /// wiec wspolny plik roboczy znaczyl, ze jedno zadanie przenosi go na
+    /// miejsce, a drugie trafia w pustke — PLIK-03 „No such file or directory".
+    #[test]
+    fn pliki_o_tym_samym_trzonie_nie_dziela_pliku_roboczego() {
+        let a = plik_czesciowy(Path::new("config/chloride-client.toml_backup1"));
+        let b = plik_czesciowy(Path::new("config/chloride-client.toml_backup2"));
+        assert_ne!(a, b, "wspolny plik roboczy to wyscig przy pobieraniu");
+        assert_eq!(a, Path::new("config/chloride-client.toml_backup1.part"));
+    }
+
+    /// Zwykle rozszerzenia tez nie moga sie zlewac — `x.json` i `x.toml`
+    /// w jednym katalogu to w paczce sytuacja codzienna.
+    #[test]
+    fn rozne_rozszerzenia_daja_rozne_pliki_roboczne() {
+        assert_ne!(
+            plik_czesciowy(Path::new("config/x.json")),
+            plik_czesciowy(Path::new("config/x.toml"))
+        );
+    }
+
+    #[test]
+    fn plik_roboczy_lezy_obok_celu() {
+        assert_eq!(
+            plik_czesciowy(Path::new("/a/b/mod.jar")),
+            Path::new("/a/b/mod.jar.part")
+        );
+    }
 
     /// Minimalny serwer HTTP na jedno żądanie. Nie chcemy ciągnąć frameworka
     /// tylko po to, żeby oddać kilka bajtów w teście.
