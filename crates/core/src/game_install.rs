@@ -89,6 +89,19 @@ fn bez_ramek_stosu(s: &str) -> String {
         .join("\n")
 }
 
+/// Czy instalacja loadera jest naprawdę skończona?
+///
+/// Sam profil nie wystarczy. Instalator zapisuje go, **zanim** ściągnie
+/// biblioteki, więc po nieudanej próbie zostaje na dysku sam jak palec —
+/// sprawdzone: po przerwanej instalacji leży `neoforge-<wersja>.json`,
+/// a katalog `libraries` w ogóle nie powstaje. Wcześniej kolejne uruchomienie
+/// brało ten plik za dowód gotowej instalacji, pomijało instalator i dopiero
+/// potem przewracało się na braku wersji, po której profil dziedziczy —
+/// gracz dostawał INST-03 i żadna liczba prób tego nie zmieniała.
+fn instalacja_kompletna(json_profilu: &Path, json_vanilla: &Path) -> bool {
+    json_profilu.is_file() && json_vanilla.is_file()
+}
+
 /// Kładzie na dysku profil i plik czystego Minecrafta, zanim ruszy instalator.
 ///
 /// Instalator umie pobrać je sam, ale robi to własnym połączeniem z limitem
@@ -182,7 +195,11 @@ pub async fn ensure_loader(
         .join("versions")
         .join(&profil)
         .join(format!("{profil}.json"));
-    if json_profilu.is_file() {
+    let json_vanilla = mc_dir
+        .join("versions")
+        .join(minecraft)
+        .join(format!("{minecraft}.json"));
+    if instalacja_kompletna(&json_profilu, &json_vanilla) {
         return Ok(profil);
     }
 
@@ -256,6 +273,10 @@ pub async fn ensure_loader(
     }
 
     if let Some((kod, tekst)) = nieudane {
+        // Niedokonczony profil musi zniknac, inaczej przy kolejnym starcie
+        // wygladalby na gotowa instalacje i instalator juz by nie ruszyl.
+        let _ = std::fs::remove_file(&json_profilu);
+
         // Klasyfikujemy po pelnym wyjsciu, a pokazujemy juz bez ramek stosu.
         let czytelne = ogon(&bez_ramek_stosu(&tekst), 1200);
         return Err(if wyglada_na_siec(&tekst) {
@@ -393,6 +414,33 @@ mod tests {
         "\tat net.minecraftforge.installer.SimpleInstaller.main(SimpleInstaller.java:174)\n",
         "A problem installing was detected, install cannot continue"
     );
+
+    /// Dokladnie to zostawil po sobie instalator, ktoremu przerwano prace:
+    /// profil jest, bibliotek nie ma. Taki stan nie moze uchodzic za gotowa
+    /// instalacje, bo instalator juz nigdy by nie ruszyl.
+    #[test]
+    fn sam_profil_bez_czystej_wersji_to_nie_gotowa_instalacja() {
+        let kat = tempfile::tempdir().unwrap();
+        let profil = kat.path().join("neoforge-21.1.249.json");
+        let vanilla = kat.path().join("1.21.1.json");
+
+        std::fs::write(&profil, "{}").unwrap();
+        assert!(
+            !instalacja_kompletna(&profil, &vanilla),
+            "sam profil po przerwanej instalacji nie moze wystarczyc"
+        );
+
+        std::fs::write(&vanilla, "{}").unwrap();
+        assert!(instalacja_kompletna(&profil, &vanilla));
+    }
+
+    #[test]
+    fn brak_profilu_to_zawsze_instalacja_od_nowa() {
+        let kat = tempfile::tempdir().unwrap();
+        let vanilla = kat.path().join("1.21.1.json");
+        std::fs::write(&vanilla, "{}").unwrap();
+        assert!(!instalacja_kompletna(&kat.path().join("brak.json"), &vanilla));
+    }
 
     #[test]
     fn timeout_instalatora_rozpoznajemy_jako_siec() {
