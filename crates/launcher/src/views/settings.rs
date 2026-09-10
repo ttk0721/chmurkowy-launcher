@@ -82,36 +82,59 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                         None => "Ta paczka potrzebuje co najmniej 4 GB.".to_string(),
                     };
                     ui.label(theme::drobny(&opis_paczki));
-                    // Propozycja dobrana do komputera. Pokazujemy ja tylko przy
-                    // wyraznej roznicy, zeby nie zaczepiac gracza bez powodu.
+
                     if let Some(calkowita) = chmurka_core::pamiec::calkowita_mb() {
-                        let zalecana = chmurka_core::pamiec::zalecana_mb(calkowita);
-                        if chmurka_core::pamiec::warto_zaproponowac(
-                            app.ustawienia.pamiec_mb,
-                            zalecana,
-                        ) {
+                        use chmurka_core::pamiec;
+                        let zalecana = pamiec::zalecana_mb(calkowita);
+
+                        // Suwak pokazuje sterte, ale gra bierze wiecej: metaspace,
+                        // cache kodu i bufory sterownika grafiki leza poza nia.
+                        // Bez tego zdania gracz podnosil suwak „bo ma 8 GB"
+                        // i system ubijal mu gre w polowie rozgrywki.
+                        ui.add_space(theme::S1);
+                        ui.label(theme::drobny(&format!(
+                            "Suwak ustawia pamięć samej gry. Z dodatkami zajmie ona około {} MB \
+                             z {} MB, jakie ma Twój komputer.",
+                            pamiec::szacowany_proces_mb(app.ustawienia.pamiec_mb),
+                            calkowita
+                        )));
+
+                        if pamiec::grozi_brakiem_pamieci(app.ustawienia.pamiec_mb, calkowita) {
                             ui.add_space(theme::S1);
-                            ui.horizontal(|ui| {
-                                ui.label(
-                                    egui::RichText::new(format!(
-                                        "Twój komputer ma {} GB — proponujemy {} MB.",
-                                        calkowita / 1024,
-                                        zalecana
-                                    ))
-                                    .size(11.0)
-                                    .color(theme::AKCENT),
-                                );
-                                if ui
-                                    .add(egui::Button::new(
-                                        egui::RichText::new("Ustaw").size(11.0),
-                                    ))
-                                    .clicked()
-                                {
-                                    app.ustawienia.pamiec_mb = zalecana;
-                                    zmienione = true;
-                                }
-                            });
+                            ui.label(
+                                egui::RichText::new(
+                                    "To ustawienie jest za wysokie dla tego komputera — \
+                                     system może zamknąć grę w trakcie zabawy.",
+                                )
+                                .size(11.0)
+                                .color(theme::BLAD),
+                            );
                         }
+
+                        ui.add_space(theme::S1);
+                        ui.horizontal(|ui| {
+                            if ui
+                                .add(egui::Button::new(
+                                    egui::RichText::new("Dobierz automatycznie").size(11.0),
+                                ))
+                                .on_hover_text(format!(
+                                    "Ustawi {zalecana} MB — tyle bezpiecznie mieści się \
+                                     w {} MB tego komputera.",
+                                    calkowita
+                                ))
+                                .clicked()
+                            {
+                                app.ustawienia.pamiec_mb = zalecana;
+                                zmienione = true;
+                            }
+                            if pamiec::warto_zaproponowac(app.ustawienia.pamiec_mb, zalecana) {
+                                ui.label(
+                                    egui::RichText::new(format!("proponujemy {zalecana} MB"))
+                                        .size(11.0)
+                                        .color(theme::AKCENT),
+                                );
+                            }
+                        });
                     }
                 }
 

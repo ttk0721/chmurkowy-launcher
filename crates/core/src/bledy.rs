@@ -141,6 +141,8 @@ pub enum BladLaunchera {
         kod: Option<i32>,
         ogon_logu: String,
         wlasne_argumenty: bool,
+        /// Gry nie ubił błąd, tylko system — zabrakło mu pamięci.
+        zabita_przez_system: bool,
     },
 }
 
@@ -193,7 +195,8 @@ impl BladLaunchera {
                 kod,
                 ogon_logu,
                 wlasne_argumenty,
-            } => z_gry(*kod, ogon_logu, *wlasne_argumenty),
+                zabita_przez_system,
+            } => z_gry(*kod, ogon_logu, *wlasne_argumenty, *zabita_przez_system),
         }
     }
 }
@@ -487,8 +490,32 @@ fn z_logowania(e: &AuthError) -> BladUzytkownika {
 
 // --- GRA ---
 
-fn z_gry(kod: Option<i32>, ogon_logu: &str, wlasne_argumenty: bool) -> BladUzytkownika {
+fn z_gry(
+    kod: Option<i32>,
+    ogon_logu: &str,
+    wlasne_argumenty: bool,
+    zabita_przez_system: bool,
+) -> BladUzytkownika {
     let log = ogon_logu.to_lowercase();
+
+    // Ten przypadek sprawdzamy pierwszy, bo log nic o nim nie mówi. System
+    // ubija grę sygnałem, którego nie da się przechwycić, więc zapis urywa się
+    // w pół zdania i po samym logu wygląda to jak przypadkowa awaria.
+    if zabita_przez_system {
+        return BladUzytkownika::nowy(
+            "GRA-05",
+            "Komputerowi zabrakło pamięci i zamknął grę",
+            "Gra nie zawiesiła się sama — to system ją zamknął, bo zabrakło mu pamięci \
+             na wszystko naraz. Zwykle znaczy to, że grze przydzielono jej za dużo: \
+             gra zajmuje o półtora do dwóch gigabajtów więcej, niż pokazuje suwak.",
+            &[
+                "Wejdź w Ustawienia i kliknij „Dobierz automatycznie” przy suwaku pamięci.",
+                "Zamknij przeglądarkę i inne programy przed uruchomieniem gry.",
+                "Jeśli to się powtarza, zejdź suwakiem jeszcze o 512 MB niżej.",
+            ],
+            format!("gra zabita przez system, kod wyjścia {kod:?}\n{ogon_logu}"),
+        );
+    }
 
     if log.contains("outofmemoryerror") || log.contains("java heap space") {
         return BladUzytkownika::nowy(
@@ -496,9 +523,10 @@ fn z_gry(kod: Option<i32>, ogon_logu: &str, wlasne_argumenty: bool) -> BladUzytk
             "Grze zabrakło pamięci",
             "Ta paczka modów potrzebuje dużo pamięci. Tyle, ile jej przydzielono, nie wystarczyło.",
             &[
-                "Wejdź w Ustawienia i przesuń suwak pamięci na 6144 MB albo więcej.",
+                "Wejdź w Ustawienia i kliknij „Dobierz automatycznie” przy suwaku pamięci.",
                 "Zamknij przeglądarkę i inne programy przed uruchomieniem gry.",
-                "Jeśli komputer ma 8 GB pamięci lub mniej, nie ustawiaj więcej niż 4096 MB — zabraknie jej systemowi.",
+                "Nie podnoś suwaka na siłę — gra zajmuje o półtora do dwóch gigabajtów \
+                 więcej, niż on pokazuje, i przy zbyt wysokim ustawieniu system ją zamknie.",
             ],
             format!("kod wyjścia {kod:?}\n{ogon_logu}"),
         );
@@ -601,10 +629,67 @@ mod tests {
             kod: Some(1),
             ogon_logu: "java.lang.OutOfMemoryError: Java heap space".into(),
             wlasne_argumenty: false,
+            zabita_przez_system: false,
         }
         .dla_uzytkownika();
         assert_eq!(b.kod, "GRA-02");
-        assert!(b.co_zrobic[0].contains("6144"));
+        assert!(b.co_zrobic[0].contains("Dobierz automatycznie"));
+        // Rada „podnies suwak do 6144" zabijala gre na maszynie z 8 GB:
+        // sam suwak nie widzi poltora giga narzutu poza sterta.
+        assert!(
+            b.co_zrobic.iter().all(|r| !r.contains("6144")),
+            "nie wolno podawac sztywnej liczby megabajtow: {:?}",
+            b.co_zrobic
+        );
+        assert!(
+            b.co_zrobic.iter().any(|r| r.contains("więcej, niż on pokazuje")),
+            "gracz musi uslyszec, ze gra bierze wiecej niz sterta"
+        );
+    }
+
+    /// System ubija gre sygnalem, ktorego nie da sie przechwycic — w logu nie
+    /// ma po tym sladu. Bez osobnego rozpoznania gracz dostawal „gra padla,
+    /// nie wiemy czemu", choc przyczyne da sie naprawic jednym suwakiem.
+    #[test]
+    fn ubicie_przez_system_ma_wlasny_kod_mimo_pustego_logu() {
+        let b = BladLaunchera::GraPadla {
+            kod: None,
+            ogon_logu: "[16:20:03] [Render thread/INFO]: Ładowanie tekstur".into(),
+            wlasne_argumenty: false,
+            zabita_przez_system: true,
+        }
+        .dla_uzytkownika();
+        assert_eq!(b.kod, "GRA-05");
+        assert!(b.tytul.contains("pamięci"));
+        assert!(b.co_zrobic[0].contains("Dobierz automatycznie"));
+    }
+
+    /// Ubicie przez system rozpoznajemy przed czytaniem logu: log moglby
+    /// zawierac stary, niezwiazany wpis o pamieci i wskazac zly kod.
+    #[test]
+    fn ubicie_przez_system_wygrywa_z_trescia_logu() {
+        let b = BladLaunchera::GraPadla {
+            kod: Some(137),
+            ogon_logu: "java.lang.OutOfMemoryError: Java heap space".into(),
+            wlasne_argumenty: false,
+            zabita_przez_system: true,
+        }
+        .dla_uzytkownika();
+        assert_eq!(b.kod, "GRA-05");
+    }
+
+    /// Gry ubitej przez system nie wolno probowac ponownie ani kasowac po niej
+    /// plikow — nic z tego nie doda pamieci komputerowi.
+    #[test]
+    fn ubicia_przez_system_launcher_nie_naprawia_sam() {
+        let b = BladLaunchera::GraPadla {
+            kod: None,
+            ogon_logu: String::new(),
+            wlasne_argumenty: false,
+            zabita_przez_system: true,
+        }
+        .dla_uzytkownika();
+        assert_eq!(b.samonaprawa(), Samonaprawa::Nic);
     }
 
     #[test]
@@ -614,6 +699,7 @@ mod tests {
             kod: Some(1),
             ogon_logu: log.into(),
             wlasne_argumenty: true,
+            zabita_przez_system: false,
         }
         .dla_uzytkownika();
         assert_eq!(z_wlasnymi.kod, "GRA-03");
@@ -623,6 +709,7 @@ mod tests {
             kod: Some(1),
             ogon_logu: log.into(),
             wlasne_argumenty: false,
+            zabita_przez_system: false,
         }
         .dla_uzytkownika();
         assert_ne!(bez.kod, "GRA-03");
@@ -634,6 +721,7 @@ mod tests {
             kod: Some(1),
             ogon_logu: "net.neoforged.fml.ModLoadingException: something".into(),
             wlasne_argumenty: false,
+            zabita_przez_system: false,
         }
         .dla_uzytkownika();
         assert_eq!(b.kod, "GRA-04");
@@ -664,6 +752,7 @@ mod tests {
                 kod: None,
                 ogon_logu: String::new(),
                 wlasne_argumenty: false,
+            zabita_przez_system: false,
             },
         ];
         for p in przypadki {

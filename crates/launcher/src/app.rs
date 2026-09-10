@@ -135,6 +135,7 @@ impl App {
                     kod: Some(1),
                     ogon_logu: "java.lang.OutOfMemoryError: Java heap space\n\tat net.minecraft.client.main.Main.main(Main.java:1)".into(),
                     wlasne_argumenty: false,
+                    zabita_przez_system: false,
                 }
                 .dla_uzytkownika(),
             );
@@ -142,6 +143,7 @@ impl App {
         if pierwsze_uruchomienie {
             app.zapisz_ustawienia();
         }
+        app.zbij_zabojcze_ustawienie_pamieci();
         if app.widok == Widok::Paczki {
             app.odswiez_paczki();
         }
@@ -199,6 +201,44 @@ impl App {
                 }
             }
         });
+    }
+
+    /// Zbija przydział pamięci, jeśli zapisane ustawienie nie mieści się
+    /// w tym komputerze.
+    ///
+    /// Suwak pokazuje stertę Javy, a gra bierze o półtora do dwóch gigabajtów
+    /// więcej — metaspace, cache kodu i bufory sterownika grafiki leżą poza
+    /// stertą. Ustawienie 4096 MB na maszynie z 8 GB wygląda więc niewinnie,
+    /// a kończy się tym, że jądro zamyka grę w trakcie zabawy. Nikt tego nie
+    /// odgadnie z samego suwaka, więc launcher poprawia to za gracza.
+    ///
+    /// Własnego `-Xmx` nie ruszamy — kto go wpisał, wie co robi.
+    fn zbij_zabojcze_ustawienie_pamieci(&mut self) {
+        use chmurka_core::pamiec;
+
+        if self.ustawienia.wlasny_rozmiar_sterty() {
+            return;
+        }
+        let Some(calkowita) = pamiec::calkowita_mb() else {
+            return;
+        };
+        if !pamiec::grozi_brakiem_pamieci(self.ustawienia.pamiec_mb, calkowita) {
+            return;
+        }
+        let bezpieczna = pamiec::zalecana_mb(calkowita);
+        if bezpieczna >= self.ustawienia.pamiec_mb {
+            // Komputer jest po prostu za słaby — zbijanie w dół niczego
+            // nie załatwi, a gracz straciłby ustawienie bez powodu.
+            return;
+        }
+        self.log.push(format!(
+            "Pamięć dla gry zmieniona z {} na {bezpieczna} MB — przy poprzednim ustawieniu \
+             gra zajmowałaby około {} MB i system mógłby ją zamknąć.",
+            self.ustawienia.pamiec_mb,
+            pamiec::szacowany_proces_mb(self.ustawienia.pamiec_mb)
+        ));
+        self.ustawienia.pamiec_mb = bezpieczna;
+        self.zapisz_ustawienia();
     }
 
     /// Podmienia launcher na najnowszy, jeśli manifest podaje nowszy.
@@ -702,5 +742,25 @@ async fn przygotuj_i_odpal(
         kod: status.code(),
         ogon_logu: ogon,
         wlasne_argumenty: !dodatkowe.is_empty(),
+        zabita_przez_system: zabita_przez_system(&status),
     })
+}
+
+/// Czy to system ubił grę, bo zabrakło mu pamięci?
+///
+/// Jądro wysyła wtedy SIGKILL i proces nie ma jak niczego zapisać — w logu
+/// gry nie ma śladu, urywa się w połowie zdania. Bez tego rozpoznania gracz
+/// dostawał „gra padła, nie wiemy czemu", choć przyczyna jest konkretna
+/// i da się ją naprawić suwakiem pamięci.
+fn zabita_przez_system(status: &std::process::ExitStatus) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::ExitStatusExt;
+        // 9 to SIGKILL — tym zabija zarowno jadro, jak i systemd-oomd.
+        if status.signal() == Some(9) {
+            return true;
+        }
+    }
+    // Powloki i menedzery procesow raportuja zabicie sygnalem jako 128 + numer.
+    status.code() == Some(137)
 }
