@@ -6426,10 +6426,10 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.4.11",
+    "latest_version": "0.4.12",
     "urls": {
-      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.11/ChmurkowyLauncher-linux-x64",
-      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.11/ChmurkowyLauncher-windows-x64.exe"
+      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.12/ChmurkowyLauncher-linux-x64",
+      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.12/ChmurkowyLauncher-windows-x64.exe"
     }
   },
   "memory": {
@@ -6469,7 +6469,7 @@
     },
     "minecraft": "1.21.1",
     "name": "Chmurkowy Serwer",
-    "version": "2026.09.10-13"
+    "version": "2026.09.10-14"
   },
   "schema": 1
 }
