@@ -55,7 +55,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                         .on_hover_text(podpowiedz)
                         .clicked()
                     {
-                        app.widok = Widok::Logowanie;
+                        app.widok = ekran_kont(app);
                     }
                 });
             });
@@ -173,7 +173,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     if app.konto.is_some() {
                         crate::app::uruchom(app);
                     } else {
-                        app.widok = Widok::Logowanie;
+                        app.widok = ekran_kont(app);
                     }
                 }
                 if app.zajety {
@@ -182,4 +182,16 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 }
             });
         });
+}
+
+/// Dokąd prowadzi przycisk konta.
+///
+/// Gdy nie ma jeszcze żadnego konta, menedżer pokazywałby pustą listę
+/// i prosił o kliknięcie jeszcze raz. Wtedy idziemy prosto do logowania.
+fn ekran_kont(app: &App) -> Widok {
+    if app.konta.konta.is_empty() {
+        Widok::Logowanie
+    } else {
+        Widok::Konta
+    }
 }

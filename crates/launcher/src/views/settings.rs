@@ -281,7 +281,14 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
 
                 // --- AKTUALIZACJA ---
                 if let Some(m) = &app.manifest {
-                    if m.launcher.latest_version != env!("CARGO_PKG_VERSION") {
+                    // Porownanie wersji, a NIE „rozne od". Przy zwyklym !=
+                    // manifest ogloszony chwilowo na starsza wersje wygladal
+                    // na aktualizacje: launcher 0.4.17 pisal „dostepna nowsza:
+                    // 0.4.14" i proponowal cofniecie sie wstecz.
+                    if chmurka_core::aktualizacja::nowsza(
+                        env!("CARGO_PKG_VERSION"),
+                        &m.launcher.latest_version,
+                    ) {
                         ui.add_space(theme::S4);
                         theme::naglowek_sekcji(ui, "AKTUALIZACJA");
                         ui.label(

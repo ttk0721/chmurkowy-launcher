@@ -48,7 +48,7 @@ pub fn zaplanuj(exe: &Path, wspolny: &Path) -> Wpis {
          Exec=\"{exec}\"\n\
          Icon=chmurkowy-launcher\n\
          Terminal=false\n\
-         Categories=Game;\n\
+         Categories=Game;AdventureGame;\n\
          StartupNotify=true\n\
          StartupWMClass=ChmurkowyLauncher\n\
          Keywords=minecraft;gra;mody;chmurka;\n",

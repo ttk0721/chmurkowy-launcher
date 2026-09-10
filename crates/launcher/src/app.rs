@@ -14,6 +14,7 @@ use std::sync::Arc;
 pub enum Widok {
     Glowny,
     Logowanie,
+    Konta,
     Ustawienia,
     Paczki,
     Blad,
@@ -403,7 +404,16 @@ impl App {
         let data = self.data();
 
         match aktualizacja::zdecyduj(biezaca, &najnowsza, url.as_deref(), &data) {
-            Decyzja::Aktualna => return,
+            Decyzja::Aktualna => {
+                // Klikniecie, po ktorym nic sie nie dzieje, wyglada na zepsuty
+                // przycisk. Przy sprawdzeniu automatycznym milczymy, bo to
+                // stan normalny przy kazdym starcie.
+                if recznie {
+                    self.komunikat =
+                        Some(format!("Masz już najnowszą wersję ({biezaca})."));
+                }
+                return;
+            }
             Decyzja::BrakAdresu => {
                 self.log.push(format!(
                     "Jest launcher {najnowsza}, ale manifest nie podaje pliku dla tego systemu."
@@ -625,6 +635,7 @@ impl App {
                     self.kod = None;
                     self.zajety = false;
                     self.widok = Widok::Glowny;
+                    self.komunikat = None;
                 }
                 Wiadomosc::GraWystartowala => {
                     self.gra_dziala = true;
@@ -739,6 +750,7 @@ impl eframe::App for App {
         match self.widok {
             Widok::Glowny => crate::views::main::rysuj(self, ctx),
             Widok::Logowanie => crate::views::login::rysuj(self, ctx),
+            Widok::Konta => crate::views::accounts::rysuj(self, ctx),
             Widok::Ustawienia => crate::views::settings::rysuj(self, ctx),
             Widok::Paczki => crate::views::packs::rysuj(self, ctx),
             Widok::Blad => crate::views::error::rysuj(self, ctx),

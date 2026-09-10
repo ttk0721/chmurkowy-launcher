@@ -5,7 +5,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
     egui::TopBottomPanel::top("gora-log")
         .frame(theme::ramka())
         .show(ctx, |ui| {
-            super::pasek_tytulu(ui, ctx, "Konta");
+            super::pasek_tytulu(ui, ctx, "Dodaj konto");
         });
 
     egui::TopBottomPanel::bottom("dol-log")
@@ -15,7 +15,12 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 .add(theme::przycisk_zwykly("Wróć").min_size(egui::vec2(120.0, 44.0)))
                 .clicked()
             {
-                app.widok = Widok::Glowny;
+                // Wracamy do menedżera, gdy jest już czym zarządzać.
+                app.widok = if app.konta.konta.is_empty() {
+                    Widok::Glowny
+                } else {
+                    Widok::Konta
+                };
             }
         });
 
@@ -23,8 +28,6 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
         .frame(theme::ramka())
         .show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                lista_kont(app, ui);
-
                 match &app.kod {
                     Some(kod) => {
                         let kod_tekst = kod.user_code.clone();
@@ -137,69 +140,3 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
         });
 }
 
-/// Lista zapamiętanych kont z przełączaniem.
-///
-/// Przy jednym komputerze siedzi rodzeństwo, a jedna osoba miewa konto do
-/// gry i drugie do testów. Bez listy każde przelogowanie oznaczało wpisywanie
-/// kodu z Microsoftu od nowa.
-fn lista_kont(app: &mut App, ui: &mut egui::Ui) {
-    if app.konta.konta.is_empty() {
-        return;
-    }
-
-    theme::naglowek_sekcji(ui, "TWOJE KONTA");
-
-    let wybrane = app.konta.wybrane.clone();
-    // Kopia, bo w pętli wołamy metody `app`, które listę zmieniają.
-    let konta: Vec<_> = app.konta.konta.clone();
-    let mut przelacz = None;
-    let mut zapomnij = None;
-
-    for konto in &konta {
-        let klucz = konto.klucz();
-        let aktywne = wybrane.as_deref() == Some(klucz.as_str());
-        let (opis, kolor) = match &konto.rodzaj {
-            chmurka_core::auth::store::Rodzaj::Microsoft { .. } => ("Microsoft", theme::AKCENT),
-            chmurka_core::auth::store::Rodzaj::Offline => ("offline", theme::TEKST_PRZYGASZONY),
-        };
-
-        ui.horizontal(|ui| {
-            ui.add_space((ui.available_width() - 420.0).max(0.0) / 2.0);
-
-            let etykieta = if aktywne {
-                format!("● {}", konto.nick)
-            } else {
-                format!("   {}", konto.nick)
-            };
-            let przycisk = ui.add_enabled(
-                !aktywne && !app.zajety,
-                theme::przycisk_zwykly(&etykieta).min_size(egui::vec2(300.0, 40.0)),
-            );
-            if przycisk.clicked() {
-                przelacz = Some(klucz.clone());
-            }
-
-            ui.label(egui::RichText::new(opis).size(11.0).color(kolor));
-
-            if ui
-                .add(theme::przycisk_zwykly("Zapomnij").min_size(egui::vec2(90.0, 40.0)))
-                .on_hover_text("Usuwa konto z listy. Światy i pliki gry zostają.")
-                .clicked()
-            {
-                zapomnij = Some(klucz.clone());
-            }
-        });
-        ui.add_space(4.0);
-    }
-
-    if let Some(k) = przelacz {
-        app.przelacz_konto(&k);
-    }
-    if let Some(k) = zapomnij {
-        app.zapomnij_konto(&k);
-    }
-
-    ui.add_space(theme::S3);
-    theme::naglowek_sekcji(ui, "DODAJ KOLEJNE KONTO");
-    ui.add_space(theme::S1);
-}

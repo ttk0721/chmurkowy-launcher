@@ -1,3 +1,4 @@
+pub mod accounts;
 pub mod console;
 pub mod error;
 pub mod login;

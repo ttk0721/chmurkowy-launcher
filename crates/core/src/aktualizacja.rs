@@ -286,6 +286,17 @@ mod tests {
         assert!(nowsza("0.9.9", "1.0.0"));
     }
 
+    /// Interfejs ustawien porownywal wersje zwyklym „rozne od" i przy
+    /// manifescie ogloszonym chwilowo na starsza wersje pisal graczowi
+    /// „dostepna nowsza: 0.4.14", majac 0.4.17. Cofanie sie wstecz nie jest
+    /// aktualizacja.
+    #[test]
+    fn starsza_wersja_w_manifescie_to_nie_aktualizacja() {
+        assert!(!nowsza("0.4.17", "0.4.14"));
+        assert!(!nowsza("0.4.18", "0.4.9"));
+        assert!(!nowsza("1.0.0", "0.9.9"));
+    }
+
     #[test]
     fn ta_sama_albo_starsza_nie_wywoluje_aktualizacji() {
         assert!(!nowsza("0.4.5", "0.4.5"));
