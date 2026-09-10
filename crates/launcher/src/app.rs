@@ -17,6 +17,7 @@ pub enum Widok {
     Ustawienia,
     Paczki,
     Blad,
+    Konsola,
 }
 
 /// Wiadomości płynące z zadań w tle do wątku rysującego.
@@ -58,6 +59,9 @@ pub struct App {
     pub zajety: bool,
     /// Prawda od startu gry do jej zakończenia.
     pub gra_dziala: bool,
+    /// Podgląd logu gry — jedyny sposób, żeby gracz sprawdził, czy paczka
+    /// się jeszcze ładuje, czy proces dawno stanął.
+    pub konsola: chmurka_core::konsola::Konsola,
     schowaj_okno: bool,
     przywroc_okno: bool,
     zakoncz: bool,
@@ -81,7 +85,8 @@ impl App {
             .build()
             .expect("runtime tokio");
 
-        let plik_ustawien = katalog.join("data").join("settings.json");
+        let katalog_danych = katalog.join("data");
+        let plik_ustawien = katalog_danych.join("settings.json");
         let pierwsze_uruchomienie = !plik_ustawien.is_file();
         let mut ustawienia = Ustawienia::wczytaj(&plik_ustawien);
 
@@ -118,6 +123,9 @@ impl App {
             shadery: StanShaderow::default(),
             zajety: false,
             gra_dziala: false,
+            konsola: chmurka_core::konsola::Konsola::nowa(
+                katalog_danych.join("logs").join("game.log"),
+            ),
             schowaj_okno: false,
             przywroc_okno: false,
             zakoncz: false,
@@ -383,6 +391,11 @@ impl App {
                 }
                 Wiadomosc::GraWystartowala => {
                     self.gra_dziala = true;
+                    // Miedzy klknieciem GRAJ a pojawieniem sie okna gry mija
+                    // ze dwie minuty, w ktorych na ekranie nie ma nic. Kto
+                    // przywroci launcher z zasobnika, ma od razu zobaczyc,
+                    // ze paczka sie laduje — a nie pusty ekran glowny.
+                    self.widok = Widok::Konsola;
                     if self.ustawienia.ukryj_po_starcie {
                         self.schowaj_okno = true;
                     }
@@ -394,6 +407,12 @@ impl App {
                     self.gra_dziala = false;
                     self.postep = None;
                     self.przywroc_okno = true;
+                    // Po normalnym wyjściu z gry wracamy na ekran główny.
+                    // Konsola przydawała się w trakcie ładowania; teraz gracz
+                    // chce zobaczyć przycisk GRAJ, a nie ścianę logów.
+                    if self.widok == Widok::Konsola {
+                        self.widok = Widok::Glowny;
+                    }
                     self.log.push(format!(
                         "Gra zakończyła się kodem {}",
                         kod.map(|k| k.to_string()).unwrap_or_else(|| "nieznanym".into())
@@ -454,8 +473,15 @@ impl eframe::App for App {
 
         // W trakcie gry nic się nie zmienia aż do jej zakończenia, więc odpytujemy
         // raz na sekundę — inaczej schowany launcher wciąż mieliłby procesor.
-        if self.gra_dziala {
-            ctx.request_repaint_after(std::time::Duration::from_secs(1));
+        if self.gra_dziala || self.widok == Widok::Konsola {
+            // Na konsoli odswiezamy czesciej — inaczej log doganialby okno
+            // z sekundowym opoznieniem i wygladal na zamarly.
+            let odstep = if self.widok == Widok::Konsola {
+                std::time::Duration::from_millis(400)
+            } else {
+                std::time::Duration::from_secs(1)
+            };
+            ctx.request_repaint_after(odstep);
         } else if self.zajety || self.kod.is_some() || self.manifest.is_none() {
             ctx.request_repaint_after(std::time::Duration::from_millis(120));
         }
@@ -466,6 +492,7 @@ impl eframe::App for App {
             Widok::Ustawienia => crate::views::settings::rysuj(self, ctx),
             Widok::Paczki => crate::views::packs::rysuj(self, ctx),
             Widok::Blad => crate::views::error::rysuj(self, ctx),
+            Widok::Konsola => crate::views::console::rysuj(self, ctx),
         }
     }
 }

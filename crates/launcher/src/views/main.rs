@@ -20,6 +20,23 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     {
                         app.widok = Widok::Ustawienia;
                     }
+                    // Gdy gra sie laduje, to najwazniejszy przycisk na ekranie:
+                    // bez niego gracz nie ma jak sprawdzic, czy cos jeszcze
+                    // sie dzieje, czy proces stanal.
+                    let etykieta_konsoli = if app.gra_dziala {
+                        "Co się dzieje ●"
+                    } else {
+                        "Co się dzieje"
+                    };
+                    if ui
+                        .add(egui::Button::new(
+                            egui::RichText::new(etykieta_konsoli).size(13.0),
+                        ))
+                        .on_hover_text("Podgląd tego, co gra wypisuje w trakcie ładowania")
+                        .clicked()
+                    {
+                        app.widok = Widok::Konsola;
+                    }
                     if ui
                         .add(egui::Button::new(egui::RichText::new("Paczki").size(13.0)))
                         .on_hover_text("Paczki zasobów i shadery")

@@ -99,6 +99,34 @@ pub fn build_command(p: &LaunchParams) -> Result<std::process::Command, LaunchEr
         cmd.arg(format!("-Xms{}M", p.min_mb));
         cmd.arg(format!("-Xmx{}M", p.max_mb));
     }
+
+    // Nastawy odśmiecacza dla ciasnej pamięci.
+    //
+    // Domyślny G1 zbiera rzadko i dużymi partiami. Przy paczce z 261 modami
+    // na maszynie, gdzie sterta ledwo starcza, kończy się to długimi
+    // przestojami: procesor stoi na jednym procencie, skacze do czterdziestu
+    // na czas zbierania i tak w kółko. Z zewnątrz wygląda to na zawieszenie.
+    //
+    // Krótszy cel pauzy i wcześniejszy start cyklu każą zbierać częściej,
+    // za to po trochu. `MaxMetaspaceSize` trzyma w ryzach obszar, który przy
+    // tylu modach potrafi rosnąć bez końca i wypycha proces poza pamięć.
+    //
+    // Każdą z tych nastaw gracz może nadpisać własnym parametrem — dokładamy
+    // tylko te, których sam nie podał.
+    for (przedrostek, nastawa) in [
+        ("-XX:+UseG1GC", "-XX:+UseG1GC"),
+        ("-XX:MaxGCPauseMillis", "-XX:MaxGCPauseMillis=50"),
+        ("-XX:G1HeapRegionSize", "-XX:G1HeapRegionSize=16M"),
+        (
+            "-XX:InitiatingHeapOccupancyPercent",
+            "-XX:InitiatingHeapOccupancyPercent=35",
+        ),
+        ("-XX:MaxMetaspaceSize", "-XX:MaxMetaspaceSize=512M"),
+    ] {
+        if !p.dodatkowe.iter().any(|a| a.starts_with(przedrostek)) {
+            cmd.arg(nastawa);
+        }
+    }
     for a in p.dodatkowe {
         cmd.arg(a);
     }
@@ -235,6 +263,36 @@ mod tests {
         assert!(a.contains(&"-Dfoo=bar".to_string()));
         // Bez wlasnego -Xmx suwak nadal dziala.
         assert!(a.contains(&"-Xmx4096M".to_string()));
+    }
+
+    /// Na ciasnej pamieci domyslny odsmiecacz robi dlugie przestoje —
+    /// z zewnatrz nie do odroznienia od zawieszenia.
+    #[test]
+    fn dokladamy_nastawy_odsmiecacza() {
+        let a = argumenty(&[]);
+        for oczekiwana in [
+            "-XX:+UseG1GC",
+            "-XX:MaxGCPauseMillis=50",
+            "-XX:G1HeapRegionSize=16M",
+            "-XX:InitiatingHeapOccupancyPercent=35",
+            "-XX:MaxMetaspaceSize=512M",
+        ] {
+            assert!(a.iter().any(|x| x == oczekiwana), "brakuje {oczekiwana}: {a:?}");
+        }
+    }
+
+    /// Gracz, ktory sam dobral nastawe, ma miec ostatnie slowo. Dwie te same
+    /// opcje w jednej komendzie to zrodlo bledow nie do wysledzenia.
+    #[test]
+    fn wlasna_nastawa_odsmiecacza_wypiera_nasza() {
+        let a = argumenty(&["-XX:MaxGCPauseMillis=200".to_string()]);
+        assert!(a.contains(&"-XX:MaxGCPauseMillis=200".to_string()));
+        assert!(
+            !a.iter().any(|x| x == "-XX:MaxGCPauseMillis=50"),
+            "nie moze byc dwoch nastaw tej samej opcji: {a:?}"
+        );
+        // Pozostale nastawy zostaja — nadpisanie jednej nie kasuje reszty.
+        assert!(a.contains(&"-XX:MaxMetaspaceSize=512M".to_string()));
     }
 
     #[test]

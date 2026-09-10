@@ -4,6 +4,7 @@ pub mod bledy;
 pub mod game_install;
 pub mod hash;
 pub mod java;
+pub mod konsola;
 pub mod launch;
 pub mod manifest;
 pub mod narzedzia;

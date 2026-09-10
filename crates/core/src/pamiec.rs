@@ -24,12 +24,22 @@ pub fn narzut_jvm_mb(sterta_mb: u32) -> u32 {
 
 /// Ile zostawiamy systemowi: pulpit, przeglądarka i wszystko poza grą.
 ///
-/// Na maszynie z 8 GB sam system w spoczynku potrafi zająć 2,5 GB, więc
-/// 2 GB rezerwy było za mało — komputer wchodził w wymianę stron i jądro
-/// ubijało grę. Bierzemy ćwiartkę pamięci, ale nigdy mniej niż 3 GB.
+/// Zmierzone na maszynie testera: sam system w spoczynku zajmuje 2,5 GB.
+/// Tyle więc zostawiamy jako dolną granicę — 2 GB było za mało i komputer
+/// wchodził w wymianę stron, ale 3 GB zabierało grze tak dużo, że nie
+/// zostawało jej na własną pracę. Na większych maszynach rezerwa rośnie
+/// razem z pamięcią, bo i reszta programów ma tam więcej miejsca.
 pub fn rezerwa_systemu_mb(calkowita_mb: u64) -> u64 {
-    (calkowita_mb / 4).max(3072)
+    (calkowita_mb / 4).max(2560)
 }
+
+/// Poniżej tego paczka nie ma czym oddychać.
+///
+/// Przy mniejszej stercie odśmiecacz nie nadąża zwalniać pamięci i gra staje:
+/// procesor stoi na jednym procencie ze skokami do czterdziestu, a komputer
+/// zapełnia plik wymiany. Nie wygląda to na brak pamięci, tylko na zawieszenie
+/// — i dokładnie tak wyglądało u testera przy 2560 MB.
+pub const NAJMNIEJSZA_GRYWALNA_MB: u64 = 3072;
 
 /// Ile pamięci zajmie cały proces gry przy takiej stercie.
 pub fn szacowany_proces_mb(sterta_mb: u32) -> u32 {
@@ -64,7 +74,12 @@ pub fn zalecana_mb(calkowita_mb: u64) -> u32 {
     // a zaokrąglenie w dół nigdy nie zjada rezerwy.
     let sterta = (sterta / 512) * 512;
 
-    sterta.clamp(1024, NAJWIEKSZA_ZALECANA_MB) as u32
+    // Dołem trzymamy próg grywalności, nawet gdy budżet wychodzi mniejszy.
+    // Zaniżona sterta nie chroni przed niczym: gra i tak zajmie pamięć,
+    // tylko zamiast działać będzie stała na odśmiecaniu. Że komputer jest
+    // za słaby, gracz usłyszy od `grozi_brakiem_pamieci`, a nie od suwaka
+    // ustawionego po cichu na wartość, przy której nic nie ruszy.
+    sterta.clamp(NAJMNIEJSZA_GRYWALNA_MB, NAJWIEKSZA_ZALECANA_MB) as u32
 }
 
 /// Czy warto pokazać graczowi propozycję zmiany. Drobne różnice pomijamy,
@@ -110,7 +125,7 @@ mod tests {
     /// byc bezpieczne — inaczej sami wpychalibysmy gracza w ubicie przez jadro.
     #[test]
     fn zalecenie_nigdy_nie_grozi_ubiciem_gry() {
-        for total in [6144u64, 8192, 12288, 16384, 32768, 65536] {
+        for total in [7400u64, 8192, 12288, 16384, 32768, 65536] {
             let z = zalecana_mb(total);
             assert!(
                 !grozi_brakiem_pamieci(z, total),
@@ -119,13 +134,19 @@ mod tests {
         }
     }
 
-    /// Ponizej 6 GB nie ma bezpiecznego ustawienia: sama rezerwa systemu
-    /// i narzut JVM zjadaja cala pamiec. Zalecamy wtedy minimum, ale
-    /// `grozi_brakiem_pamieci` ma o tym uczciwie mowic — to jedyny sposob,
-    /// zeby gracz uslyszal, ze problem jest w komputerze, a nie w suwaku.
+    /// Ponizej mniej wiecej siedmiu gigabajtow nie ma bezpiecznego
+    /// ustawienia: rezerwa systemu, prog grywalnosci i narzut JVM nie
+    /// mieszcza sie razem. Zalecamy wtedy prog, ale `grozi_brakiem_pamieci`
+    /// ma o tym uczciwie mowic — to jedyny sposob, zeby gracz uslyszal,
+    /// ze problem jest w komputerze, a nie w suwaku.
     #[test]
-    fn na_czterech_gigach_nie_ma_bezpiecznego_ustawienia() {
-        assert!(grozi_brakiem_pamieci(zalecana_mb(4096), 4096));
+    fn na_malej_maszynie_nie_ma_bezpiecznego_ustawienia() {
+        for total in [4096u64, 6144] {
+            assert!(
+                grozi_brakiem_pamieci(zalecana_mb(total), total),
+                "przy {total} MB udajemy, ze paczka sie zmiesci"
+            );
+        }
     }
 
     #[test]
@@ -137,8 +158,34 @@ mod tests {
     }
 
     #[test]
-    fn osiem_giga_dostaje_trzy_a_nie_cztery() {
-        assert_eq!(zalecana_mb(8192), 3072);
+    fn osiem_giga_dostaje_trzy_i_pol_a_nie_cztery() {
+        assert_eq!(zalecana_mb(8192), 3584);
+    }
+
+    /// Realny odczyt z maszyny testera: `sysinfo` podaje mniej niz nominalne
+    /// 8 GB, bo czesc pamieci zabiera uklad graficzny i firmware.
+    #[test]
+    fn niepelne_osiem_giga_wciaz_daje_grywalna_sterte() {
+        let z = zalecana_mb(7400);
+        assert!(
+            z >= NAJMNIEJSZA_GRYWALNA_MB as u32,
+            "przy 7400 MB zalecono {z} MB — ponizej tego paczka stoi na odsmiecaniu"
+        );
+        assert!(!grozi_brakiem_pamieci(z, 7400));
+    }
+
+    /// Zaniżona sterta niczego nie ratuje: gra i tak zajmie pamiec, tylko
+    /// zamiast dzialac bedzie stala na odsmiecaniu. To wlasnie zobaczyl
+    /// tester — jeden procent procesora i zapelniony plik wymiany.
+    #[test]
+    fn nigdy_nie_proponujemy_sterty_ponizej_progu_grywalnosci() {
+        for total in [2048u64, 4096, 6144, 7400, 8192, 16384, 32768] {
+            assert!(
+                zalecana_mb(total) as u64 >= NAJMNIEJSZA_GRYWALNA_MB,
+                "przy {total} MB zalecono {} MB",
+                zalecana_mb(total)
+            );
+        }
     }
 
     #[test]
@@ -159,17 +206,18 @@ mod tests {
     }
 
     #[test]
-    fn slaby_komputer_dostaje_minimum_a_nie_zero() {
+    fn slaby_komputer_dostaje_prog_grywalnosci_a_nie_zero() {
         // Paczka i tak nie pojdzie na 4 GB, ale zalecenie musi byc liczba
         // sensowna, a nie zerem albo wartoscia ujemna po odjeciu rezerwy.
-        assert_eq!(zalecana_mb(4096), 1024);
-        assert_eq!(zalecana_mb(2048), 1024);
+        // O tym, ze komputer nie wyrabia, mowi `grozi_brakiem_pamieci`.
+        assert_eq!(zalecana_mb(4096), NAJMNIEJSZA_GRYWALNA_MB as u32);
+        assert_eq!(zalecana_mb(2048), NAJMNIEJSZA_GRYWALNA_MB as u32);
     }
 
     #[test]
-    fn systemowi_zawsze_zostaja_co_najmniej_trzy_giga() {
+    fn systemowi_zawsze_zostaje_tyle_ile_zajmuje_w_spoczynku() {
         for total in [4096u64, 8192, 16384] {
-            assert!(rezerwa_systemu_mb(total) >= 3072);
+            assert!(rezerwa_systemu_mb(total) >= 2560);
         }
         // Na duzej maszynie rezerwa rosnie razem z pamiecia.
         assert_eq!(rezerwa_systemu_mb(32768), 8192);
