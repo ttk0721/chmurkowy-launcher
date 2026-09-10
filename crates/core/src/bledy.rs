@@ -45,14 +45,15 @@ impl BladUzytkownika {
         }
     }
 
-    /// Tekst do wklejenia administracji.
-    pub fn do_schowka(&self) -> String {
+    /// Raport do wklejenia administracji serwera.
+    ///
+    /// Wersję przyjmujemy z zewnątrz, bo `env!("CARGO_PKG_VERSION")` zwróciłby
+    /// tutaj wersję biblioteki `chmurka-core`, a nie launchera — administracja
+    /// dostawała przez to „0.1.0" niezależnie od tego, co gracz uruchomił.
+    pub fn do_schowka(&self, wersja_launchera: &str) -> String {
         format!(
             "Chmurkowy Launcher {}\nKod błędu: {}\n{}\n\nSzczegóły techniczne:\n{}",
-            env!("CARGO_PKG_VERSION"),
-            self.kod,
-            self.tytul,
-            self.szczegoly
+            wersja_launchera, self.kod, self.tytul, self.szczegoly
         )
     }
 }
@@ -284,6 +285,19 @@ fn z_instalacji(e: &InstallError) -> BladUzytkownika {
                 "Sprawdź, czy na dysku jest co najmniej 3 GB wolnego miejsca.",
             ],
             format!("kod wyjścia {kod}\n{wyjscie}"),
+        ),
+        InstallError::InstalatorSiec { wyjscie, .. } => BladUzytkownika::nowy(
+            "SIE-04",
+            "Instalator gry nie mógł pobrać plików",
+            "Program instalujący modyfikacje próbował pobrać pliki z internetu i nie zdążył \
+             się połączyć. Dzieje się tak na wolnym łączu albo gdy sieć przepuszcza tylko \
+             część połączeń — nawet jeśli strony w przeglądarce otwierają się normalnie.",
+            &[
+                "Uruchom launcher ponownie — to, co już się pobrało, zostaje na dysku.",
+                "Jeśli masz Wi-Fi, podejdź bliżej routera albo podłącz kabel.",
+                "Jeśli to sieć szkolna albo firmowa, spróbuj na domowej lub na telefonie.",
+            ],
+            wyjscie.clone(),
         ),
         InstallError::IndeksZasobow(s) => BladUzytkownika::nowy(
             "INST-03",
@@ -621,14 +635,41 @@ mod tests {
         assert!(!b.co_zrobic.is_empty());
         // Tresc techniczna musi przetrwac, bo to jedyny slad dla administracji.
         assert!(b.szczegoly.contains("cos zupelnie nowego"));
-        assert!(b.do_schowka().contains("cos zupelnie nowego"));
+        assert!(b.do_schowka("0.4.3").contains("cos zupelnie nowego"));
     }
 
     #[test]
     fn schowek_zawiera_kod_i_wersje() {
         let b = BladLaunchera::Logowanie(AuthError::Wygasl).dla_uzytkownika();
-        let s = b.do_schowka();
+        let s = b.do_schowka("0.4.3");
         assert!(s.contains("KONTO-01"));
-        assert!(s.contains(env!("CARGO_PKG_VERSION")));
+        assert!(s.contains("0.4.3"));
+    }
+
+    /// Raport trafia do administracji, wiec musi podawac wersje launchera,
+    /// a nie biblioteki. Przez pomylke pokazywal „0.1.0" kazdemu graczowi,
+    /// niezaleznie od tego, co naprawde uruchomil.
+    #[test]
+    fn schowek_podaje_wersje_z_zewnatrz_a_nie_biblioteki() {
+        let b = BladLaunchera::Logowanie(AuthError::Wygasl).dla_uzytkownika();
+        let s = b.do_schowka("0.9.7");
+        assert!(s.contains("Chmurkowy Launcher 0.9.7"), "{s}");
+        assert!(
+            !s.contains("0.1.0"),
+            "wersja biblioteki nie ma prawa trafic do raportu: {s}"
+        );
+    }
+
+    /// Instalator, ktory nie dosiegnal serwerow, to problem z siecia,
+    /// a nie z plikami — rada „napraw instalacje" niczego tu nie zmieni.
+    #[test]
+    fn instalator_bez_polaczenia_to_blad_sieci() {
+        let b = BladLaunchera::Instalacja(InstallError::InstalatorSiec {
+            loader: "neoforge-21.1.249".into(),
+            wyjscie: "A problem installing was detected".into(),
+        })
+        .dla_uzytkownika();
+        assert_eq!(b.kod, "SIE-04");
+        assert!(b.co_zrobic.iter().any(|r| r.contains("router")));
     }
 }

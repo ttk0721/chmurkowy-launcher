@@ -40,7 +40,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     .clicked()
                 {
                     if let Ok(mut schowek) = arboard::Clipboard::new() {
-                        let _ = schowek.set_text(b.do_schowka());
+                        let _ = schowek.set_text(b.do_schowka(env!("CARGO_PKG_VERSION")));
                         app.komunikat = Some("Skopiowano.".into());
                     }
                 }

@@ -432,6 +432,7 @@ async fn przygotuj_i_odpal(
     let profil = game_install::ensure_loader(
         &mc,
         &java,
+        &m.pack.minecraft,
         &m.pack.loader.kind,
         &m.pack.loader.version,
         &dl,

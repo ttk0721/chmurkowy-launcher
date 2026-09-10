@@ -6228,7 +6228,7 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.4.2",
+    "latest_version": "0.4.3",
     "urls": {
       "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-linux-x64",
       "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-windows-x64.exe"
