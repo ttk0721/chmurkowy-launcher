@@ -129,14 +129,9 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     Some(m) => {
                         ui.label(theme::naglowek(&m.pack.edition, 32.0));
                         ui.add_space(6.0);
-                        let mody = m
-                            .files
-                            .iter()
-                            .filter(|f| f.path.starts_with("mods/"))
-                            .count();
                         ui.label(theme::drobny(&format!(
-                            "Minecraft {} · NeoForge {} · {} modów",
-                            m.pack.minecraft, m.pack.loader.version, mody
+                            "Minecraft {} · NeoForge {}",
+                            m.pack.minecraft, m.pack.loader.version
                         )));
                     }
                     None => {

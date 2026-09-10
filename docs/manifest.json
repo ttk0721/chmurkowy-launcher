@@ -1264,6 +1264,15 @@
       ]
     },
     {
+      "path": "mods/drippyloadingscreen_neoforge_3.1.5_MC_1.21.1.jar",
+      "policy": "mirror",
+      "sha512": "3ef65f88cfa42cca781a91a2490efc890fb1865502370f71d0871d5b33a70f53fc80af9ab99650a3b4a82e1c6a13aa62c1de3dd3b2f674ac18f0e9b9dd49f4d5",
+      "size": 168632,
+      "urls": [
+        "https://cdn.modrinth.com/data/v3CYg2V9/versions/MVgsDsSB/drippyloadingscreen_neoforge_3.1.5_MC_1.21.1.jar"
+      ]
+    },
+    {
       "path": "mods/dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar",
       "policy": "mirror",
       "sha512": "8eb18a280b265e598540306275b51a165836f4b14c6c703b6ced11fcac50bfab439e4deb69e222f62614a9f15fa0ef58e5bd84e20e37ae57755d9c2f8b134057",
@@ -1399,6 +1408,33 @@
       ]
     },
     {
+      "path": "mods/fancyenchantments-1.21.1-1.0.jar",
+      "policy": "mirror",
+      "sha512": "bd389059fe9dd4da365eda2c167d59bd29f42c2a5ceaef9dbfb1c02eb67be836b4dbc8b2e23a74da3a3a1d41e995f65cb6a463a4b24a97cad2e26789e71ef02f",
+      "size": 652787,
+      "urls": [
+        "https://cdn.modrinth.com/data/Ry0mgP2K/versions/sWZjUszC/fancyenchantments-1.21.1-1.0.jar"
+      ]
+    },
+    {
+      "path": "mods/fancymenu_neoforge_3.9.12_MC_1.21.1.jar",
+      "policy": "mirror",
+      "sha512": "b33695b9dd996860084f84739b94695932aa663a056b8fcf0b3aa70cf6d251e802b8ef5aa067a92eecdff7935c2e388ebf9c5ab4bf9438ad0965b556cde9e271",
+      "size": 25912346,
+      "urls": [
+        "https://cdn.modrinth.com/data/Wq5SjeWM/versions/Jjr0fpDH/fancymenu_neoforge_3.9.12_MC_1.21.1.jar"
+      ]
+    },
+    {
+      "path": "mods/fancytabsections-6.2.1-NEOFORGE-1.21.1.jar",
+      "policy": "mirror",
+      "sha512": "2a1a33794e7677f9bf259e3ef38bfaa895fbaf86491125628f27d0f3964e70fdc1a10c39829fb0453500f15b328f7a2a3ce4a347d67ceb7ee56ca6f06ef7d6cc",
+      "size": 89474,
+      "urls": [
+        "https://cdn.modrinth.com/data/K0NYarUG/versions/Nfh3zmbE/fancytabsections-6.2.1-NEOFORGE-1.21.1.jar"
+      ]
+    },
+    {
       "path": "mods/fast-ip-ping-v1.0.11-mc1.21.1-neoforge.jar",
       "policy": "mirror",
       "sha512": "aaaf3c1494e240aa61d5191521cf324aab82a3d08c0a5dfa1db516bb26a6b165639b98fc8e9946bd65ad5048ecb6b96601d9febbd1d536f8e1ed5b72c741461f",
@@ -1441,6 +1477,15 @@
       "size": 947072,
       "urls": [
         "https://cdn.modrinth.com/data/p19vrgc2/versions/JSbPU3oG/fusion-1.3.15a-neoforge-mc1.21.1.jar"
+      ]
+    },
+    {
+      "path": "mods/fwa+1.21.1-neoforge-1.2.31.jar",
+      "policy": "mirror",
+      "sha512": "dd44ef2dad3df2b52610b2f289f02590265b467409737630ae12ac5d540613f84191a1b5488bac8098ebbeb78f1922b3b6d86c2c09bbe026f46c88f91b25f74a",
+      "size": 385558,
+      "urls": [
+        "https://cdn.modrinth.com/data/IAzUFvS6/versions/79A6vRlK/fwa%2B1.21.1-neoforge-1.2.31.jar"
       ]
     },
     {
@@ -1576,6 +1621,15 @@
       "size": 593705,
       "urls": [
         "https://cdn.modrinth.com/data/9Pk89J3g/versions/lVl2kVwh/justenoughbreeding-neoforge-1.21.1-3.2.1.jar"
+      ]
+    },
+    {
+      "path": "mods/konkrete_neoforge_1.9.9_MC_1.21.jar",
+      "policy": "mirror",
+      "sha512": "378bd12e3c32329abbae5cd514e1d1cc2a3cc3a45979fedb1d4e4c0a6732bdcf4b7d1bf7f7a112074bf288957edf86152c9c090a27d1d5de84a9a7825d3d6511",
+      "size": 618842,
+      "urls": [
+        "https://cdn.modrinth.com/data/J81TRJWm/versions/stJDU839/konkrete_neoforge_1.9.9_MC_1.21.jar"
       ]
     },
     {
@@ -1774,6 +1828,15 @@
       "size": 538109,
       "urls": [
         "https://mediafilez.forgecdn.net/files/7435/312/medieval_buildings_nether_edition-1.21.1-1.0.2-neoforge.jar"
+      ]
+    },
+    {
+      "path": "mods/melody_neoforge_1.0.10_MC_1.21.jar",
+      "policy": "mirror",
+      "sha512": "3bd96b851a65fa95d92d051851e6a7a415927f718fcb05f0dfb5983eb3ca54edfb842ea85f1497e1b3510b5884181b8f9c6080d2b15642ceadac695011c00ec1",
+      "size": 36096,
+      "urls": [
+        "https://cdn.modrinth.com/data/CVT4pFB2/versions/efcdRVZP/melody_neoforge_1.0.10_MC_1.21.jar"
       ]
     },
     {
@@ -2355,10 +2418,10 @@
     {
       "path": "config/asyncparticles/asyncparticles-mixin.properties",
       "policy": "smart",
-      "sha512": "95fb0bbfc83677989a9f47df7e9f3c311c72ae3a905f166ef98bcd7cb003c82572abdbb6d2996bff93ab6f05a426d3dc1f6737b0ece0d408a87fd8b4a9154d38",
+      "sha512": "fd16e6ee3fafeab66ef05cfc9b5daffa4cdf0b04a4c27c49a8455190e819af38b7a8c6cdb1edde56c9123d8e5cf43a30b5254d8c18d2803767c101dffd62e5b9",
       "size": 2120,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/95/95fb0bbfc83677989a9f47df7e9f3c311c72ae3a905f166ef98bcd7cb003c82572abdbb6d2996bff93ab6f05a426d3dc1f6737b0ece0d408a87fd8b4a9154d38"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/fd/fd16e6ee3fafeab66ef05cfc9b5daffa4cdf0b04a4c27c49a8455190e819af38b7a8c6cdb1edde56c9123d8e5cf43a30b5254d8c18d2803767c101dffd62e5b9"
       ]
     },
     {
@@ -2400,10 +2463,10 @@
     {
       "path": "config/iris.properties",
       "policy": "smart",
-      "sha512": "19af362294b0ced6f29db1d0c9446c096fbf23eb5e5f65bb5f4bf72cbdb517e0a4c8d1c03089c6b7194c807f30ab30dacbe9d5276066ea709a2ad0f226c8475a",
+      "sha512": "d0a57491fd9b70d7cd0a441a4b9f98d9b01180669dcd9e2cc94cb75e929b901d4cae5269ebd39476ec9de4355568396c3e31a74e860e0731d77f596c2ec0efee",
       "size": 273,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/19/19af362294b0ced6f29db1d0c9446c096fbf23eb5e5f65bb5f4bf72cbdb517e0a4c8d1c03089c6b7194c807f30ab30dacbe9d5276066ea709a2ad0f226c8475a"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/d0/d0a57491fd9b70d7cd0a441a4b9f98d9b01180669dcd9e2cc94cb75e929b901d4cae5269ebd39476ec9de4355568396c3e31a74e860e0731d77f596c2ec0efee"
       ]
     },
     {
@@ -2436,10 +2499,10 @@
     {
       "path": "config/fabric/indigo-renderer.properties",
       "policy": "smart",
-      "sha512": "9768d63098da2a3687669e969e9db6949b766e8b6521eb2449810c12f64e963f863a5ce56b924c07b14705fb5084841de6b396d410c35af114135513884dff5a",
+      "sha512": "37bc74c442f72b3f8d295cfac409bc4aaa6eeb79dff481d6d6e2bed94d64672bce84b5d8929d4a221ea07573bbee02a840742932f917e71e881cbf61e525e63b",
       "size": 282,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/97/9768d63098da2a3687669e969e9db6949b766e8b6521eb2449810c12f64e963f863a5ce56b924c07b14705fb5084841de6b396d410c35af114135513884dff5a"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/37/37bc74c442f72b3f8d295cfac409bc4aaa6eeb79dff481d6d6e2bed94d64672bce84b5d8929d4a221ea07573bbee02a840742932f917e71e881cbf61e525e63b"
       ]
     },
     {
@@ -2895,10 +2958,10 @@
     {
       "path": "config/jei/recipe-category-sort-order.ini",
       "policy": "smart",
-      "sha512": "5c3ab314966d113ec15b2c16b4368fecf82771b9fa2aaa84eb156e6e435e41f185e89ab530a4e2047cd78ad8ab79c49d6d49ed9e9ba462e2fc12618e44f76e9c",
-      "size": 3135,
+      "sha512": "f2bde1237e1dcba68c7c15e37735476ce7fdb84e9ceee4155959b227611d8f834eb328ead2c52c9485edbfb33327ac94cdd5b60fbdf2a5ad409e1deb6ae5d16d",
+      "size": 3174,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/5c/5c3ab314966d113ec15b2c16b4368fecf82771b9fa2aaa84eb156e6e435e41f185e89ab530a4e2047cd78ad8ab79c49d6d49ed9e9ba462e2fc12618e44f76e9c"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/f2/f2bde1237e1dcba68c7c15e37735476ce7fdb84e9ceee4155959b227611d8f834eb328ead2c52c9485edbfb33327ac94cdd5b60fbdf2a5ad409e1deb6ae5d16d"
       ]
     },
     {
@@ -3318,10 +3381,10 @@
     {
       "path": "config/CSC/Log/CSC_Record.log",
       "policy": "smart",
-      "sha512": "229766384a609b514968631bad772cc2c50495b9d5fcef5b32be36228c5cef07a53235a0052e2d6968401963fc8136d0099c078f9e0b7f60edbb9e54f8311c1e",
-      "size": 15730,
+      "sha512": "c429c7ffc7c3ae33a4079a9f5be6b66d860e10de6785ab60681f3b0d3f2b9c317d6a71f7a4cd7287ecffa81efde5905759421960c02f91b56b4ec378b957554d",
+      "size": 16787,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/22/229766384a609b514968631bad772cc2c50495b9d5fcef5b32be36228c5cef07a53235a0052e2d6968401963fc8136d0099c078f9e0b7f60edbb9e54f8311c1e"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/c4/c429c7ffc7c3ae33a4079a9f5be6b66d860e10de6785ab60681f3b0d3f2b9c317d6a71f7a4cd7287ecffa81efde5905759421960c02f91b56b4ec378b957554d"
       ]
     },
     {
@@ -3336,10 +3399,10 @@
     {
       "path": "config/CSC/Data/variables.data",
       "policy": "smart",
-      "sha512": "4388e46ed46e964be5470738d4e82ca445d1148de6868226e989cac7b8813176c2a10b475d9ca05d90fa3e0f48468bf01708e95152fe0d3e6aa63fc27a3a27cb",
+      "sha512": "b02fedb7f34d4e9b9cdd7c4424a5d741733f7510f920dc0dcd261a26970ed8eac1561b000263e2a3fc46eea7c549d8672af516ccea5b42f2f74f4b994ea9ceba",
       "size": 56,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/43/4388e46ed46e964be5470738d4e82ca445d1148de6868226e989cac7b8813176c2a10b475d9ca05d90fa3e0f48468bf01708e95152fe0d3e6aa63fc27a3a27cb"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/b0/b02fedb7f34d4e9b9cdd7c4424a5d741733f7510f920dc0dcd261a26970ed8eac1561b000263e2a3fc46eea7c549d8672af516ccea5b42f2f74f4b994ea9ceba"
       ]
     },
     {
@@ -3390,10 +3453,10 @@
     {
       "path": "config/submarine_hull.json",
       "policy": "smart",
-      "sha512": "9c915a26376afa027dd327667e29670bdc7294b6bfeb41e1bf8e7bf480a38143841a3d2160c8d080975306c7d005597e5cbe00353375aaa91d3a398825b4dc3b",
-      "size": 2435790,
+      "sha512": "eda89ece3b7d677ce5672d29650bf9ba73d7a02aba03db2d50ce1d8a01a90bde51e52b37366b597e945b42226137ecb7f983a6c20fd28d3c085514cfbeb959d0",
+      "size": 2435901,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/9c/9c915a26376afa027dd327667e29670bdc7294b6bfeb41e1bf8e7bf480a38143841a3d2160c8d080975306c7d005597e5cbe00353375aaa91d3a398825b4dc3b"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/ed/eda89ece3b7d677ce5672d29650bf9ba73d7a02aba03db2d50ce1d8a01a90bde51e52b37366b597e945b42226137ecb7f983a6c20fd28d3c085514cfbeb959d0"
       ]
     },
     {
@@ -3651,10 +3714,10 @@
     {
       "path": "config/packetfixer.properties",
       "policy": "smart",
-      "sha512": "99ad0b8b105a2c1b715a4753066d1d0fca27ef716defdceefdb70f411c8f29cb94a43d5fac6b2ee410c2af98077c5d47b81ddfc4be2fd6fe0c725abb1366e703",
+      "sha512": "891cc753fbb74d1e3bcd050b92e944af4df29420f93be22064f08c643c382ca250423925ae67fcf5c1b70028c3718fcfcae92b45e92cfdd6c60bc39100c0d4a0",
       "size": 474,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/99/99ad0b8b105a2c1b715a4753066d1d0fca27ef716defdceefdb70f411c8f29cb94a43d5fac6b2ee410c2af98077c5d47b81ddfc4be2fd6fe0c725abb1366e703"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/89/891cc753fbb74d1e3bcd050b92e944af4df29420f93be22064f08c643c382ca250423925ae67fcf5c1b70028c3718fcfcae92b45e92cfdd6c60bc39100c0d4a0"
       ]
     },
     {
@@ -3930,10 +3993,10 @@
     {
       "path": "config/biomeswevegone/world_generation.json",
       "policy": "smart",
-      "sha512": "303151ad5a534f3704b17ddf411df12527ded82cfccff9d76c8056cc741db8cad2762791a6565cbcf4ae8be1b10ccb6112838323d66a0609c2daf78928441eda",
+      "sha512": "54efbb44839964953d042d0d9b49b62e5d919ea6e322333738ce440cee72dacada65aa4853f336fee55e3968cf25e8d2891bf5b48794b20d7d03d82f3fa841fa",
       "size": 4196,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/30/303151ad5a534f3704b17ddf411df12527ded82cfccff9d76c8056cc741db8cad2762791a6565cbcf4ae8be1b10ccb6112838323d66a0609c2daf78928441eda"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/54/54efbb44839964953d042d0d9b49b62e5d919ea6e322333738ce440cee72dacada65aa4853f336fee55e3968cf25e8d2891bf5b48794b20d7d03d82f3fa841fa"
       ]
     },
     {
@@ -5890,12 +5953,228 @@
       ]
     },
     {
+      "path": "config/continuity.json",
+      "policy": "smart",
+      "sha512": "7fd46c3ffde96e45dabfced020f477a21d9b0f0fd9fce11caa11b07d4505eaaa5fb27157abea54bae0b2a2b591a327cefe95c28c358f01928d2627a0d5e33ab4",
+      "size": 122,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/7f/7fd46c3ffde96e45dabfced020f477a21d9b0f0fd9fce11caa11b07d4505eaaa5fb27157abea54bae0b2a2b591a327cefe95c28c358f01928d2627a0d5e33ab4"
+      ]
+    },
+    {
+      "path": "config/fancymenu/options.txt",
+      "policy": "smart",
+      "sha512": "7d6c54df33bec35705b07c64cf7397e9e9ceda2ae5e8239d6f7d167d2a8e1384f0b3a2e476c33f35237591d6359bdff93172457519d294a6adee24333e6cdb7d",
+      "size": 4399,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/7d/7d6c54df33bec35705b07c64cf7397e9e9ceda2ae5e8239d6f7d167d2a8e1384f0b3a2e476c33f35237591d6359bdff93172457519d294a6adee24333e6cdb7d"
+      ]
+    },
+    {
+      "path": "config/fancymenu/customizablemenus.txt",
+      "policy": "smart",
+      "sha512": "67d5ab589395c5ff24f8abd3e87e2c2893329d6c3f556764b187027489e69ca2e4da7ba5769a80f52bac0a3608679ec3969442879cab845999715e479ecc7b3f",
+      "size": 149,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/67/67d5ab589395c5ff24f8abd3e87e2c2893329d6c3f556764b187027489e69ca2e4da7ba5769a80f52bac0a3608679ec3969442879cab845999715e479ecc7b3f"
+      ]
+    },
+    {
+      "path": "config/fancymenu/user_variables.db",
+      "policy": "smart",
+      "sha512": "330b3d6d23908a2538bb3ac7396fe7b1976e1c2344879c7ab27768c304dd6fd508bd42035dccb4ac770c202fb2207016bad45bdcd9a0f479c74d350b33d94cd3",
+      "size": 23,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/33/330b3d6d23908a2538bb3ac7396fe7b1976e1c2344879c7ab27768c304dd6fd508bd42035dccb4ac770c202fb2207016bad45bdcd9a0f479c74d350b33d94cd3"
+      ]
+    },
+    {
+      "path": "config/fancymenu/custom_gui_screens.txt",
+      "policy": "smart",
+      "sha512": "c9a0b424ae50982066dc7a1dee0ac802a5983811cf49efad12bfcbc2aea7a79b844b77f9ad8ed954e419f6c05082025dba1d54233ca59a9a661e7635913ca717",
+      "size": 51,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/c9/c9a0b424ae50982066dc7a1dee0ac802a5983811cf49efad12bfcbc2aea7a79b844b77f9ad8ed954e419f6c05082025dba1d54233ca59a9a661e7635913ca717"
+      ]
+    },
+    {
+      "path": "config/fancymenu/legacy_checklist.txt",
+      "policy": "smart",
+      "sha512": "c50fc96f5bb6d4f6927bdc8ca29862e0e536fd32688557d54d1e81d492c5fca67de4c96b96decb462a4d47aa663f9edb2df4f2a44f0829914e7ea1e6aba00f34",
+      "size": 42,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/c5/c50fc96f5bb6d4f6927bdc8ca29862e0e536fd32688557d54d1e81d492c5fca67de4c96b96decb462a4d47aa663f9edb2df4f2a44f0829914e7ea1e6aba00f34"
+      ]
+    },
+    {
+      "path": "config/fancymenu/customization/title_screen_layout.txt",
+      "policy": "smart",
+      "sha512": "6275bdd49e686b701fa348cdf80eea1fb06da5ee17b1a5a91225302865b8d6e01da3f4eb65e4ace71078ba88cee1c81a99761659ab809a11bd25a381d620ed93",
+      "size": 60505,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/62/6275bdd49e686b701fa348cdf80eea1fb06da5ee17b1a5a91225302865b8d6e01da3f4eb65e4ace71078ba88cee1c81a99761659ab809a11bd25a381d620ed93"
+      ]
+    },
+    {
+      "path": "config/fancymenu/layout_editor/widgets/element_layer_control.lewidget",
+      "policy": "smart",
+      "sha512": "152d0e816fe14cb2f2006822a739385d7dfe59b369eb45befd7c243d18bd4ab4c2c8cb7a499588c83de22c95d5130e3711c50dfcece098e52d8faaa94e839167",
+      "size": 197,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/15/152d0e816fe14cb2f2006822a739385d7dfe59b369eb45befd7c243d18bd4ab4c2c8cb7a499588c83de22c95d5130e3711c50dfcece098e52d8faaa94e839167"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/light.json",
+      "policy": "smart",
+      "sha512": "fd0e95a537a021d9e6ee50d13d94fc1fcdc8a69ad65d5cea63e4ec859e7914274a9547caffb42ccd89e50527843c4d1e066427d97f761254a1e54912820a5d89",
+      "size": 9331,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/fd/fd0e95a537a021d9e6ee50d13d94fc1fcdc8a69ad65d5cea63e4ec859e7914274a9547caffb42ccd89e50527843c4d1e066427d97f761254a1e54912820a5d89"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/dark.json",
+      "policy": "smart",
+      "sha512": "63551087b036e9013e5bfb8ff0bba60b7991eff11b8fef14d79503cd0f43f59e034a239852cb05393ba5b1be4a4e229de401313a23e09ada5b243d1a28984adb",
+      "size": 9329,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/63/63551087b036e9013e5bfb8ff0bba60b7991eff11b8fef14d79503cd0f43f59e034a239852cb05393ba5b1be4a4e229de401313a23e09ada5b243d1a28984adb"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/light_high_contrast.json",
+      "policy": "smart",
+      "sha512": "dfb48a3d1c06bc93fbf357a7b6932c6cbf0f45656849d1e5294ef93709311c581d68f5ccfe642abac85bd407e3c02c7e865eac3b25eb477588c016928afb60f4",
+      "size": 9361,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/df/dfb48a3d1c06bc93fbf357a7b6932c6cbf0f45656849d1e5294ef93709311c581d68f5ccfe642abac85bd407e3c02c7e865eac3b25eb477588c016928afb60f4"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/dark_high_contrast.json",
+      "policy": "smart",
+      "sha512": "40959e28ee5128a7535c88cf5e4f0706ca69c07b3ad4c75beff601f21f7191bb6690228e0105586a65874a4a1ee476e759a44e28e7111bb1672a9b052953e828",
+      "size": 9359,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/40/40959e28ee5128a7535c88cf5e4f0706ca69c07b3ad4c75beff601f21f7191bb6690228e0105586a65874a4a1ee476e759a44e28e7111bb1672a9b052953e828"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/cherry_blossom.json",
+      "policy": "smart",
+      "sha512": "cc7b1de4e1b164567e247179bc20416baa2e0135fb687d555bc885e767e3c6edef48be0867c5be32b4e5239e633818a4fa7e446ced23bd3b899efac7714abc56",
+      "size": 9349,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/cc/cc7b1de4e1b164567e247179bc20416baa2e0135fb687d555bc885e767e3c6edef48be0867c5be32b4e5239e633818a4fa7e446ced23bd3b899efac7714abc56"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/spooky_season.json",
+      "policy": "smart",
+      "sha512": "155fa643e22e497478f32ae051d1a161885924495aed5361921a0442a32a5c5a74d00afe0d1b8fa782d44fcb591da8a820ad2630b94d12c8fa90505011589e67",
+      "size": 9347,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/15/155fa643e22e497478f32ae051d1a161885924495aed5361921a0442a32a5c5a74d00afe0d1b8fa782d44fcb591da8a820ad2630b94d12c8fa90505011589e67"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/pumpkin_soup.json",
+      "policy": "smart",
+      "sha512": "9b996993e51edd649deb20f9be51ea4672a74854daf75ad1848be6d3628bc65b617a4340eb0c09c213aeb7a6267993d547c2f4afac6d643a6a670fc3c4273031",
+      "size": 9345,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/9b/9b996993e51edd649deb20f9be51ea4672a74854daf75ad1848be6d3628bc65b617a4340eb0c09c213aeb7a6267993d547c2f4afac6d643a6a670fc3c4273031"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/cozy_campfire.json",
+      "policy": "smart",
+      "sha512": "fe4d872c589149edd4c695c51df7e8de44908d7826743b0e9dfccb2eeb2abe96c774b531bbfbca202a43d3a2c6ef843e4a899b74c6970309cc465cb0ce29af3c",
+      "size": 9347,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/fe/fe4d872c589149edd4c695c51df7e8de44908d7826743b0e9dfccb2eeb2abe96c774b531bbfbca202a43d3a2c6ef843e4a899b74c6970309cc465cb0ce29af3c"
+      ]
+    },
+    {
+      "path": "config/fancymenu/ui_themes/purple_void.json",
+      "policy": "smart",
+      "sha512": "bdfd2559299f3aca31d131c3b79ea9d7fb6d957ea5a843820f2ccb1d79007a4c5d2f1137ac9a9ae9c6b4c236b31f8846da5732b0d00059c855dd4d6864051c0d",
+      "size": 9343,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/bd/bdfd2559299f3aca31d131c3b79ea9d7fb6d957ea5a843820f2ccb1d79007a4c5d2f1137ac9a9ae9c6b4c236b31f8846da5732b0d00059c855dd4d6864051c0d"
+      ]
+    },
+    {
+      "path": "config/drippyloadingscreen/options.txt",
+      "policy": "smart",
+      "sha512": "c4b13caa69fe7ee6b9fda86880898f6806ab7d550032e63fb222e9c3102b9a8895f3842b03ea08dbd27eef54dbbb7f58420f50613f7a996ef365f82e0ea07583",
+      "size": 2465,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/c4/c4b13caa69fe7ee6b9fda86880898f6806ab7d550032e63fb222e9c3102b9a8895f3842b03ea08dbd27eef54dbbb7f58420f50613f7a996ef365f82e0ea07583"
+      ]
+    },
+    {
+      "path": "config/fancytabsections-client.toml",
+      "policy": "smart",
+      "sha512": "d5e3d70496659e8871f65ca5543101fb7a126cc16b224e8b7d3092a93c397dff57255fabf4ea60ba6386561fea917a855ee956ee5e514e2bbfe631c7d50ce1d7",
+      "size": 22,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/d5/d5e3d70496659e8871f65ca5543101fb7a126cc16b224e8b7d3092a93c397dff57255fabf4ea60ba6386561fea917a855ee956ee5e514e2bbfe631c7d50ce1d7"
+      ]
+    },
+    {
+      "path": "config/fancyenchantments-common.toml",
+      "policy": "smart",
+      "sha512": "08783620fb6d14757df2a514e03c27c6d903bebcde4cb7b16dab8a15e8f7bf54a80f745b3eddfa44ba872e7f6aebf50e0b138f1c032953a691122d4b7f102d10",
+      "size": 18010,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/08/08783620fb6d14757df2a514e03c27c6d903bebcde4cb7b16dab8a15e8f7bf54a80f745b3eddfa44ba872e7f6aebf50e0b138f1c032953a691122d4b7f102d10"
+      ]
+    },
+    {
       "path": "config/sodium-options.json",
       "policy": "smart",
       "sha512": "7802f18b033fd39718caf920661180b7cb2b6d026896984db96ac6431ae03244a1dd84dc2522dec7ed08d1242bb31e35e21449c6c85043a4a2dbbe54e3ffa19c",
       "size": 756,
       "urls": [
         "https://ttk0721.github.io/chmurkowy-launcher/files/78/7802f18b033fd39718caf920661180b7cb2b6d026896984db96ac6431ae03244a1dd84dc2522dec7ed08d1242bb31e35e21449c6c85043a4a2dbbe54e3ffa19c"
+      ]
+    },
+    {
+      "path": "config/konkrete/locals/en_us.local",
+      "policy": "smart",
+      "sha512": "f684b5cb888186b1b85c1e8d87f51627995887f902c518379fb48e5dafea3d992a0794355c40f1be86cc0e8a135620d28a64ac64ebea727556f070458b261533",
+      "size": 426,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/f6/f684b5cb888186b1b85c1e8d87f51627995887f902c518379fb48e5dafea3d992a0794355c40f1be86cc0e8a135620d28a64ac64ebea727556f070458b261533"
+      ]
+    },
+    {
+      "path": "config/konkrete/locals/de_de.local",
+      "policy": "smart",
+      "sha512": "79fca5cf675fa7b430239f6b897e3e3738fdc1c97361b7cf236fb7dcbfe1ad3d1430464b024700c32e59260d956e034689d1b4b72c903394182ed5e372ebdd89",
+      "size": 369,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/79/79fca5cf675fa7b430239f6b897e3e3738fdc1c97361b7cf236fb7dcbfe1ad3d1430464b024700c32e59260d956e034689d1b4b72c903394182ed5e372ebdd89"
+      ]
+    },
+    {
+      "path": "config/konkrete/locals/pl_pl.local",
+      "policy": "smart",
+      "sha512": "aee981c1389848f2038d05aa50211e5def7c2147f6ce075d1ddd2613a995c145885558450dac85494cf910926983da141378b7920803dbdeb07424f7fc67196b",
+      "size": 313,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/ae/aee981c1389848f2038d05aa50211e5def7c2147f6ce075d1ddd2613a995c145885558450dac85494cf910926983da141378b7920803dbdeb07424f7fc67196b"
+      ]
+    },
+    {
+      "path": "config/konkrete/locals/pt_br.local",
+      "policy": "smart",
+      "sha512": "f22b0feb64aeb7d3647e7b44dfbfc3092e7d950fe533677e56c479a8ea47818d5bab52cc14f4f9727a0659369a1654c161eeb599907f2789b580e007fcc3af2b",
+      "size": 322,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/f2/f22b0feb64aeb7d3647e7b44dfbfc3092e7d950fe533677e56c479a8ea47818d5bab52cc14f4f9727a0659369a1654c161eeb599907f2789b580e007fcc3af2b"
       ]
     },
     {
@@ -5914,15 +6193,6 @@
       "size": 4649,
       "urls": [
         "https://ttk0721.github.io/chmurkowy-launcher/files/71/71d3ea2aee4621a90b512480dce3b1dd22a87225f36ca338b8bca8b2150ece298b8952c953930bd1aadebcdb2ce0837508e3b30f53fd4da822d9fb19fc0a6e57"
-      ]
-    },
-    {
-      "path": "config/continuity.json",
-      "policy": "smart",
-      "sha512": "7fd46c3ffde96e45dabfced020f477a21d9b0f0fd9fce11caa11b07d4505eaaa5fb27157abea54bae0b2a2b591a327cefe95c28c358f01928d2627a0d5e33ab4",
-      "size": 122,
-      "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/7f/7fd46c3ffde96e45dabfced020f477a21d9b0f0fd9fce11caa11b07d4505eaaa5fb27157abea54bae0b2a2b591a327cefe95c28c358f01928d2627a0d5e33ab4"
       ]
     },
     {
@@ -5949,7 +6219,7 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.4.1",
+    "latest_version": "0.4.2",
     "urls": {
       "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-linux-x64",
       "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-windows-x64.exe"
@@ -5992,7 +6262,7 @@
     },
     "minecraft": "1.21.1",
     "name": "Chmurkowy Serwer",
-    "version": "2026.09.10-5"
+    "version": "2026.09.10-6"
   },
   "schema": 1
 }

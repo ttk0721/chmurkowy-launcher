@@ -3,7 +3,7 @@
 Przenośny launcher paczki modów Chmurkowego Serwera — Minecraft 1.21.1 z NeoForge.
 
 Jeden plik wykonywalny. Po uruchomieniu pobiera Javę, instaluje Minecrafta,
-synchronizuje 249 modów i odpala grę — wszystko w katalogu obok siebie.
+synchronizuje paczkę modów i odpala grę — wszystko w katalogu obok siebie.
 Deinstalacja polega na skasowaniu folderu: launcher nie zapisuje niczego
 w systemie, rejestrze ani w `~/.minecraft`.
 

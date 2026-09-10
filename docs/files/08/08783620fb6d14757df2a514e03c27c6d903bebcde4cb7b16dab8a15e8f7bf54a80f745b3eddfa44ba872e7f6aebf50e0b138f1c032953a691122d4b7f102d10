@@ -1,0 +1,697 @@
+[General]
+	#Whether Fancy Enchantments elemental opposites are incompatible.
+	"Enable Incompatibility" = true
+	#Whether enchanted books use Fancy Enchantments custom element textures on the client.
+	"Enable Mod Book Texture" = true
+
+[JEI]
+	#Whether JEI shows the translated enchantment description line.
+	"Enable Description" = true
+	#Whether JEI shows the enchantment maximum level line.
+	"Enable Max Level" = true
+	#Whether JEI shows the enchantment rarity line.
+	"Enable Rarity" = true
+
+["Enchanting Table"]
+	#Maximum bookshelf power counted by the elemental enchanting table.
+	# Default: 30
+	# Range: > 0
+	"Max Bookshelf Level" = 30
+	#Maximum stored upgrade bonus added by upgrade materials.
+	# Default: 30
+	# Range: > 0
+	"Max Upgrade Bonus" = 30
+
+["Element Stat Effect"]
+	"Aer Buff" = "minecraft:speed"
+	"Aqua Buff" = "minecraft:regeneration"
+	"Ignis Buff" = "minecraft:strength"
+	"Terra Buff" = "minecraft:resistance"
+	#Aer buff condition.
+	# Default: 5
+	# Range: > 1
+	"Aer Condition" = 5
+	#Aqua buff condition.
+	# Default: 6
+	# Range: > 1
+	"Aqua Condition" = 6
+	#Ignis buff condition.
+	# Default: 4
+	# Range: > 1
+	"Ignis Condition" = 4
+	#Terra buff condition.
+	# Default: 9
+	# Range: > 1
+	"Terra Condition" = 9
+	# Default: 6
+	# Range: > 1
+	"Aer Max Effect Level" = 6
+	# Default: 6
+	# Range: > 1
+	"Aqua Max Effect Level" = 6
+	# Default: 6
+	# Range: > 1
+	"Ignis Max Effect Level" = 6
+	# Default: 4
+	# Range: > 1
+	"Terra Max Effect Level" = 4
+	#Ignis point condition for fire resistance.
+	# Default: 10
+	# Range: > 0
+	"Ignis Fire Resistance Condition" = 10
+	#Debuff condition = twisted points - holy points.
+	# Default: 10
+	# Range: > 0
+	"Twisted Debuff Condition" = 10
+	#Probability per second to receive a random debuff when twisted points exceed the condition.
+	# Default: 0.02
+	# Range: 0.0 ~ 1.0
+	"Twisted Debuff Probability" = 0.02
+	#Random debuff duration in seconds.
+	# Default: 3
+	# Range: > 0
+	"Twisted Debuff Duration" = 3
+
+["Advanced Flame"]
+	#Projectile fire duration in seconds.
+	# Default: 30
+	# Range: > 0
+	"Projectile Fire Seconds" = 30
+	#Extra fire duration applied on hit in seconds.
+	# Default: 8
+	# Range: > 0
+	"Hit Fire Seconds" = 8
+
+[Afterimage]
+	#Probability of dodging = extra speed(%) * multiplier.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Probability Multiplier" = 0.5
+	#Probability cap per enchantment level.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Probability Cap" = 0.3
+	#Maximum dodge probability cap.
+	# Default: 0.8
+	# Range: 0.0 ~ 1.0
+	"Probability Max Cap" = 0.8
+
+["Air Attack"]
+	#Damage = fall distance * multiplier * level.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.3
+
+["Armor Forging"]
+	#Upper limit of forging value = value cap per level * level.
+	# Default: 1000
+	# Range: > 0
+	"Value Cap" = 1000
+	#Increased armor = forging value / armor base * 100%.
+	# Default: 5000
+	# Range: > 1
+	"Armor Base" = 5000
+	#Increased toughness = forging value / toughness base * 100%.
+	# Default: 10000
+	# Range: > 1
+	"Toughness Base" = 10000
+
+["Beyond the Flash"]
+	#Durability consumption multiplier.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Durability Consumption Multiplier" = 1.0
+
+["Blood Feed"]
+	#Trigger probability = probability per level * level.
+	# Default: 0.03
+	# Range: 0.0 ~ 1.0
+	Probability = 0.03
+	#Stored stack cap = cap per level * level.
+	# Default: 10
+	# Range: > 0
+	Cap = 10
+
+["Blood Sacrifice"]
+	#Damage to player per level.
+	# Default: 2.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Self Damage" = 2.0
+	#Damage *= 1 + (base + lost health / max health) * level.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.7976931348623157E308
+	Multiplier = 0.1
+
+[Bloodthirsty]
+	#Hunger value += damage value * multiplier.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Hunger Multiplier" = 0.5
+	#Maximum hunger value restored by its damage effect.
+	# Default: 20
+	# Range: > 0
+	"Hunger Upper Limit" = 20
+	#Saturation += damage value * multiplier.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Saturation Multiplier" = 0.2
+	#Maximum saturation restored by its damage effect.
+	# Default: 25.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Saturation Cap" = 25.0
+
+["Bubble Shield"]
+	#Triggering condition: air supply value >= max value * ratio.
+	# Default: 0.8
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Air Supply Ratio" = 0.8
+	#Air supply cost ratio.
+	# Default: 0.7
+	# Range: 0.0 ~ 1.0
+	"Cost Ratio" = 0.7
+	#Damage -= air supply value * cost ratio * multiplier * level.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.1
+
+[Charge]
+	#Push distance multiplier.
+	# Default: 2.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Distance Multiplier" = 2.0
+	#Duration = 5 + invincible duration per level * level (ticks).
+	# Default: 5
+	# Range: > 0
+	"Invincible Duration" = 5
+
+["Condition Overload"]
+	#Damage *= 1 + multiplier * level * debuff count.
+	# Default: 0.05
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.05
+
+[Cumbersome]
+	#Attack speed *= 1 - reducer.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.0
+	"Attack Speed Reducer" = 0.2
+
+["Cursed Gaze"]
+	#Effective distance = min(level * base distance, 128).
+	# Default: 5.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Base Distance" = 5.0
+
+["Cracked Crown"]
+	#Attacker dealt damage *= 1 + damage multiplier * level.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.3
+	#Wearer taken damage *= 1 + taken damage multiplier * level.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Taken Damage Multiplier" = 0.3
+
+[Dedication]
+	#Armor += stored level * armor bonus multiplier.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Armor Bonus Multiplier" = 1.0
+	#Toughness += stored level * toughness bonus multiplier.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Toughness Bonus Multiplier" = 0.5
+	#Probability to consume the enchantment on hurt.
+	# Default: 0.001
+	# Range: 0.0 ~ 1.0
+	Probability = 0.001
+
+["Delayed Execution"]
+	#Proportion of damage to store.
+	# Default: 0.8
+	# Range: 0.0 ~ 1.0
+	"Stored Damage" = 0.8
+	#Damage = stored damage * (1 + damage multiplier * level).
+	# Default: 0.8
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.8
+
+[Dominion]
+	#Damage += sum of enchantment level * multiplier.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.5
+
+[Downwind]
+	#Upward push base added after hit.
+	# Default: 2.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Push Force Multiplier" = 2.0
+	#Airborne target damage *= 1 + damage multiplier per level. Legacy behavior applies this once and does not scale with enchantment level.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.2
+
+[Drowning]
+	#Air supply is set to this value after each hit.
+	# Default: -40
+	# Range: > -2147483648
+	"Air Supply Value" = -40
+	#Self damage dealt when attacking while already out of air.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	Damage = 1.0
+
+["Duellists Prerogative"]
+	#Damage *= 1 + multiplier * level.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.2
+
+["Eater of Souls"]
+	#Damage += sqrt(kill count) * level * multiplier.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.3
+	#Damage cap.
+	# Default: 1000.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	Cap = 1000.0
+
+[Empathy]
+	#Push distance multiplier = charge * multiplier.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Shoot Power Multiplier" = 0.1
+
+[Eucharist]
+	#The minimum hunger point to obtain the buff.
+	# Default: 6
+	# Range: > 0
+	"Minimum Hunger" = 6
+	#The effect duration = multiplier * foodSaturation (second).
+	# Default: 3
+	# Range: > 0
+	"Duration Multiplier" = 3
+	#Taken damage *= multiplier.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.1
+
+["Falling Stone"]
+	#Damage = (1 + level * multiplier) * fallingDistance.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.5
+
+["Fearless Challenger"]
+	#Trigger when target's HP / user's HP > condition.
+	# Default: 3.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"HP Condition" = 3.0
+	#Damage *= min(cap, target's HP / user's HP * multiplier * level).
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	Multiplier = 1.0
+	#Damage bonus cap.
+	# Default: 10.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	Cap = 10.0
+
+["Feint Attack"]
+	#Damage to the target *= 1 - reducer.
+	# Default: 0.7
+	# Range: 0.0 ~ 1.0
+	"Damage Reducer" = 0.7
+	#Damage to others *= 1 + multiplier * level.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.2
+
+["Fire Disaster"]
+	#The probability of generating a fire (per level).
+	# Default: 0.05
+	# Range: 0.0 ~ 1.0
+	Probability = 0.05
+
+["Frozen Heart"]
+	#Slowness duration in seconds.
+	# Default: 5
+	# Range: > 0
+	Duration = 5
+
+[Gale]
+	#Haste duration in seconds after breaking a block.
+	# Default: 2
+	# Range: > 0
+	"Duration Seconds" = 2
+
+["Gift of Fire"]
+	#Damage += level * multiplier when the target is on fire.
+	# Default: 2.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Beneficial Multiplier" = 2.5
+
+["Greed Supreme Looting"]
+	#Looting level += level * multiplier. On trigger, the same amount is added again.
+	# Default: 3
+	# Range: > 0
+	"Loot Level Multiplier" = 3
+	#Probability of applying the additional looting bonus again.
+	# Default: 0.05
+	# Range: 0.0 ~ 1.0
+	"Probability Of Doubling" = 0.05
+
+["Heavy Arrow"]
+	#Arrow base damage *= 1 + damage multiplier * level.
+	# Default: 0.15
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.15
+	#Arrow knockback += knockback addon * level.
+	# Default: 1
+	# Range: > 0
+	"Knockback Addon" = 1
+
+["Heavy Blow"]
+	#rate = baseRate * level
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	"Base Rate" = 0.1
+	#damage *= 1 + level * multiplier
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 1.0
+	#attackSpeed *= 1 - reducer
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	"Speed Reducer" = 0.1
+
+[Hungry]
+	#The probability of generating a copy = level * probability
+	# Default: 0.2
+	# Range: 0.0 ~ 1.0
+	Probability = 0.2
+
+["Icy Burst"]
+	#damage = target'sMaxHealth * multiplier * level
+	# Default: 0.15
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.15
+	#Duration per level in seconds.
+	# Default: 3
+	# Range: > 0
+	Duration = 3
+
+["Lava Burst"]
+	#The probability of generating a burst = level * probability
+	# Default: 0.2
+	# Range: 0.0 ~ 1.0
+	Probability = 0.2
+
+[Lightness]
+	#speed while blocking *= 1 + level * multiplier
+	# Default: 0.8
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Speed Multiplier" = 0.8
+
+["Lithic Siphon"]
+	#Trigger probability = probability per level * level.
+	# Default: 0.03
+	# Range: 0.0 ~ 1.0
+	Probability = 0.03
+
+[Melter]
+	#All level, reduce base damage
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Reducer" = 0.5
+	#Armor *= 1 - reducer * level
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Armor Reducer" = 0.2
+	#The effect duration = level * duration (second)
+	# Default: 3
+	# Range: > 0
+	Duration = 3
+
+["Mountain Supreme Protection"]
+	#Fixed damage reduction, per level
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	Reducer = 0.5
+
+[Nightmare]
+	#Explosion radius = base + (level - 1) * per level.
+	# Default: 3.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Explode Radius Base" = 3.0
+	#Explosion radius = base + (level - 1) * per level.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Explode Radius Step" = 1.0
+	#Explosion entity damage = base + (level - 1) * per level.
+	# Default: 8.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Explode Damage Base" = 8.0
+	#Explosion entity damage = base + (level - 1) * per level.
+	# Default: 4.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Explode Damage Step" = 4.0
+
+[Nirvana]
+	#Minimum health ratio to trigger the effect.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	"Minimum Health Ratio" = 0.5
+	#Trigger interval in seconds.
+	# Default: 10
+	# Range: > 1
+	"Interval Seconds" = 10
+	#Instant health effect duration in ticks.
+	# Default: 3
+	# Range: > 0
+	"Heal Duration Ticks" = 3
+
+["Ocean Current"]
+	#Attack speed += level * multiplier.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Speed Multiplier" = 0.2
+	#Attack speed while in water += level * multiplier * extra multiplier.
+	# Default: 1.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Extra Speed Multiplier" = 1.5
+	#Whether the effect is disabled while on fire.
+	"Ineffective When On Fire" = true
+
+[Overflow]
+	#The probability of generating a puddle of water (per level).
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	Probability = 0.1
+
+["Over Healing"]
+	#Maximum absorption added per level.
+	# Default: 10
+	# Range: > 0
+	Cap = 10
+
+["Chest Loot"]
+	#Chance of spawning a Fancy Enchantments enchanted book.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.0
+	"Mod Book Chance" = 0.3
+	#Final spawn probability = base chance * common rarity chance.
+	# Default: 0.9
+	# Range: 0.0 ~ 1.0
+	"Common Chance" = 0.9
+	#Final spawn probability = base chance * uncommon rarity chance.
+	# Default: 0.75
+	# Range: 0.0 ~ 1.0
+	"Uncommon Chance" = 0.75
+	#Final spawn probability = base chance * rare rarity chance.
+	# Default: 0.6
+	# Range: 0.0 ~ 1.0
+	"Rare Chance" = 0.6
+	#Final spawn probability = base chance * very rare rarity chance.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	"Very Rare Chance" = 0.5
+
+["Paladins Shield"]
+	#Transferred damage amount = damage * ratio.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	"Damage Transfer Ratio" = 0.5
+	#Damage reduction while holding a shield -= base damage reduction ratio * level.
+	# Default: 0.05
+	# Range: 0.0 ~ 1.0
+	"Base Damage Reduction Ratio" = 0.05
+	#Damage the enchantment holder receives = damage * damage transfer ratio * transferred damage ratio.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Transferred Damage Ratio" = 0.5
+	#If the final damage exceeds the upper limit * receiver's max health, it will not be transferred.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Upper Limit" = 0.5
+
+[Pervert]
+	#Probability to drop the cursed item upon equipping.
+	# Default: 0.9
+	# Range: 0.0 ~ 1.0
+	"Drop Probability" = 0.9
+
+["Pure Fate"]
+	#Probability of removing a curse = probability * level.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	"Curse Removal Probability" = 0.1
+
+[Purifying]
+	#Damage to undead += addon * level.
+	# Default: 3.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Undead Damage Addon" = 3.0
+
+[Pyromaniac]
+	#Heal amount = explosive damage * multiplier * level.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Explosion Heal Multiplier" = 0.1
+	#Durability value of armor -= base + heal amount * multiplier.
+	# Default: 3
+	# Range: > 0
+	"Armor Base Damage" = 3
+	#Durability value of armor -= base + heal amount * multiplier.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Explosion Damage Multiplier" = 1.0
+
+[Reflecting]
+	#Reflected projectile velocity = 1.0 + baseVelocity * level.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Base Velocity" = 0.5
+	#Durability value of shield -= base.
+	# Default: 3
+	# Range: > 0
+	"Base Damage" = 3
+
+["Rolling Stone"]
+	#Damage += multiplier * level * speed.
+	# Default: 25.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 25.0
+	#Damage taken *= 1 - reducer * level.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	"Damage Reducer" = 0.1
+	#Lower limit, minimum percentage of damage taken.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	"Lower Limit" = 0.5
+
+[Sander]
+	#Damage *= 1 + (damageValue / maxDamage) * level * multiplier.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 1.0
+
+["Sharp Rock"]
+	#Shield damage = armor * multiplier * level.
+	# Default: 0.4
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Shield Damage Multiplier" = 0.4
+	#Damage += armor * multiplier * level.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Weapon Damage Multiplier" = 0.2
+
+["Sighs of Ashes"]
+	#Damage += remaining fire seconds * multiplier.
+	# Default: 0.2
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Per Second" = 0.2
+
+["Spreading Spores"]
+	#Reaching the cap triggers the damage.
+	# Default: 10
+	# Range: > 0
+	"Spore Cap" = 10
+	#Damage *= multiplier on spore cap trigger.
+	# Default: 3.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 3.0
+
+["Stacking Waves"]
+	#Effect duration in seconds.
+	# Default: 2
+	# Range: > 0
+	Duration = 2
+	#Attack speed += attack speed multiplier * (effect amplifier + 1).
+	# Default: 0.3
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Attack Speed Multiplier" = 0.3
+
+[Streamline]
+	#Arrow speed boost per enchantment level.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Speed Multiplier" = 0.5
+
+["The Fallen"]
+	#Damage *= 1 + multiplier * level * curse count.
+	# Default: 0.3
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 0.3
+
+["Thrilling Thunder"]
+	#Time gap of causing damage.
+	# Default: 10
+	# Range: > 1
+	"Tick Gap" = 10
+	#Damage = effect level * multiplier.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Damage Multiplier" = 1.0
+	#Trigger probability = probability per level * level.
+	# Default: 0.1
+	# Range: 0.0 ~ 1.0
+	Probability = 0.1
+
+["Unyielding Spirit"]
+	#Extra Time To Live (second).
+	# Default: 8
+	# Range: > 0
+	"Extra Time" = 8
+	#Durability value of helmet -= base.
+	# Default: 5
+	# Range: > 0
+	"Base Damage" = 5
+	#The health set when enchantment takes effect, percentage.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.0
+	"Health Percentage" = 0.5
+	#Slowness effect level, set 0 to disable.
+	# Default: 3
+	# Range: > 0
+	"Slowness Level" = 3
+	#Damage resistance effect level, set 0 to disable.
+	# Default: 3
+	# Range: > 0
+	"Damage Resistance Level" = 3
+	#Whether blindness is applied during the extra time.
+	"Enable Blindness" = false
+
+["Wind Blade"]
+	#Damage *= 1 + extraSpeedAttributeValue * level * base multiplier.
+	# Default: 0.5
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Base Damage Multiplier" = 0.5
+
+["Wind Fire Wheels"]
+	#Horizontal push along look direction while sprinting midair.
+	# Default: 0.06
+	# Range: 0.0 ~ 1.7976931348623157E308
+	"Speed Multiplier" = 0.06

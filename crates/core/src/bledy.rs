@@ -428,7 +428,7 @@ fn z_gry(kod: Option<i32>, ogon_logu: &str, wlasne_argumenty: bool) -> BladUzytk
         return BladUzytkownika::nowy(
             "GRA-02",
             "Grze zabrakło pamięci",
-            "Paczka z 249 modami potrzebuje dużo pamięci. Tyle, ile jej przydzielono, nie wystarczyło.",
+            "Ta paczka modów potrzebuje dużo pamięci. Tyle, ile jej przydzielono, nie wystarczyło.",
             &[
                 "Wejdź w Ustawienia i przesuń suwak pamięci na 6144 MB albo więcej.",
                 "Zamknij przeglądarkę i inne programy przed uruchomieniem gry.",

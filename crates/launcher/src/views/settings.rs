@@ -68,9 +68,20 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                         .color(theme::AKCENT),
                     );
                 } else {
-                    ui.label(theme::drobny(
-                        "Paczka z 249 modami potrzebuje co najmniej 4 GB.",
-                    ));
+                    // Liczba modow pochodzi z manifestu — wpisana w kod
+                    // rozjezdzalaby sie z paczka przy kazdej jej zmianie.
+                    let opis_paczki = match &app.manifest {
+                        Some(m) => {
+                            let mody = m
+                                .files
+                                .iter()
+                                .filter(|f| f.path.starts_with("mods/"))
+                                .count();
+                            format!("Paczka z {mody} modami potrzebuje co najmniej 4 GB.")
+                        }
+                        None => "Ta paczka potrzebuje co najmniej 4 GB.".to_string(),
+                    };
+                    ui.label(theme::drobny(&opis_paczki));
                     // Propozycja dobrana do komputera. Pokazujemy ja tylko przy
                     // wyraznej roznicy, zeby nie zaczepiac gracza bez powodu.
                     if let Some(calkowita) = chmurka_core::pamiec::calkowita_mb() {
