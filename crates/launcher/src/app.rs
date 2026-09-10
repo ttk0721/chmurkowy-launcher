@@ -144,6 +144,7 @@ impl App {
                     ogon_logu: "java.lang.OutOfMemoryError: Java heap space\n\tat net.minecraft.client.main.Main.main(Main.java:1)".into(),
                     wlasne_argumenty: false,
                     zabita_przez_system: false,
+                    sterta_mb: 4096,
                 }
                 .dla_uzytkownika(),
             );
@@ -770,6 +771,7 @@ async fn przygotuj_i_odpal(
         ogon_logu: ogon,
         wlasne_argumenty: !dodatkowe.is_empty(),
         zabita_przez_system: zabita_przez_system(&status),
+        sterta_mb: ustawienia.pamiec_mb,
     })
 }
 

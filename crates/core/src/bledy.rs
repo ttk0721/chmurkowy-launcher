@@ -143,6 +143,9 @@ pub enum BladLaunchera {
         wlasne_argumenty: bool,
         /// Gry nie ubił błąd, tylko system — zabrakło mu pamięci.
         zabita_przez_system: bool,
+        /// Ile pamięci gra dostała. Bez tego nie da się odróżnić „podnieś
+        /// suwak" od „ten komputer dał już wszystko, co miał".
+        sterta_mb: u32,
     },
 }
 
@@ -196,7 +199,14 @@ impl BladLaunchera {
                 ogon_logu,
                 wlasne_argumenty,
                 zabita_przez_system,
-            } => z_gry(*kod, ogon_logu, *wlasne_argumenty, *zabita_przez_system),
+                sterta_mb,
+            } => z_gry(
+                *kod,
+                ogon_logu,
+                *wlasne_argumenty,
+                *zabita_przez_system,
+                *sterta_mb,
+            ),
         }
     }
 }
@@ -495,6 +505,7 @@ fn z_gry(
     ogon_logu: &str,
     wlasne_argumenty: bool,
     zabita_przez_system: bool,
+    sterta_mb: u32,
 ) -> BladUzytkownika {
     let log = ogon_logu.to_lowercase();
 
@@ -518,6 +529,32 @@ fn z_gry(
     }
 
     if log.contains("outofmemoryerror") || log.contains("java heap space") {
+        // Czy suwak ma jeszcze cokolwiek do oddania? Jeśli gra dostała już
+        // tyle, ile ten komputer bezpiecznie mieści, rada „podnieś suwak"
+        // jest ślepą uliczką: wyżej system i tak zamknie grę. Trzeba wtedy
+        // powiedzieć wprost, że to komputer jest za mały — inaczej rodzic
+        // z dzieckiem będą w kółko przesuwać suwak i wracać do tego samego.
+        let na_maksa = crate::pamiec::calkowita_mb()
+            .is_some_and(|c| sterta_mb >= crate::pamiec::zalecana_mb(c));
+
+        if na_maksa {
+            return BladUzytkownika::nowy(
+                "GRA-06",
+                "Ten komputer ma za mało pamięci na tę paczkę",
+                "Grze zabrakło pamięci, a dostała już tyle, ile ten komputer może jej dać. \
+                 Przydzielenie jej więcej odebrałoby pamięć systemowi i gra zostałaby \
+                 zamknięta jeszcze wcześniej. To nie jest wina ustawień ani instalacji.",
+                &[
+                    "Zamknij wszystkie inne programy — zwłaszcza przeglądarkę — i spróbuj raz jeszcze.",
+                    "Wejdź w „Paczki” i wyłącz shadery, jeśli są włączone. Na słabszej grafice \
+                     zajmują bardzo dużo pamięci.",
+                    "Jeśli masz do wyboru inny komputer, zagraj na nim.",
+                    "Napisz do administracji i podaj ten kod — może przygotować lżejszą paczkę.",
+                ],
+                format!("sterta {sterta_mb} MB, kod wyjścia {kod:?}\n{ogon_logu}"),
+            );
+        }
+
         return BladUzytkownika::nowy(
             "GRA-02",
             "Grze zabrakło pamięci",
@@ -630,6 +667,7 @@ mod tests {
             ogon_logu: "java.lang.OutOfMemoryError: Java heap space".into(),
             wlasne_argumenty: false,
             zabita_przez_system: false,
+            sterta_mb: 4096,
         }
         .dla_uzytkownika();
         assert_eq!(b.kod, "GRA-02");
@@ -647,6 +685,52 @@ mod tests {
         );
     }
 
+    /// Prawdziwy przypadek z komputera testera: 8 GB pamieci, zintegrowana
+    /// grafika, sterta juz na maksimum i mimo to OutOfMemoryError przy
+    /// pieczeniu modeli. Rada „podnies suwak" byla wtedy slepa uliczka —
+    /// wyzej system i tak zamknalby gre.
+    #[test]
+    fn brak_pamieci_przy_maksymalnej_stercie_to_za_slaby_komputer() {
+        let Some(calkowita) = crate::pamiec::calkowita_mb() else {
+            return; // bez odczytu pamieci nie ma czego sprawdzac
+        };
+        let na_maksa = crate::pamiec::zalecana_mb(calkowita);
+        let b = BladLaunchera::GraPadla {
+            kod: Some(1),
+            ogon_logu: "java.lang.OutOfMemoryError: Java heap space".into(),
+            wlasne_argumenty: false,
+            zabita_przez_system: false,
+            sterta_mb: na_maksa,
+        }
+        .dla_uzytkownika();
+        assert_eq!(b.kod, "GRA-06");
+        assert!(
+            b.co_zrobic.iter().any(|r| r.contains("shadery")),
+            "wylaczenie shaderow to jedyna realna dzwignia na takiej maszynie"
+        );
+        // Zadna rada nie moze kazac podnosic suwaka — nie ma juz czego podnosic.
+        assert!(
+            b.co_zrobic.iter().all(|r| !r.contains("Dobierz automatycznie")),
+            "to slepa uliczka na maszynie, ktora dala juz wszystko: {:?}",
+            b.co_zrobic
+        );
+    }
+
+    /// Gdy suwak stoi nisko, rada ma nadal odsylac do doboru pamieci —
+    /// tam jeszcze jest co zyskac.
+    #[test]
+    fn brak_pamieci_przy_niskiej_stercie_wciaz_odsyla_do_suwaka() {
+        let b = BladLaunchera::GraPadla {
+            kod: Some(1),
+            ogon_logu: "java.lang.OutOfMemoryError: Java heap space".into(),
+            wlasne_argumenty: false,
+            zabita_przez_system: false,
+            sterta_mb: 1024,
+        }
+        .dla_uzytkownika();
+        assert_eq!(b.kod, "GRA-02");
+    }
+
     /// System ubija gre sygnalem, ktorego nie da sie przechwycic — w logu nie
     /// ma po tym sladu. Bez osobnego rozpoznania gracz dostawal „gra padla,
     /// nie wiemy czemu", choc przyczyne da sie naprawic jednym suwakiem.
@@ -657,6 +741,7 @@ mod tests {
             ogon_logu: "[16:20:03] [Render thread/INFO]: Ładowanie tekstur".into(),
             wlasne_argumenty: false,
             zabita_przez_system: true,
+            sterta_mb: 4096,
         }
         .dla_uzytkownika();
         assert_eq!(b.kod, "GRA-05");
@@ -673,6 +758,7 @@ mod tests {
             ogon_logu: "java.lang.OutOfMemoryError: Java heap space".into(),
             wlasne_argumenty: false,
             zabita_przez_system: true,
+            sterta_mb: 4096,
         }
         .dla_uzytkownika();
         assert_eq!(b.kod, "GRA-05");
@@ -687,6 +773,7 @@ mod tests {
             ogon_logu: String::new(),
             wlasne_argumenty: false,
             zabita_przez_system: true,
+            sterta_mb: 4096,
         }
         .dla_uzytkownika();
         assert_eq!(b.samonaprawa(), Samonaprawa::Nic);
@@ -700,6 +787,7 @@ mod tests {
             ogon_logu: log.into(),
             wlasne_argumenty: true,
             zabita_przez_system: false,
+            sterta_mb: 4096,
         }
         .dla_uzytkownika();
         assert_eq!(z_wlasnymi.kod, "GRA-03");
@@ -710,6 +798,7 @@ mod tests {
             ogon_logu: log.into(),
             wlasne_argumenty: false,
             zabita_przez_system: false,
+            sterta_mb: 4096,
         }
         .dla_uzytkownika();
         assert_ne!(bez.kod, "GRA-03");
@@ -722,6 +811,7 @@ mod tests {
             ogon_logu: "net.neoforged.fml.ModLoadingException: something".into(),
             wlasne_argumenty: false,
             zabita_przez_system: false,
+            sterta_mb: 4096,
         }
         .dla_uzytkownika();
         assert_eq!(b.kod, "GRA-04");
@@ -753,6 +843,7 @@ mod tests {
                 ogon_logu: String::new(),
                 wlasne_argumenty: false,
             zabita_przez_system: false,
+            sterta_mb: 4096,
             },
         ];
         for p in przypadki {
