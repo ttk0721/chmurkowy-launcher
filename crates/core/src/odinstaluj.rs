@@ -18,14 +18,27 @@ pub enum Zakres {
     Wszystko,
 }
 
+/// Kto dokończy robotę po naszym wyjściu.
+///
+/// Windows nie pozwala usunąć pliku, który się wykonuje, więc launcher nie
+/// skasuje sam siebie. Ktoś musi to zrobić, gdy nas już nie będzie.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Dokonczenie {
+    /// Deinstalator zostawiony przez instalator. Wie, co dopisał do rejestru
+    /// i do menu Start, więc oddajemy mu całą robotę.
+    Deinstalator(PathBuf),
+    /// Kopia przenośna, bez instalatora. Zostaje sam plik programu —
+    /// kasuje go skrypt, który czeka, aż launcher zniknie z pamięci.
+    SkryptSprzatajacy { exe: PathBuf },
+}
+
 /// Co trzeba zrobić, żeby launcher zniknął z komputera.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Plan {
     /// Kasujemy sami, jeszcze przed wyjściem.
     pub do_usuniecia: Vec<PathBuf>,
-    /// Program, który dokończy robotę już po naszym wyjściu — bo pliku,
-    /// który się wykonuje, Windows nie pozwala usunąć.
-    pub dokonczy: Option<(PathBuf, Vec<String>)>,
+    /// Robota do wykonania już po naszym wyjściu.
+    pub dokonczy: Option<Dokonczenie>,
 }
 
 impl Plan {
@@ -49,15 +62,16 @@ pub fn zaplanuj(exe: &Path, katalog_danych: &Path, zakres: Zakres) -> Plan {
     if cfg!(target_os = "windows") {
         // Instalator zostawia obok programu swój deinstalator. To on wie,
         // co dopisał do rejestru i do menu Start, więc oddajemy mu robotę.
+        // Bez niego (kopia przenośna) zostaje sam plik programu — i tego
+        // pliku launcher nie skasuje sam, bo właśnie się z niego wykonuje.
         let deinstalator = exe.with_file_name("unins000.exe");
-        if deinstalator.is_file() {
-            dokonczy = Some((
-                deinstalator,
-                vec!["/SILENT".to_string(), "/NORESTART".to_string()],
-            ));
-        }
-        // Bez deinstalatora (kopia przenośna) zostaje sam plik programu.
-        // Usunie go skrypt sprzątający — patrz `wykonaj`.
+        dokonczy = Some(if deinstalator.is_file() {
+            Dokonczenie::Deinstalator(deinstalator)
+        } else {
+            Dokonczenie::SkryptSprzatajacy {
+                exe: exe.to_path_buf(),
+            }
+        });
     } else {
         // Na Linuksie plik, który się wykonuje, wolno odpiąć od katalogu,
         // więc radzimy sobie sami.
@@ -120,18 +134,72 @@ pub fn wykonaj(plan: &Plan) -> Vec<String> {
         }
     }
 
-    if let Some((program, argumenty)) = &plan.dokonczy {
-        let mut cmd = std::process::Command::new(program);
-        cmd.args(argumenty);
-        if let Some(katalog) = program.parent() {
-            cmd.current_dir(katalog);
+    match &plan.dokonczy {
+        Some(Dokonczenie::Deinstalator(program)) => {
+            let mut cmd = std::process::Command::new(program);
+            cmd.args(["/SILENT", "/NORESTART"]);
+            if let Some(katalog) = program.parent() {
+                cmd.current_dir(katalog);
+            }
+            if let Err(e) = cmd.spawn() {
+                potkniecia.push(format!("{}: {e}", program.display()));
+            }
         }
-        if let Err(e) = cmd.spawn() {
-            potkniecia.push(format!("{}: {e}", program.display()));
+        Some(Dokonczenie::SkryptSprzatajacy { exe }) => {
+            if let Err(e) = odpal_skrypt_sprzatajacy(exe) {
+                potkniecia.push(e);
+            }
         }
+        None => {}
     }
 
     potkniecia
+}
+
+/// Uruchamia skrypt, który skasuje plik launchera, gdy ten zniknie z pamięci.
+///
+/// Windows trzyma plik wykonywalny zablokowany przez cały czas działania
+/// procesu, więc skrypt kręci się w pętli: próbuje skasować, a gdy się nie
+/// da — czeka sekundę i próbuje znowu. Na końcu kasuje sam siebie.
+#[cfg(target_os = "windows")]
+fn odpal_skrypt_sprzatajacy(exe: &Path) -> Result<(), String> {
+    use std::os::windows::process::CommandExt;
+
+    // Skrypt musi leżeć poza katalogiem, który sprzątamy.
+    let skrypt = std::env::temp_dir().join("chmurkowy-sprzataj.cmd");
+
+    // Czekamy przez `ping`, a nie `timeout`: to drugie przerywa pracę
+    // komunikatem „Input redirection is not supported", gdy proces nie ma
+    // konsoli — a my uruchamiamy skrypt właśnie bez okna.
+    let tresc = format!(
+        "@echo off\r\n\
+         :czekaj\r\n\
+         del /f /q \"{plik}\" >nul 2>&1\r\n\
+         if exist \"{plik}\" (\r\n\
+         ping -n 2 127.0.0.1 >nul\r\n\
+         goto czekaj\r\n\
+         )\r\n\
+         del /f /q \"%~f0\" >nul 2>&1\r\n",
+        plik = exe.display()
+    );
+    std::fs::write(&skrypt, tresc).map_err(|e| format!("{}: {e}", skrypt.display()))?;
+
+    // CREATE_NO_WINDOW — bez tego graczowi mignęłoby czarne okno konsoli.
+    const BEZ_OKNA: u32 = 0x0800_0000;
+    std::process::Command::new("cmd")
+        .arg("/c")
+        .arg(&skrypt)
+        .creation_flags(BEZ_OKNA)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("{}: {e}", skrypt.display()))
+}
+
+/// Poza Windowsem nigdy nie powstaje — plik, który się wykonuje, wolno tam
+/// odpiąć od katalogu, więc launcher usuwa się sam.
+#[cfg(not(target_os = "windows"))]
+fn odpal_skrypt_sprzatajacy(_exe: &Path) -> Result<(), String> {
+    Err("skrypt sprzątający jest potrzebny tylko na Windowsie".to_string())
 }
 
 #[cfg(test)]
@@ -172,8 +240,11 @@ mod tests {
         assert!(plan.do_usuniecia.contains(&dane));
     }
 
-    /// Kazdy zakres ma usunac program — inaczej „odinstaluj" niczego
-    /// nie odinstalowuje.
+    /// Kazdy zakres na kazdym systemie ma usunac program — inaczej
+    /// „odinstaluj" niczego nie odinstalowuje. Ten test zlapal realna dziure:
+    /// na Windowsie bez deinstalatora (kopia przenosna) plan nie usuwal
+    /// niczego poza danymi, bo skrypt sprzatajacy byl opisany w komentarzu,
+    /// ale nigdy nie powstal.
     #[test]
     fn program_znika_w_obu_zakresach() {
         let (exe, dane) = sciezki();
@@ -182,6 +253,30 @@ mod tests {
             let usuwa_program = plan.do_usuniecia.contains(&exe) || plan.dokonczy.is_some();
             assert!(usuwa_program, "zakres {zakres:?} nie usuwa programu");
         }
+    }
+
+    /// Na Windowsie plan ZAWSZE musi wskazac, kto skasuje plik programu —
+    /// niezaleznie od tego, czy instalator zostawil swoj deinstalator.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn na_windowsie_zawsze_jest_kto_dokonczy() {
+        let (exe, dane) = sciezki();
+        let plan = zaplanuj(&exe, &dane, Zakres::TylkoProgram);
+        assert!(
+            plan.dokonczy.is_some(),
+            "bez tego kopia przenosna zostawalaby na dysku"
+        );
+    }
+
+    /// Poza Windowsem nie ma czego zlecac — plik, ktory sie wykonuje, wolno
+    /// tam odpiac od katalogu, wiec launcher kasuje sie sam.
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn poza_windowsem_radzimy_sobie_sami() {
+        let (exe, dane) = sciezki();
+        let plan = zaplanuj(&exe, &dane, Zakres::TylkoProgram);
+        assert!(plan.dokonczy.is_none());
+        assert!(plan.do_usuniecia.contains(&exe));
     }
 
     #[test]
