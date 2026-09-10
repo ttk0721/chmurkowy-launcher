@@ -31,7 +31,7 @@ enum Polecenie {
         version: String,
         /// Najnowsza wersja launchera — launcher porownuje ja ze swoja
         /// i informuje gracza o dostepnej aktualizacji.
-        #[arg(long, default_value = "0.3.1")]
+        #[arg(long, default_value = "0.4.0")]
         launcher_version: String,
     },
     /// Instaluje wszystko do wskazanego katalogu danych.
@@ -186,6 +186,10 @@ async fn przygotuj(
 
     game_install::ensure_libraries(&mc, &wersja, &dl, postep.clone()).await?;
     game_install::ensure_assets(&mc, &wersja, &dl, postep.clone()).await?;
+
+    if !m.narzedzia.is_empty() {
+        narzedzia::zapewnij(&instancja, &m.narzedzia, &dl, postep.clone()).await?;
+    }
 
     let sciezka_stanu = data.join("state.json");
     let mut stan = state::State::load(&sciezka_stanu);
@@ -348,6 +352,27 @@ fn pack_build(
             }
         },
         "mirror_dirs": ["mods"],
+        // Zewnetrzne programy wymagane przez Create: Harmonics. Adresy sa te same,
+        // z ktorych korzysta sam mod — niczego nie hostujemy u siebie.
+        "narzedzia": [
+            {
+                "nazwa": "yt-dlp",
+                "katalog": "audio_providers/yt-dlp",
+                "pliki": { "linux-x64": "yt-dlp", "windows-x64": "yt-dlp.exe" },
+                "zrodla": {
+                    "linux-x64": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux",
+                    "windows-x64": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+                }
+            },
+            {
+                "nazwa": "ffmpeg",
+                "katalog": "audio_providers/ffmpeg",
+                "zrodla": {
+                    "linux-x64": "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-lgpl.tar.xz",
+                    "windows-x64": "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-lgpl.zip"
+                }
+            }
+        ],
         "files": files,
     });
 

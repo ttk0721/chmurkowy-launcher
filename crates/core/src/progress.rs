@@ -6,6 +6,7 @@ pub enum Stage {
     Libraries,
     Assets,
     Pack,
+    Narzedzia,
     Ready,
 }
 
@@ -19,6 +20,7 @@ impl Stage {
             Stage::Libraries => "Pobieram biblioteki",
             Stage::Assets => "Pobieram zasoby gry",
             Stage::Pack => "Pobieram mody",
+            Stage::Narzedzia => "Pobieram biblioteki dźwięku",
             Stage::Ready => "Gotowe",
         }
     }

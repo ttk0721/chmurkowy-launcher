@@ -28,6 +28,9 @@ pub struct Manifest {
     pub launcher: LauncherInfo,
     #[serde(default)]
     pub mirror_dirs: Vec<String>,
+    /// Zewnętrzne programy wymagane przez mody, pobierane z ich własnych źródeł.
+    #[serde(default)]
+    pub narzedzia: Vec<crate::narzedzia::Narzedzie>,
     pub files: Vec<FileEntry>,
 }
 

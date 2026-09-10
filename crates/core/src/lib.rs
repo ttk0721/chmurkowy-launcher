@@ -5,6 +5,7 @@ pub mod hash;
 pub mod java;
 pub mod launch;
 pub mod manifest;
+pub mod narzedzia;
 pub mod net;
 pub mod pack_sync;
 pub mod paczki;

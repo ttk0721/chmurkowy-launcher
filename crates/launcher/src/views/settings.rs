@@ -119,6 +119,20 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                      wróci sam, gdyby gra się zamknęła z błędem.",
                 ));
 
+                ui.add_space(theme::S2);
+                zmienione |= ui
+                    .checkbox(
+                        &mut app.ustawienia.biblioteki_dzwieku,
+                        "Przygotuj biblioteki dźwięku przed pierwszym uruchomieniem",
+                    )
+                    .changed();
+                ui.add_space(4.0);
+                ui.label(theme::drobny(
+                    "Mod Create: Harmonics potrzebuje programów yt-dlp i ffmpeg. Launcher pobierze \
+                     je z ich oficjalnych źródeł (około 160 MB), żeby mod nie pytał o to w trakcie \
+                     gry. Wyłącz, jeśli masz wolne łącze — mod poradzi sobie sam.",
+                ));
+
                 // --- PARAMETRY JAVY ---
                 ui.add_space(theme::S4);
                 theme::naglowek_sekcji(ui, "DODATKOWE PARAMETRY JAVY");

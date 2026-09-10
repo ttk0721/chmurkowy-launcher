@@ -270,6 +270,7 @@ mod tests {
                 urls: BTreeMap::new(),
             },
             mirror_dirs: vec!["mods".into()],
+            narzedzia: Vec::new(),
             files: wpisy
                 .into_iter()
                 .map(|(p, h, pol)| FileEntry {

@@ -451,6 +451,19 @@ async fn przygotuj_i_odpal(
         let _ = n.send(Wiadomosc::Notatka(x));
     }
 
+    // Biblioteki dźwięku są dodatkiem, nie warunkiem działania paczki —
+    // gdy pobranie się nie uda, gra i tak ma wystartować, a mod poradzi sobie sam.
+    if ustawienia.biblioteki_dzwieku && !m.narzedzia.is_empty() {
+        if let Err(e) =
+            narzedzia::zapewnij(&instancja, &m.narzedzia, &dl, postep.clone()).await
+        {
+            let _ = n.send(Wiadomosc::Notatka(format!(
+                "Nie udało się przygotować bibliotek dźwięku ({e}). Gra ruszy, a mod \
+                 zapyta o nie sam, gdy będą potrzebne."
+            )));
+        }
+    }
+
     let dodatkowe = podziel_argumenty(&ustawienia.dodatkowe_argumenty);
     let mut cmd = launch::build_command(&launch::LaunchParams {
         java: &java.java_bin,

@@ -14,6 +14,9 @@ pub struct Ustawienia {
     /// Chowanie okna launchera po starcie gry, żeby nie zabierało zasobów.
     /// Domyślnie włączone.
     pub ukryj_po_starcie: bool,
+    /// Pobieranie yt-dlp i ffmpeg wymaganych przez Create: Harmonics.
+    /// Domyślnie włączone — bez nich mod pyta gracza o instalację w trakcie gry.
+    pub biblioteki_dzwieku: bool,
     pub nick_offline: String,
 }
 
@@ -23,6 +26,7 @@ impl Default for Ustawienia {
             pamiec_mb: 4096,
             dodatkowe_argumenty: String::new(),
             ukryj_po_starcie: true,
+            biblioteki_dzwieku: true,
             nick_offline: String::new(),
         }
     }
@@ -90,6 +94,7 @@ mod tests {
     fn domyslnie_chowa_okno_po_starcie() {
         let u = Ustawienia::default();
         assert!(u.ukryj_po_starcie, "to ma byc wlaczone domyslnie");
+        assert!(u.biblioteki_dzwieku, "biblioteki dzwieku tez domyslnie wlaczone");
         assert_eq!(u.pamiec_mb, 4096);
     }
 
@@ -142,6 +147,7 @@ mod tests {
             pamiec_mb: 8192,
             dodatkowe_argumenty: "-XX:+UseG1GC".into(),
             ukryj_po_starcie: false,
+            biblioteki_dzwieku: false,
             nick_offline: "Tomek".into(),
         };
         u.zapisz(&p).unwrap();
