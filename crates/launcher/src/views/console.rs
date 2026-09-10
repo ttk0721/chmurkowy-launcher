@@ -42,7 +42,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 .clicked()
                 {
                     if let Some(katalog) = app.konsola.sciezka().parent() {
-                        let _ = open::that(katalog);
+                        let _ = open::that_detached(katalog);
                     }
                 }
                 // Wcześniej stało tu na sztywno „skopiowane" — także wtedy,

@@ -249,18 +249,48 @@ pub async fn ensure_loader(
             ));
         }
 
-        let mut polecenie = std::process::Command::new(&java.java_bin);
+        let mut polecenie = tokio::process::Command::new(&java.java_bin);
         if proba > 1 {
             polecenie.arg("-Djava.net.preferIPv4Stack=true");
         }
-        let wyjscie = polecenie
+        // `kill_on_drop` sprząta po przekroczeniu limitu: porzucone dziecko
+        // ginie razem z uchwytem, zamiast zostać w tle na zawsze.
+        let dziecko = polecenie
             .arg("-jar")
             .arg(&instalator)
             .arg("--install-client")
             .arg(mc_dir)
             .current_dir(mc_dir)
-            .output()
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .kill_on_drop(true)
+            .spawn()
             .map_err(InstallError::Uruchomienie)?;
+
+        // Wcześniej czekaliśmy tu bez żadnej górnej granicy. Instalator
+        // dociąga własne biblioteki i ma na to limit *połączenia*, ale nie
+        // odczytu — mirror, który przyjmie połączenie i zamilknie w połowie,
+        // zatrzymywał go na zawsze, a razem z nim cały launcher. Trzy
+        // podejścia i przełączenie na IPv4 nie ruszały ani razu, bo pierwsze
+        // podejście się nie kończyło.
+        let wyjscie = match tokio::time::timeout(
+            crate::limity::INSTALATOR,
+            dziecko.wait_with_output(),
+        )
+        .await
+        {
+            Ok(w) => w.map_err(InstallError::Uruchomienie)?,
+            Err(_) => {
+                nieudane = Some((
+                    -1,
+                    format!(
+                        "instalator nie skończył w {} minut i został zatrzymany",
+                        crate::limity::INSTALATOR.as_secs() / 60
+                    ),
+                ));
+                continue;
+            }
+        };
 
         if wyjscie.status.success() {
             nieudane = None;

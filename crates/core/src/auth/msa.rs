@@ -75,11 +75,12 @@ pub enum PollResult {
     Gotowe(Tokens),
 }
 
+/// Wszystkie zadania logowania to male JSON-y, wiec limit na cale zadanie
+/// jest tu wlasciwy. Bez niego milczacy serwer Microsoftu albo filtrujacy
+/// posrednik zostawial gracza z wygaszonym przyciskiem i kreciolkiem
+/// „Czekam na potwierdzenie" bez konca.
 fn klient() -> reqwest::Client {
-    reqwest::Client::builder()
-        .user_agent("ChmurkowyLauncher/0.1")
-        .build()
-        .expect("klient HTTP")
+    crate::limity::klient_maly()
 }
 
 /// Rozpoczyna logowanie. Zwraca kod, który użytkownik wpisuje na stronie Microsoftu.

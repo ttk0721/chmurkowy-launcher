@@ -55,6 +55,8 @@ pub struct App {
     pub komunikat: Option<String>,
     pub log: Vec<String>,
     pub pokaz_szczegoly: bool,
+    /// Czy pokazać okno potwierdzenia odinstalowania.
+    pub pyta_o_odinstalowanie: bool,
     pub ustawienia: Ustawienia,
     /// Stan paczek czytany z plików gry przy każdym wejściu na ekran —
     /// gracz mógł je pozmieniać w samej grze.
@@ -77,7 +79,24 @@ pub struct App {
     /// Czy udało się założyć ikonę. Bez niej chowanie okna odcięłoby graczowi
     /// dostęp do launchera, więc wtedy tylko minimalizujemy.
     ma_zasobnik: bool,
-    pub runtime: tokio::runtime::Runtime,
+    /// W `Option`, żeby dało się go oddać w `Drop` — patrz `impl Drop for App`.
+    runtime: Option<tokio::runtime::Runtime>,
+}
+
+impl Drop for App {
+    /// Runtime tokio przy zwykłym porzuceniu czeka **bez limitu** na zadania
+    /// blokujące, a jednym z nich jest pilnowanie procesu gry. Zamknięcie
+    /// okna w trakcie rozgrywki zostawiało więc działający proces launchera:
+    /// druga ikona w zasobniku po ponownym uruchomieniu, a na Windowsie
+    /// zajęty własny plik `.exe`, co miesza się z podmianą przy aktualizacji.
+    ///
+    /// `shutdown_background` nie czeka na nic. Proces gry żyje dalej sam
+    /// i o to właśnie chodzi.
+    fn drop(&mut self) {
+        if let Some(rt) = self.runtime.take() {
+            rt.shutdown_background();
+        }
+    }
 }
 
 impl App {
@@ -109,7 +128,19 @@ impl App {
         }
         let sciezka_logu = katalog_danych.join("logs").join("game.log");
         // ksni zaklada dzialajacy runtime tokio, wiec ikone tworzymy w jego kontekscie.
-        let zasobnik = runtime.block_on(crate::zasobnik::utworz(nadawca_zas));
+        // Bez limitu zamrozony host zasobnika (rozszerzenie GNOME, tray KDE)
+        // zatrzymywal launcher PRZED pierwsza klatka — gracz klikal ikone
+        // i nie dostawal zadnego okna. Brak zasobnika juz obslugujemy:
+        // launcher wtedy minimalizuje okno zamiast je chowac.
+        let zasobnik = runtime.block_on(async {
+            tokio::time::timeout(
+                std::time::Duration::from_secs(3),
+                crate::zasobnik::utworz(nadawca_zas),
+            )
+            .await
+            .ok()
+            .flatten()
+        });
 
         let mut app = Self {
             katalog_danych,
@@ -129,6 +160,7 @@ impl App {
             komunikat: None,
             log: Vec::new(),
             pokaz_szczegoly: false,
+            pyta_o_odinstalowanie: false,
             ustawienia,
             zasoby: StanZasobow::default(),
             shadery: StanShaderow::default(),
@@ -145,7 +177,7 @@ impl App {
             odbiorca_zasobnika,
             ma_zasobnik: zasobnik.is_some(),
             _zasobnik: zasobnik,
-            runtime,
+            runtime: Some(runtime),
         };
         // Podgląd ekranu błędu przy pracy nad wyglądem: CHMURKA_WIDOK=blad
         if app.widok == Widok::Blad {
@@ -177,6 +209,49 @@ impl App {
         app.wczytaj_manifest();
         app.wznow_sesje();
         app
+    }
+
+    /// Uruchamia zadanie w tle. Cicho odpuszcza, gdy launcher jest już
+    /// w trakcie zamykania — wtedy nie ma po co niczego zaczynać.
+    fn w_tle<F>(&self, zadanie: F)
+    where
+        F: std::future::Future<Output = ()> + Send + 'static,
+    {
+        if let Some(rt) = &self.runtime {
+            rt.spawn(zadanie);
+        }
+    }
+
+    /// Usuwa launcher z komputera i kończy pracę.
+    ///
+    /// Sam plik programu na Windowsie usuwa deinstalator zostawiony przez
+    /// instalator — pliku, który się wykonuje, system nie pozwala skasować.
+    /// Na Linuksie radzimy sobie sami. W obu przypadkach dane gracza znikają
+    /// tylko wtedy, gdy wprost o to poprosił.
+    pub fn odinstaluj(&mut self, zakres: chmurka_core::odinstaluj::Zakres) {
+        use chmurka_core::odinstaluj;
+
+        self.pyta_o_odinstalowanie = false;
+
+        let Ok(exe) = std::env::current_exe() else {
+            self.komunikat =
+                Some("Nie udało się ustalić, gdzie leży launcher. Odinstaluj go ręcznie.".into());
+            return;
+        };
+
+        let plan = odinstaluj::zaplanuj(&exe, &self.data(), zakres);
+        let potkniecia = odinstaluj::wykonaj(&plan);
+
+        if potkniecia.is_empty() {
+            self.zakoncz = true;
+            return;
+        }
+        // Cokolwiek zostało, gracz musi o tym usłyszeć — inaczej uznałby,
+        // że launcher zniknął, a on siedziałby dalej na dysku.
+        self.komunikat = Some(format!(
+            "Nie wszystko udało się usunąć: {}. Resztę skasuj ręcznie.",
+            potkniecia.join("; ")
+        ));
     }
 
     pub fn data(&self) -> PathBuf {
@@ -215,7 +290,7 @@ impl App {
     fn wczytaj_manifest(&mut self) {
         let n = self.nadawca.clone();
         let adres = env!("CHMURKA_MANIFEST_URL").to_string();
-        self.runtime.spawn(async move {
+        self.w_tle(async move {
             match pobierz_manifest(&adres).await {
                 Ok(m) => {
                     let _ = n.send(Wiadomosc::Manifest(Box::new(m)));
@@ -338,7 +413,7 @@ impl App {
             let _ = n2.send(Wiadomosc::Postep(p));
         });
 
-        self.runtime.spawn(async move {
+        self.w_tle(async move {
             let dl = chmurka_core::net::Downloader::new(4);
             match aktualizacja::pobierz_i_podmien(&url, &najnowsza, &data, &dl, postep).await {
                 Ok(exe) => {
@@ -364,7 +439,7 @@ impl App {
             return;
         };
         let n = self.nadawca.clone();
-        self.runtime.spawn(async move {
+        self.w_tle(async move {
             use chmurka_core::auth::store;
             let client_id = "00000000402b5328";
             let Ok(t) = msa::refresh(client_id, &zapis.refresh_token).await else {
@@ -405,6 +480,11 @@ impl App {
                 }
                 Wiadomosc::Notatka(s) => self.log.push(s),
                 Wiadomosc::BladZKodem(b) => {
+                    // Bez tego po nieudanym logowaniu ekran zostawal na kodzie,
+                    // ktory dawno wygasl, a przycisk „Zaloguj przez Microsoft"
+                    // rysuje sie tylko wtedy, gdy kodu nie ma. Gracz nie mial
+                    // jak zaczac od nowa.
+                    self.kod = None;
                     self.zajety = false;
                     self.gra_dziala = false;
                     self.postep = None;
@@ -483,7 +563,17 @@ impl App {
 
 async fn pobierz_manifest(adres: &str) -> Result<Manifest, BladLaunchera> {
     let siec = |e: reqwest::Error| BladLaunchera::Logowanie(msa::AuthError::Siec(e.to_string()));
-    let tekst = reqwest::get(adres).await.map_err(siec)?.text().await.map_err(siec)?;
+    // Skrot `reqwest::get` buduje klienta bez zadnych limitow. Manifest to
+    // pierwsza rzecz po starcie i jedyna brama do wszystkiego — milczacy
+    // serwer zostawial gracza z wiecznym kreciolkiem „Sprawdzam paczke".
+    let tekst = chmurka_core::limity::klient_maly()
+        .get(adres)
+        .send()
+        .await
+        .map_err(siec)?
+        .text()
+        .await
+        .map_err(siec)?;
     Ok(chmurka_core::manifest::parse(&tekst)?)
 }
 
@@ -545,7 +635,7 @@ pub fn zaloguj_microsoft(app: &mut App) {
 
     app.blad_z_kodem = None;
     app.zajety = true;
-    app.runtime.spawn(async move {
+    app.w_tle(async move {
         let zglos = |e: msa::AuthError, n: &Sender<Wiadomosc>| {
             let _ = n.send(Wiadomosc::BladZKodem(Box::new(
                 BladLaunchera::Logowanie(e).dla_uzytkownika(),
@@ -565,12 +655,23 @@ pub fn zaloguj_microsoft(app: &mut App) {
             if std::time::Instant::now() > koniec {
                 return zglos(msa::AuthError::Wygasl, &n);
             }
-            tokio::time::sleep(std::time::Duration::from_secs(odstep)).await;
+            // Śpimy najwyżej do terminu. Bez tego przy odstępie urosłym przez
+            // „slow_down" launcher spał jeszcze długo po wygaśnięciu kodu,
+            // pokazując graczowi kręciołek i kod, który już nie działa.
+            let zostalo = koniec.saturating_duration_since(std::time::Instant::now());
+            tokio::time::sleep(zostalo.min(std::time::Duration::from_secs(odstep))).await;
+
             match msa::poll_once(&client_id, &device_code).await {
                 Ok(msa::PollResult::Czekamy) => {}
                 // Microsoft prosi o wolniejsze odpytywanie — zignorowanie tego
-                // kończy się zablokowaniem całej sesji logowania.
-                Ok(msa::PollResult::Zwolnij) => odstep += 5,
+                // kończy się zablokowaniem całej sesji logowania. Sufit, bo bez
+                // niego po kilkunastu takich odpowiedziach odstęp rósł ponad
+                // minutę i gracz czekał w ciszy.
+                Ok(msa::PollResult::Zwolnij) => odstep = (odstep + 5).min(60),
+                // Chwilowa awaria sieci nie może przerwać logowania w połowie —
+                // gracz ma wpisany kod na stronie Microsoftu i nie ma pojęcia,
+                // że coś mrugnęło. Termin i tak kiedyś zamknie sprawę.
+                Err(msa::AuthError::Siec(_)) => {}
                 Ok(msa::PollResult::Gotowe(t)) => {
                     return match msa::zaloguj_minecraft(&t).await {
                         Ok(konto) => {
@@ -605,7 +706,7 @@ pub fn uruchom(app: &mut App) {
     app.zajety = true;
     app.log.clear();
 
-    app.runtime.spawn(async move {
+    app.w_tle(async move {
         let n2 = n.clone();
         let postep: Arc<dyn Fn(Progress) + Send + Sync> =
             Arc::new(move |p| {

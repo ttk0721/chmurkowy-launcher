@@ -60,7 +60,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                                 crate::schowek::kopiuj(&kod_tekst),
                                 "Przepisz kod ręcznie — jest widoczny powyżej.",
                             ));
-                            let _ = open::that(&adres);
+                            let _ = open::that_detached(&adres);
                         }
                         if let Some(k) = &app.komunikat {
                             ui.add_space(theme::S1);

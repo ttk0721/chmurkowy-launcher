@@ -3,6 +3,10 @@ use crate::theme;
 use chmurka_core::ustawienia::podziel_argumenty;
 
 pub fn rysuj(app: &mut App, ctx: &egui::Context) {
+    if app.pyta_o_odinstalowanie {
+        okno_odinstalowania(app, ctx);
+    }
+
     egui::TopBottomPanel::top("gora-ust")
         .frame(theme::ramka())
         .show(ctx, |ui| {
@@ -202,7 +206,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     // launcherze przycisk cicho nic nie robił.
                     if ui.add(theme::przycisk_zwykly("Otwórz folder gry")).clicked() {
                         let _ = std::fs::create_dir_all(&instancja);
-                        match open::that(&instancja) {
+                        match open::that_detached(&instancja) {
                             Ok(()) => app.komunikat = None,
                             Err(e) => {
                                 app.komunikat =
@@ -218,7 +222,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     )
                     .clicked()
                     {
-                        if let Err(e) = open::that(&log) {
+                        if let Err(e) = open::that_detached(&log) {
                             app.komunikat = Some(format!("Nie udało się otworzyć logu: {e}"));
                         }
                     }
@@ -309,6 +313,31 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     }
                 }
 
+                // --- STREFA ZAGROŻENIA ---
+                //
+                // Osobno, na samym dole i na czerwono, bo to jedyne miejsce
+                // w launcherze, po którym nie ma odwrotu.
+                ui.add_space(theme::S4);
+                ui.label(
+                    egui::RichText::new("STREFA ZAGROŻENIA")
+                        .size(11.0)
+                        .family(theme::polgruba())
+                        .color(theme::BLAD),
+                );
+                ui.add_space(theme::S1);
+
+                if ui
+                    .add(theme::przycisk_zwykly("Odinstaluj launcher"))
+                    .clicked()
+                {
+                    app.pyta_o_odinstalowanie = true;
+                }
+                ui.add_space(4.0);
+                ui.label(theme::drobny(
+                    "Usuwa launcher z tego komputera. Zapyta, czy skasować też \
+                     światy i paczkę modów.",
+                ));
+
                 ui.add_space(theme::S3);
 
                 // Zapis po każdej zmianie — ustawienia nie mogą znikać
@@ -318,4 +347,79 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 }
             });
         });
+}
+
+/// Okno potwierdzenia odinstalowania.
+///
+/// Pytanie o dane jest tu osobnym, świadomym wyborem, a nie polem wyboru
+/// obok przycisku — skasowania światów z singleplayera nie da się cofnąć.
+/// Łagodniejsze wyjście zostawia dane; wariant kasujący wszystko jest
+/// czerwony i mówi wprost, co zniknie.
+fn okno_odinstalowania(app: &mut App, ctx: &egui::Context) {
+    use chmurka_core::odinstaluj::Zakres;
+
+    let mut otwarte = true;
+    egui::Window::new("Odinstalować Chmurkowy Launcher?")
+        .collapsible(false)
+        .resizable(false)
+        .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
+        .open(&mut otwarte)
+        .frame(
+            egui::Frame::NONE
+                .fill(theme::PANEL)
+                .stroke(egui::Stroke::new(1.0_f32, theme::BLAD))
+                .corner_radius(egui::CornerRadius::same(12))
+                .inner_margin(egui::Margin::same(20)),
+        )
+        .show(ctx, |ui| {
+            ui.set_max_width(430.0);
+            ui.label(theme::drobny(
+                "Sam launcher zniknie w obu przypadkach. Pytanie dotyczy tego, \
+                 co zostanie po nim na dysku:",
+            ));
+            ui.add_space(theme::S2);
+
+            ui.label(
+                egui::RichText::new("Twoje światy z singleplayera, ustawienia gry i paczka modów")
+                    .size(12.0)
+                    .color(theme::TEKST),
+            );
+            ui.add_space(theme::S1);
+            ui.label(theme::drobny(&format!("Leżą w: {}", app.data().display())));
+            ui.add_space(theme::S3);
+
+            if ui
+                .add(theme::przycisk_zwykly("Zostaw moje światy").min_size(egui::vec2(400.0, 44.0)))
+                .on_hover_text("Usuwa tylko program. Wszystko inne zostaje na dysku.")
+                .clicked()
+            {
+                app.odinstaluj(Zakres::TylkoProgram);
+            }
+            ui.add_space(theme::S1);
+
+            if ui
+                .add(
+                    theme::przycisk_zwykly("Usuń wszystko, razem ze światami")
+                        .min_size(egui::vec2(400.0, 44.0))
+                        .fill(theme::BLAD),
+                )
+                .on_hover_text("Tego nie da się cofnąć.")
+                .clicked()
+            {
+                app.odinstaluj(Zakres::Wszystko);
+            }
+            ui.add_space(theme::S2);
+
+            if ui
+                .add(theme::przycisk_zwykly("Nie odinstalowuj").min_size(egui::vec2(400.0, 40.0)))
+                .clicked()
+            {
+                app.pyta_o_odinstalowanie = false;
+            }
+        });
+
+    // Krzyżyk w rogu okna znaczy „rozmyśliłem się".
+    if !otwarte {
+        app.pyta_o_odinstalowanie = false;
+    }
 }

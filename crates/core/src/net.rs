@@ -40,10 +40,10 @@ pub struct Downloader {
 
 impl Downloader {
     pub fn new(concurrency: usize) -> Self {
-        let client = reqwest::Client::builder()
-            .user_agent("ChmurkowyLauncher/0.1")
-            .build()
-            .expect("klient HTTP");
+        // Bez limitow host, ktory przyjmowal polaczenie i milkl, zatrzymywal
+        // launcher na zawsze — a petla ponowien i lista zapasowych adresow
+        // siedza ZA tym oczekiwaniem, wiec nie ruszaly ani razu.
+        let client = crate::limity::klient_pobierania();
         Self {
             client,
             limit: Arc::new(tokio::sync::Semaphore::new(concurrency)),

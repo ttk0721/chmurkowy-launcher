@@ -163,7 +163,14 @@ async fn przygotuj(
         }
     });
 
-    let tekst = reqwest::get(adres_manifestu).await?.text().await?;
+    // Ten sam limit, co w launcherze — inaczej `chmurka install` w skrypcie
+    // albo w CI stalby w nieskonczonosc bez jednej linijki wyjscia.
+    let tekst = chmurka_core::limity::klient_maly()
+        .get(adres_manifestu)
+        .send()
+        .await?
+        .text()
+        .await?;
     let m = manifest::parse(&tekst)?;
     println!("Paczka {} wersja {}", m.pack.name, m.pack.version);
 
