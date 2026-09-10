@@ -40,6 +40,21 @@ pub fn katalog_uzytkownika() -> Option<PathBuf> {
     }
 }
 
+/// Katalog danych współdzielonych użytkownika (`~/.local/share`).
+///
+/// Tu trafiają rzeczy widoczne dla systemu: wpis w menu aplikacji i ikona.
+/// Nie mylić z [`katalog_uzytkownika`], który wskazuje nasz własny podkatalog.
+pub fn katalog_wspoldzielony() -> Option<PathBuf> {
+    std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .filter(|p| p.is_absolute())
+        .or_else(|| {
+            std::env::var_os("HOME")
+                .map(PathBuf::from)
+                .map(|p| p.join(".local").join("share"))
+        })
+}
+
 /// Co launcher zrobił z katalogiem danych — do zapisania w logu.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Wynik {

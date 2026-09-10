@@ -17,6 +17,8 @@ pub mod paczki;
 pub mod pamiec;
 pub mod paths;
 pub mod progress;
+pub mod skrot;
 pub mod state;
 pub mod ustawienia;
 pub mod version;
+pub mod zadomowienie;

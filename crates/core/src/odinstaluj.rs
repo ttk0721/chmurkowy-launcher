@@ -76,7 +76,7 @@ pub fn zaplanuj(exe: &Path, katalog_danych: &Path, zakres: Zakres) -> Plan {
         // Na Linuksie plik, który się wykonuje, wolno odpiąć od katalogu,
         // więc radzimy sobie sami.
         do_usuniecia.push(exe.to_path_buf());
-        if let Some(dane) = katalog_wspoldzielony() {
+        if let Some(dane) = crate::miejsca::katalog_wspoldzielony() {
             do_usuniecia.push(
                 dane.join("applications")
                     .join("chmurkowy-launcher.desktop"),
@@ -99,17 +99,6 @@ pub fn zaplanuj(exe: &Path, katalog_danych: &Path, zakres: Zakres) -> Plan {
         do_usuniecia,
         dokonczy,
     }
-}
-
-fn katalog_wspoldzielony() -> Option<PathBuf> {
-    std::env::var_os("XDG_DATA_HOME")
-        .map(PathBuf::from)
-        .filter(|p| p.is_absolute())
-        .or_else(|| {
-            std::env::var_os("HOME")
-                .map(PathBuf::from)
-                .map(|p| p.join(".local").join("share"))
-        })
 }
 
 /// Wykonuje plan. Zwraca listę rzeczy, których nie udało się usunąć —
