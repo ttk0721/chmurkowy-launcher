@@ -436,6 +436,19 @@ fn smiec_roboczy(nazwa: &str) -> bool {
         || nazwa.contains(".json_backup")
 }
 
+/// Katalog konfiguracji, który mod zakłada osobno dla każdego świata.
+///
+/// Inventory Profiles Next trzyma zakładki handlu z wieśniakami w katalogu
+/// nazwanym jak świat gracza. U utrzymującego paczkę siedzą tam jego światy
+/// testowe („Test 2", „Test3", „Świat do testów chmurki") i jechały do
+/// wszystkich graczy — każdy dostawał puste ustawienia dla światów, których
+/// nigdy nie miał, razem z ich nazwami.
+///
+/// `integrationHints` to jedyny podkatalog tego moda, który dotyczy wszystkich.
+fn katalog_na_swiat(prefiks: &str, nazwa: &str) -> bool {
+    prefiks == "config/inventoryprofilesnext" && nazwa != "integrationHints"
+}
+
 fn zbierz_configi(katalog: &Path, prefiks: &str, out: &mut Vec<(String, PathBuf, &'static str)>) {
     let Ok(wpisy) = std::fs::read_dir(katalog) else {
         return;
@@ -447,6 +460,9 @@ fn zbierz_configi(katalog: &Path, prefiks: &str, out: &mut Vec<(String, PathBuf,
         }
         let rel = format!("{prefiks}/{nazwa}");
         if w.path().is_dir() {
+            if katalog_na_swiat(prefiks, &nazwa) {
+                continue;
+            }
             zbierz_configi(&w.path(), &rel, out);
         } else {
             out.push((rel, w.path(), "smart"));
@@ -481,6 +497,35 @@ mod testy_paczowania {
             "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.6/ChmurkowyLauncher-linux-x64"
         );
         assert!(!adres_wydania("0.4.6", "x").contains("latest"));
+    }
+
+    /// Swiaty utrzymujacego paczke nie maja czego szukac u graczy. Jechaly
+    /// tam od dawna: „Test 2", „Test3", „Swiat do testow chmurki".
+    #[test]
+    fn katalogi_na_swiat_nie_jada_do_paczki() {
+        for swiat in ["Test 2", "Test3", "Świat do testów chmurki"] {
+            assert!(
+                katalog_na_swiat("config/inventoryprofilesnext", swiat),
+                "{swiat} to katalog na swiat gracza"
+            );
+        }
+    }
+
+    #[test]
+    fn wspolne_ustawienia_tego_moda_zostaja() {
+        assert!(!katalog_na_swiat(
+            "config/inventoryprofilesnext",
+            "integrationHints"
+        ));
+    }
+
+    /// Regula dotyczy tylko tego jednego moda — reszta configow ma jechac
+    /// normalnie, razem z podkatalogami.
+    #[test]
+    fn regula_nie_wykracza_poza_ten_mod() {
+        assert!(!katalog_na_swiat("config/xaero/minimap", "profiles"));
+        assert!(!katalog_na_swiat("config", "inventoryprofilesnext"));
+        assert!(!katalog_na_swiat("config/witherreincarnated", "Test3"));
     }
 
     #[test]
