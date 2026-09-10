@@ -12,7 +12,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
         .frame(theme::ramka())
         .show(ctx, |ui| {
             if ui
-                .add(egui::Button::new("Wróć").min_size(egui::vec2(120.0, 44.0)))
+                .add(theme::przycisk_zwykly("Wróć").min_size(egui::vec2(120.0, 44.0)))
                 .clicked()
             {
                 app.widok = Widok::Glowny;
@@ -38,11 +38,17 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                             .corner_radius(egui::CornerRadius::same(12))
                             .inner_margin(egui::Margin::symmetric(28, 14))
                             .show(ui, |ui| {
-                                ui.label(
-                                    egui::RichText::new(&kod_tekst)
-                                        .size(34.0)
-                                        .family(theme::polgruba())
-                                        .color(theme::AKCENT),
+                                // Kod musi dać się zaznaczyć myszą. Gdy schowek
+                                // odmówi — a na Windowsie potrafi — to jedyna
+                                // droga do skopiowania go bez przepisywania.
+                                ui.add(
+                                    egui::Label::new(
+                                        egui::RichText::new(&kod_tekst)
+                                            .size(34.0)
+                                            .family(theme::polgruba())
+                                            .color(theme::AKCENT),
+                                    )
+                                    .selectable(true),
                                 );
                             });
                         ui.add_space(theme::S2);
@@ -50,10 +56,20 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                             .add(theme::przycisk_zwykly("Kopiuj kod i otwórz przeglądarkę"))
                             .clicked()
                         {
-                            if let Ok(mut schowek) = arboard::Clipboard::new() {
-                                let _ = schowek.set_text(kod_tekst);
-                            }
+                            app.komunikat = Some(crate::schowek::komunikat(
+                                crate::schowek::kopiuj(&kod_tekst),
+                                "Przepisz kod ręcznie — jest widoczny powyżej.",
+                            ));
                             let _ = open::that(&adres);
+                        }
+                        if let Some(k) = &app.komunikat {
+                            ui.add_space(theme::S1);
+                            let kolor = if k.starts_with("Skopiowano") {
+                                theme::SUKCES
+                            } else {
+                                theme::BLAD
+                            };
+                            ui.label(egui::RichText::new(k).size(11.0).color(kolor));
                         }
                         ui.add_space(theme::S1);
                         ui.label(theme::drobny(&adres));
@@ -100,7 +116,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     if ui
                         .add_enabled(
                             mozna,
-                            egui::Button::new("Graj").min_size(egui::vec2(88.0, 40.0)),
+                            theme::przycisk_zwykly("Graj").min_size(egui::vec2(88.0, 40.0)),
                         )
                         .on_disabled_hover_text("Najpierw wpisz nick.")
                         .clicked()

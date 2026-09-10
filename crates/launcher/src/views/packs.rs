@@ -25,7 +25,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
             }
             ui.horizontal(|ui| {
                 if ui
-                    .add(egui::Button::new("Wróć").min_size(egui::vec2(120.0, 44.0)))
+                    .add(theme::przycisk_zwykly("Wróć").min_size(egui::vec2(120.0, 44.0)))
                     .clicked()
                 {
                     app.komunikat = None;

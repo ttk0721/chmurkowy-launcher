@@ -13,10 +13,42 @@ pub enum AuthError {
     Odmowa(String),
     #[error("kod wygasł — spróbuj zalogować się jeszcze raz")]
     Wygasl,
-    #[error("Xbox Live odmówił: {0}")]
-    Xbox(String),
+    #[error("Xbox Live odmówił: {szczegoly}")]
+    Xbox {
+        powod: PowodXbox,
+        szczegoly: String,
+    },
     #[error("to konto Microsoft nie ma kupionego Minecrafta")]
     BrakGry,
+}
+
+/// Dlaczego Xbox Live odmówił.
+///
+/// Wcześniej rozpoznawaliśmy to po treści komunikatu po polsku — wystarczyło,
+/// żeby w opisie błędu padło słowo „Xbox", a gracz dostawał radę o zakładaniu
+/// profilu Xbox przy zupełnie innym problemie. Zdanie dla gracza i decyzja,
+/// co mu poradzić, muszą stać na osobnych nogach.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PowodXbox {
+    BrakProfiluXbox,
+    KontoDziecka,
+    RegionNiedostepny,
+    WymaganaWeryfikacja,
+    KontoZablokowane,
+    /// Cokolwiek innego — łącznie z odpowiedzią, której nie umiemy odczytać.
+    Inny,
+}
+
+/// Kody, którymi Xbox Live tłumaczy odmowę.
+pub fn powod_xerr(kod: u64) -> PowodXbox {
+    match kod {
+        2148916227 => PowodXbox::KontoZablokowane,
+        2148916233 => PowodXbox::BrakProfiluXbox,
+        2148916235 => PowodXbox::RegionNiedostepny,
+        2148916236 | 2148916237 => PowodXbox::WymaganaWeryfikacja,
+        2148916238 => PowodXbox::KontoDziecka,
+        _ => PowodXbox::Inny,
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -142,10 +174,62 @@ pub async fn refresh(client_id: &str, refresh_token: &str) -> Result<Tokens, Aut
 }
 
 pub fn opis_xerr(kod: u64) -> String {
-    match kod {
-        2148916233 => "to konto Microsoft nie ma profilu Xbox — załóż go na xbox.com i spróbuj ponownie".into(),
-        2148916238 => "to konto dziecka — musi zostać dodane do rodziny Microsoft, żeby móc grać".into(),
-        inny => format!("Xbox Live odrzucił logowanie, kod {inny}"),
+    let nazwa = match powod_xerr(kod) {
+        PowodXbox::KontoZablokowane => "konto zablokowane",
+        PowodXbox::BrakProfiluXbox => "brak profilu Xbox",
+        PowodXbox::RegionNiedostepny => "Xbox Live niedostępny w tym kraju",
+        PowodXbox::WymaganaWeryfikacja => "konto wymaga potwierdzenia pełnoletności",
+        PowodXbox::KontoDziecka => "konto dziecka spoza rodziny Microsoft",
+        PowodXbox::Inny => "powód nieznany launcherowi",
+    };
+    format!("XErr {kod} ({nazwa})")
+}
+
+/// Skraca treść odpowiedzi do czegoś, co zmieści się w oknie błędu.
+fn skrot(s: &str, ile: usize) -> String {
+    let s = s.trim();
+    if s.chars().count() <= ile {
+        return s.to_string();
+    }
+    let uciety: String = s.chars().take(ile).collect();
+    format!("{uciety}…")
+}
+
+/// Czyta odpowiedź razem ze statusem HTTP i treścią.
+///
+/// Wcześniej każdy krok robił `.json()` od razu, więc gdy Microsoft oddał
+/// cokolwiek nieoczekiwanego — stronę błędu, komunikat o przeciążeniu,
+/// pustą treść — do okna gracza trafiało „error decoding response body".
+/// Z takiego zdania ani gracz, ani administracja nie dowiadywali się niczego,
+/// a każdy taki przypadek lądował pod jednym workiem KONTO-05.
+async fn odczytaj(odp: reqwest::Response) -> Result<(reqwest::StatusCode, String), AuthError> {
+    let status = odp.status();
+    let tekst = odp.text().await.map_err(|e| AuthError::Siec(e.to_string()))?;
+    Ok((status, tekst))
+}
+
+/// Wyławia `XErr` z treści odpowiedzi. Xbox Live podaje go i przy 401,
+/// i czasem przy innych statusach.
+fn xerr_z_tresci(tekst: &str) -> Option<u64> {
+    let v: serde_json::Value = serde_json::from_str(tekst).ok()?;
+    match v.get("XErr")? {
+        serde_json::Value::Number(n) => n.as_u64(),
+        serde_json::Value::String(s) => s.parse().ok(),
+        _ => None,
+    }
+}
+
+/// Buduje błąd Xbox Live z tego, co naprawdę przyszło.
+fn blad_xbox(etap: &str, status: reqwest::StatusCode, tekst: &str) -> AuthError {
+    match xerr_z_tresci(tekst) {
+        Some(kod) => AuthError::Xbox {
+            powod: powod_xerr(kod),
+            szczegoly: format!("{etap}: HTTP {status}, {}", opis_xerr(kod)),
+        },
+        None => AuthError::Xbox {
+            powod: PowodXbox::Inny,
+            szczegoly: format!("{etap}: HTTP {status}, treść: {}", skrot(tekst, 400)),
+        },
     }
 }
 
@@ -170,7 +254,7 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
         uhs: String,
     }
 
-    let xbl: XblOdp = c
+    let odp = c
         .post("https://user.auth.xboxlive.com/user/authenticate")
         .json(&serde_json::json!({
             "Properties": { "AuthMethod": "RPS", "SiteName": "user.auth.xboxlive.com",
@@ -180,17 +264,34 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
         }))
         .send()
         .await
-        .map_err(|e| AuthError::Siec(e.to_string()))?
-        .json()
-        .await
-        .map_err(|e| AuthError::Xbox(e.to_string()))?;
+        .map_err(|e| AuthError::Siec(e.to_string()))?;
 
-    let uhs = xbl
-        .claims
-        .xui
-        .first()
-        .map(|x| x.uhs.clone())
-        .unwrap_or_default();
+    // Ten krok wcześniej w ogóle nie patrzył na status — a Xbox Live potrafi
+    // odmówić już tutaj, razem z kodem XErr.
+    let (status, tekst) = odczytaj(odp).await?;
+    if !status.is_success() {
+        return Err(blad_xbox("Xbox Live", status, &tekst));
+    }
+    let xbl: XblOdp = serde_json::from_str(&tekst).map_err(|e| AuthError::Xbox {
+        powod: PowodXbox::Inny,
+        szczegoly: format!(
+            "Xbox Live: odpowiedź nie do odczytania ({e}), treść: {}",
+            skrot(&tekst, 400)
+        ),
+    })?;
+
+    let Some(uhs) = xbl.claims.xui.first().map(|x| x.uhs.clone()) else {
+        // Bez identyfikatora użytkownika kolejny krok i tak by nie przeszedł,
+        // a wcześniej szliśmy dalej z pustym ciągiem i błąd wychodził dopiero
+        // przy Minecrafcie — w zupełnie innym miejscu, niż powstał.
+        return Err(AuthError::Xbox {
+            powod: PowodXbox::Inny,
+            szczegoly: format!(
+                "Xbox Live nie podał identyfikatora konta, treść: {}",
+                skrot(&tekst, 400)
+            ),
+        });
+    };
 
     // 2. XSTS.
     let odp = c
@@ -204,14 +305,9 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
         .await
         .map_err(|e| AuthError::Siec(e.to_string()))?;
 
-    if odp.status() == reqwest::StatusCode::UNAUTHORIZED {
-        #[derive(Deserialize)]
-        struct Blad {
-            #[serde(rename = "XErr")]
-            xerr: u64,
-        }
-        let b: Blad = odp.json().await.map_err(|e| AuthError::Xbox(e.to_string()))?;
-        return Err(AuthError::Xbox(opis_xerr(b.xerr)));
+    let (status, tekst) = odczytaj(odp).await?;
+    if !status.is_success() {
+        return Err(blad_xbox("XSTS", status, &tekst));
     }
 
     #[derive(Deserialize)]
@@ -219,22 +315,39 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
         #[serde(rename = "Token")]
         token: String,
     }
-    let xsts: XstsOdp = odp.json().await.map_err(|e| AuthError::Xbox(e.to_string()))?;
+    let xsts: XstsOdp = serde_json::from_str(&tekst).map_err(|e| AuthError::Xbox {
+        powod: PowodXbox::Inny,
+        szczegoly: format!(
+            "XSTS: odpowiedź nie do odczytania ({e}), treść: {}",
+            skrot(&tekst, 400)
+        ),
+    })?;
 
     // 3. Token Minecrafta.
     #[derive(Deserialize)]
     struct McOdp {
         access_token: String,
     }
-    let mc: McOdp = c
+    let odp = c
         .post("https://api.minecraftservices.com/authentication/login_with_xbox")
         .json(&serde_json::json!({ "identityToken": format!("XBL3.0 x={uhs};{}", xsts.token) }))
         .send()
         .await
-        .map_err(|e| AuthError::Siec(e.to_string()))?
-        .json()
-        .await
-        .map_err(|e| AuthError::Odmowa(e.to_string()))?;
+        .map_err(|e| AuthError::Siec(e.to_string()))?;
+
+    let (status, tekst) = odczytaj(odp).await?;
+    if !status.is_success() {
+        return Err(AuthError::Odmowa(format!(
+            "logowanie do Minecrafta: HTTP {status}, treść: {}",
+            skrot(&tekst, 400)
+        )));
+    }
+    let mc: McOdp = serde_json::from_str(&tekst).map_err(|e| {
+        AuthError::Odmowa(format!(
+            "logowanie do Minecrafta: odpowiedź nie do odczytania ({e}), treść: {}",
+            skrot(&tekst, 400)
+        ))
+    })?;
 
     // 4. Profil. 404 znaczy konto bez kupionej gry — to najczestszy blad u testerow.
     let odp = c
@@ -317,5 +430,76 @@ mod tests {
         assert!(opis_xerr(2148916233).contains("konta Xbox") || opis_xerr(2148916233).contains("Xbox"));
         assert!(opis_xerr(2148916238).contains("dziecka"));
         assert!(opis_xerr(999).contains("999"));
+    }
+
+    /// Pieciu powodow odmowy Xbox Live rozpoznawalismy dwa. Reszta ladowala
+    /// pod jednym workiem „Microsoft odmowil i nie podal powodu", choc kod
+    /// odmowy przychodzil wprost w odpowiedzi.
+    #[test]
+    fn rozpoznajemy_wszystkie_znane_kody_odmowy() {
+        assert_eq!(powod_xerr(2148916227), PowodXbox::KontoZablokowane);
+        assert_eq!(powod_xerr(2148916233), PowodXbox::BrakProfiluXbox);
+        assert_eq!(powod_xerr(2148916235), PowodXbox::RegionNiedostepny);
+        assert_eq!(powod_xerr(2148916236), PowodXbox::WymaganaWeryfikacja);
+        assert_eq!(powod_xerr(2148916237), PowodXbox::WymaganaWeryfikacja);
+        assert_eq!(powod_xerr(2148916238), PowodXbox::KontoDziecka);
+        assert_eq!(powod_xerr(1), PowodXbox::Inny);
+    }
+
+    /// Xbox Live podaje XErr raz jako liczbe, raz jako napis.
+    #[test]
+    fn xerr_czytamy_i_z_liczby_i_z_napisu() {
+        assert_eq!(
+            xerr_z_tresci(r#"{"XErr":2148916238,"Message":""}"#),
+            Some(2148916238)
+        );
+        assert_eq!(
+            xerr_z_tresci(r#"{"XErr":"2148916233"}"#),
+            Some(2148916233)
+        );
+        assert_eq!(xerr_z_tresci("<html>502 Bad Gateway</html>"), None);
+        assert_eq!(xerr_z_tresci("{}"), None);
+    }
+
+    /// Odpowiedz bez XErr — na przyklad strona bledu posrednika — musi trafic
+    /// do szczegolow w calosci na tyle, zeby dalo sie ja rozpoznac.
+    #[test]
+    fn nieznana_odpowiedz_zachowuje_status_i_tresc() {
+        let e = blad_xbox(
+            "XSTS",
+            reqwest::StatusCode::BAD_GATEWAY,
+            "<html>502 Bad Gateway</html>",
+        );
+        let AuthError::Xbox { powod, szczegoly } = e else {
+            panic!("spodziewany blad Xbox");
+        };
+        assert_eq!(powod, PowodXbox::Inny);
+        assert!(szczegoly.contains("502"), "{szczegoly}");
+        assert!(szczegoly.contains("Bad Gateway"), "{szczegoly}");
+        assert!(szczegoly.contains("XSTS"), "{szczegoly}");
+    }
+
+    #[test]
+    fn znany_kod_odmowy_nie_gubi_sie_w_tresci() {
+        let e = blad_xbox(
+            "XSTS",
+            reqwest::StatusCode::UNAUTHORIZED,
+            r#"{"XErr":2148916235}"#,
+        );
+        let AuthError::Xbox { powod, .. } = e else {
+            panic!("spodziewany blad Xbox");
+        };
+        assert_eq!(powod, PowodXbox::RegionNiedostepny);
+    }
+
+    /// Okno bledu ma swoja szerokosc — dluga odpowiedz trzeba przyciac,
+    /// ale poczatek jest tym, co niesie informacje.
+    #[test]
+    fn dluga_tresc_jest_przycinana() {
+        let dlugi = "x".repeat(1000);
+        let s = skrot(&dlugi, 40);
+        assert!(s.chars().count() <= 41, "{}", s.chars().count());
+        assert!(s.ends_with('…'));
+        assert_eq!(skrot("  krotki  ", 40), "krotki");
     }
 }

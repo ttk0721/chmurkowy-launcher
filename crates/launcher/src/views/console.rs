@@ -28,10 +28,10 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     .on_hover_text("Wklej to w wiadomości do administracji serwera.")
                     .clicked()
                 {
-                    if let Ok(mut schowek) = arboard::Clipboard::new() {
-                        let _ = schowek.set_text(app.konsola.do_schowka());
-                        app.komunikat = Some("Skopiowano.".into());
-                    }
+                    app.komunikat = Some(crate::schowek::komunikat(
+                        crate::schowek::kopiuj(&app.konsola.do_schowka()),
+                        "Użyj przycisku „Otwórz folder z logiem” i wyślij plik game.log.",
+                    ));
                 }
                 if super::przycisk_warunkowy(
                     ui,
@@ -45,12 +45,15 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                         let _ = open::that(katalog);
                     }
                 }
-                if app.komunikat.is_some() {
-                    ui.label(
-                        egui::RichText::new("skopiowane")
-                            .size(11.0)
-                            .color(theme::SUKCES),
-                    );
+                // Wcześniej stało tu na sztywno „skopiowane" — także wtedy,
+                // gdy schowek odmówił i nic się nie skopiowało.
+                if let Some(k) = &app.komunikat {
+                    let kolor = if k.starts_with("Skopiowano") {
+                        theme::SUKCES
+                    } else {
+                        theme::BLAD
+                    };
+                    ui.label(egui::RichText::new(k).size(11.0).color(kolor));
                 }
             });
         });

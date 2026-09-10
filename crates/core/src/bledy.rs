@@ -4,7 +4,7 @@
 //! opisujące co się stało bez żargonu, i listę konkretnych kroków do wykonania.
 //! Szczegóły techniczne są osobno — dla administracji, nie dla gracza.
 
-use crate::auth::msa::AuthError;
+use crate::auth::msa::{AuthError, PowodXbox};
 use crate::game_install::InstallError;
 use crate::java::JavaError;
 use crate::launch::LaunchError;
@@ -445,9 +445,13 @@ fn z_logowania(e: &AuthError) -> BladUzytkownika {
             ],
             "profil Minecrafta nie istnieje (HTTP 404)",
         ),
-        AuthError::Xbox(s) => {
-            let (kod, tytul, co, kroki): (&str, &str, &str, &[&str]) = if s.contains("dziecka") {
-                (
+        // Decyzja idzie po rozpoznanym powodzie, a nie po treści komunikatu.
+        // Dopóki szukaliśmy w nim słowa „Xbox", zdanie „Xbox Live odrzucił
+        // logowanie, kod 2148916235" trafiało w radę o zakładaniu profilu Xbox,
+        // choć chodziło o niedostępność usługi w danym kraju.
+        AuthError::Xbox { powod, szczegoly } => {
+            let (kod, tytul, co, kroki): (&str, &str, &str, &[&str]) = match powod {
+                PowodXbox::KontoDziecka => (
                     "KONTO-03",
                     "To konto dziecka i wymaga zgody rodzica",
                     "Microsoft blokuje logowanie kont dziecięcych, dopóki nie zostaną dodane \
@@ -457,9 +461,8 @@ fn z_logowania(e: &AuthError) -> BladUzytkownika {
                         "Po dodaniu spróbuj zalogować się jeszcze raz.",
                         "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
                     ],
-                )
-            } else if s.contains("Xbox") {
-                (
+                ),
+                PowodXbox::BrakProfiluXbox => (
                     "KONTO-02",
                     "To konto nie ma profilu Xbox",
                     "Minecraft wymaga profilu Xbox, a to konto Microsoft jeszcze go nie ma.",
@@ -467,21 +470,55 @@ fn z_logowania(e: &AuthError) -> BladUzytkownika {
                         "Wejdź na xbox.com, zaloguj się tym kontem i załóż profil — to darmowe i zajmuje minutę.",
                         "Wróć do launchera i zaloguj się ponownie.",
                     ],
-                )
-            } else {
-                (
+                ),
+                PowodXbox::RegionNiedostepny => (
+                    "KONTO-06",
+                    "Xbox Live nie działa w kraju ustawionym na tym koncie",
+                    "Konto Microsoft ma ustawiony kraj, w którym Xbox Live nie jest dostępny. \
+                     To ustawienie samego konta, nie komputera ani gry.",
+                    &[
+                        "Wejdź na account.microsoft.com, otwórz „Twoje dane” i sprawdź kraj lub region.",
+                        "Po poprawieniu kraju zaloguj się w launcherze jeszcze raz.",
+                        "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
+                    ],
+                ),
+                PowodXbox::WymaganaWeryfikacja => (
+                    "KONTO-07",
+                    "Microsoft chce potwierdzenia na stronie konta",
+                    "Zanim to konto zaloguje się do gry, Microsoft wymaga dokończenia czegoś \
+                     na stronie konta — zwykle potwierdzenia wieku albo zgody rodzica.",
+                    &[
+                        "Wejdź na account.microsoft.com i zaloguj się tym samym kontem.",
+                        "Wykonaj to, o co poprosi strona, a potem wróć do launchera.",
+                        "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
+                    ],
+                ),
+                PowodXbox::KontoZablokowane => (
+                    "KONTO-08",
+                    "To konto jest zablokowane przez Microsoft",
+                    "Microsoft zablokował temu kontu dostęp do Xbox Live. Launcher nie ma jak \
+                     tego obejść.",
+                    &[
+                        "Wejdź na account.microsoft.com i sprawdź, czy Microsoft czegoś nie wymaga.",
+                        "Zaloguj się innym kontem, jeśli masz do niego dostęp.",
+                        "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
+                    ],
+                ),
+                PowodXbox::Inny => (
                     "KONTO-05",
                     "Microsoft odmówił logowania",
                     "Serwery Microsoftu odrzuciły logowanie i nie podały powodu, który \
-                     launcher potrafi rozpoznać.",
+                     launcher potrafi rozpoznać. Szczegóły poniżej są dla administracji — \
+                     to z nich wynika, co poszło nie tak.",
                     &[
                         "Spróbuj zalogować się jeszcze raz za kilka minut.",
                         "Sprawdź, czy możesz zalogować się na minecraft.net w przeglądarce.",
+                        "Skopiuj szczegóły przyciskiem poniżej i wyślij je administracji.",
                         "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
                     ],
-                )
+                ),
             };
-            BladUzytkownika::nowy(kod, tytul, co, kroki, s.clone())
+            BladUzytkownika::nowy(kod, tytul, co, kroki, szczegoly.clone())
         }
         AuthError::Odmowa(s) => BladUzytkownika::nowy(
             "KONTO-05",
@@ -817,18 +854,50 @@ mod tests {
         assert_eq!(b.kod, "GRA-04");
     }
 
-    #[test]
-    fn konto_dziecka_i_brak_xboxa_to_rozne_kody() {
-        let dziecko =
-            BladLaunchera::Logowanie(AuthError::Xbox("to konto dziecka — musi".into()))
-                .dla_uzytkownika();
-        assert_eq!(dziecko.kod, "KONTO-03");
+    fn xbox(powod: PowodXbox) -> BladUzytkownika {
+        BladLaunchera::Logowanie(AuthError::Xbox {
+            powod,
+            szczegoly: "szczegóły techniczne".into(),
+        })
+        .dla_uzytkownika()
+    }
 
-        let xbox = BladLaunchera::Logowanie(AuthError::Xbox(
-            "to konto Microsoft nie ma profilu Xbox".into(),
-        ))
+    #[test]
+    fn kazdy_powod_odmowy_xbox_ma_wlasny_kod() {
+        assert_eq!(xbox(PowodXbox::KontoDziecka).kod, "KONTO-03");
+        assert_eq!(xbox(PowodXbox::BrakProfiluXbox).kod, "KONTO-02");
+        assert_eq!(xbox(PowodXbox::RegionNiedostepny).kod, "KONTO-06");
+        assert_eq!(xbox(PowodXbox::WymaganaWeryfikacja).kod, "KONTO-07");
+        assert_eq!(xbox(PowodXbox::KontoZablokowane).kod, "KONTO-08");
+        assert_eq!(xbox(PowodXbox::Inny).kod, "KONTO-05");
+    }
+
+    /// Dopoki rozpoznawalismy powod po tresci komunikatu, zdanie „Xbox Live
+    /// odrzucil logowanie, kod 2148916235" trafialo w rade o zakladaniu
+    /// profilu Xbox — bo zawieralo slowo „Xbox". Decyzja musi stac na
+    /// rozpoznanym powodzie, a nie na tekscie dla czlowieka.
+    #[test]
+    fn tresc_komunikatu_nie_decyduje_o_kodzie() {
+        let b = BladLaunchera::Logowanie(AuthError::Xbox {
+            powod: PowodXbox::RegionNiedostepny,
+            szczegoly: "XSTS: HTTP 401, XErr 2148916235 (Xbox Live niedostępny w tym kraju)"
+                .into(),
+        })
         .dla_uzytkownika();
-        assert_eq!(xbox.kod, "KONTO-02");
+        assert_eq!(b.kod, "KONTO-06", "slowo Xbox w tresci nie moze przewazyc o kodzie");
+    }
+
+    /// Szczegoly to jedyny slad dla administracji — musza przetrwac
+    /// przejscie przez katalog bledow w calosci.
+    #[test]
+    fn szczegoly_odmowy_trafiaja_do_raportu() {
+        let b = BladLaunchera::Logowanie(AuthError::Xbox {
+            powod: PowodXbox::Inny,
+            szczegoly: "XSTS: HTTP 503, treść: usługa niedostępna".into(),
+        })
+        .dla_uzytkownika();
+        assert!(b.szczegoly.contains("HTTP 503"), "{}", b.szczegoly);
+        assert!(b.do_schowka("0.5.0").contains("HTTP 503"));
     }
 
     #[test]
