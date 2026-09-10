@@ -262,10 +262,20 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 if app.konto.is_some() {
                     ui.add_space(theme::S4);
                     theme::naglowek_sekcji(ui, "KONTO");
-                    if ui.add(theme::przycisk_zwykly("Wyloguj")).clicked() {
+                    // Pojedynczym kontem zarzadza sie na ekranie Konta —
+                    // tu zostaje tylko wyczyszczenie calej listy naraz.
+                    if ui
+                        .add(theme::przycisk_zwykly("Wyloguj wszystkie konta"))
+                        .on_hover_text(
+                            "Usuwa z launchera wszystkie zapamiętane konta. \
+                             Światy i pliki gry zostają.",
+                        )
+                        .clicked()
+                    {
                         chmurka_core::auth::store::clear(&app.data().join("auth.json"));
+                        app.konta = chmurka_core::auth::store::Konta::default();
                         app.konto = None;
-                        app.komunikat = Some("Wylogowano.".into());
+                        app.komunikat = Some("Wylogowano ze wszystkich kont.".into());
                     }
                 }
 

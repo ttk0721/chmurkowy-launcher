@@ -29,7 +29,11 @@ pub enum Wiadomosc {
     /// Błąd z kodem i instrukcją — pokazywany na własnym ekranie.
     BladZKodem(Box<BladUzytkownika>),
     KodUrzadzenia(Box<DeviceCode>),
-    Zalogowano(Box<Account>),
+    /// Konto zalogowane i gotowe do zapamiętania na liście.
+    ZapamietajKonto {
+        konto: Box<Account>,
+        refresh_token: String,
+    },
     /// Gra ruszyła — czas schować okno, jeśli gracz sobie tego życzy.
     GraWystartowala,
     GraZakonczona(Option<i32>),
@@ -48,6 +52,8 @@ pub struct App {
     pub widok: Widok,
     pub manifest: Option<Manifest>,
     pub konto: Option<Account>,
+    /// Wszystkie zapamiętane konta — online i offline naraz.
+    pub konta: chmurka_core::auth::store::Konta,
     pub kod: Option<DeviceCode>,
     pub postep: Option<Progress>,
     pub blad_z_kodem: Option<BladUzytkownika>,
@@ -154,6 +160,7 @@ impl App {
             },
             manifest: None,
             konto: None,
+            konta: chmurka_core::auth::store::Konta::default(),
             kod: None,
             postep: None,
             blad_z_kodem: None,
@@ -445,31 +452,131 @@ impl App {
         });
     }
 
-    /// Próbuje odtworzyć poprzednie logowanie bez pytania użytkownika.
-    /// Niepowodzenie jest ciche — użytkownik po prostu zobaczy ekran logowania.
+    /// Wraca na wybrane konto bez pytania gracza.
+    ///
+    /// Konto offline odtwarzamy od ręki — nick wystarczy, sieć niepotrzebna.
+    /// Przy koncie Microsoft odświeżamy token w tle; niepowodzenie jest ciche,
+    /// gracz po prostu zobaczy ekran kont.
     fn wznow_sesje(&mut self) {
+        use chmurka_core::auth::store;
+
         let sciezka = self.data().join("auth.json");
-        let Some(zapis) = chmurka_core::auth::store::load(&sciezka) else {
+        self.konta = store::wczytaj(&sciezka);
+
+        let Some(wybrane) = self.konta.wybrane().cloned() else {
             return;
         };
+
+        let token = match &wybrane.rodzaj {
+            store::Rodzaj::Offline => {
+                self.konto = Some(store::na_konto_offline(&wybrane));
+                return;
+            }
+            store::Rodzaj::Microsoft { refresh_token } => refresh_token.clone(),
+        };
+
         let n = self.nadawca.clone();
         self.w_tle(async move {
-            use chmurka_core::auth::store;
             let client_id = "00000000402b5328";
-            let Ok(t) = msa::refresh(client_id, &zapis.refresh_token).await else {
+            let Ok(t) = msa::refresh(client_id, &token).await else {
                 return;
             };
             if let Ok(konto) = msa::zaloguj_minecraft(&t).await {
-                let _ = store::save(
-                    &sciezka,
-                    &store::Zapis {
-                        refresh_token: t.refresh_token,
-                        nick: konto.name.clone(),
-                    },
-                );
-                let _ = n.send(Wiadomosc::Zalogowano(Box::new(konto)));
+                let _ = n.send(Wiadomosc::ZapamietajKonto {
+                    konto: Box::new(konto),
+                    refresh_token: t.refresh_token,
+                });
             }
         });
+    }
+
+    /// Dopisuje konto do listy, zapisuje ją i przełącza się na nie.
+    pub fn zapamietaj_konto(&mut self, konto: Account, refresh_token: Option<String>) {
+        use chmurka_core::auth::store;
+
+        self.konta.dodaj(store::ZapisaneKonto {
+            nick: konto.name.clone(),
+            uuid: konto.uuid.clone(),
+            rodzaj: match refresh_token {
+                Some(t) => store::Rodzaj::Microsoft { refresh_token: t },
+                None => store::Rodzaj::Offline,
+            },
+        });
+        self.zapisz_konta();
+        self.konto = Some(konto);
+    }
+
+    pub fn zapisz_konta(&mut self) {
+        let sciezka = self.data().join("auth.json");
+        if let Err(e) = chmurka_core::auth::store::zapisz(&sciezka, &self.konta) {
+            self.komunikat = Some(format!("Nie udało się zapisać kont: {e}"));
+        }
+    }
+
+    /// Przełącza się na zapamiętane konto.
+    ///
+    /// Offline działa od ręki. Przy koncie Microsoft odświeżamy token w tle,
+    /// więc przez chwilę gra jeszcze nie ruszy — ale gracz nie musi nic wpisywać.
+    pub fn przelacz_konto(&mut self, klucz: &str) {
+        use chmurka_core::auth::store;
+
+        if !self.konta.wybierz(klucz) {
+            return;
+        }
+        self.zapisz_konta();
+        let Some(wybrane) = self.konta.wybrane().cloned() else {
+            return;
+        };
+
+        match &wybrane.rodzaj {
+            store::Rodzaj::Offline => {
+                self.konto = Some(store::na_konto_offline(&wybrane));
+                self.widok = Widok::Glowny;
+            }
+            store::Rodzaj::Microsoft { refresh_token } => {
+                // Do czasu odświeżenia nie mamy ważnego tokenu do gry.
+                self.konto = None;
+                let token = refresh_token.clone();
+                let n = self.nadawca.clone();
+                self.zajety = true;
+                self.w_tle(async move {
+                    let client_id = "00000000402b5328";
+                    match msa::refresh(client_id, &token).await {
+                        Ok(t) => match msa::zaloguj_minecraft(&t).await {
+                            Ok(konto) => {
+                                let _ = n.send(Wiadomosc::ZapamietajKonto {
+                                    konto: Box::new(konto),
+                                    refresh_token: t.refresh_token,
+                                });
+                            }
+                            Err(e) => {
+                                let _ = n.send(Wiadomosc::BladZKodem(Box::new(
+                                    BladLaunchera::Logowanie(e).dla_uzytkownika(),
+                                )));
+                            }
+                        },
+                        Err(e) => {
+                            let _ = n.send(Wiadomosc::BladZKodem(Box::new(
+                                    BladLaunchera::Logowanie(e).dla_uzytkownika(),
+                                )));
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    /// Usuwa konto z listy i przechodzi na następne, jeśli jakieś zostało.
+    pub fn zapomnij_konto(&mut self, klucz: &str) {
+        let bylo_wybrane = self.konta.wybrane.as_deref() == Some(klucz);
+        self.konta.usun(klucz);
+        self.zapisz_konta();
+        if bylo_wybrane {
+            self.konto = None;
+            if let Some(nastepne) = self.konta.wybrane().map(|k| k.klucz()) {
+                self.przelacz_konto(&nastepne);
+            }
+        }
     }
 
     fn odbierz(&mut self) {
@@ -510,13 +617,14 @@ impl App {
                     self.przywroc_okno = true;
                 }
                 Wiadomosc::KodUrzadzenia(d) => self.kod = Some(*d),
-                Wiadomosc::Zalogowano(k) => {
+                Wiadomosc::ZapamietajKonto {
+                    konto,
+                    refresh_token,
+                } => {
+                    self.zapamietaj_konto(*konto, Some(refresh_token));
                     self.kod = None;
                     self.zajety = false;
-                    self.konto = Some(*k);
-                    if self.widok == Widok::Logowanie {
-                        self.widok = Widok::Glowny;
-                    }
+                    self.widok = Widok::Glowny;
                 }
                 Wiadomosc::GraWystartowala => {
                     self.gra_dziala = true;
@@ -645,7 +753,6 @@ pub fn zaloguj_microsoft(app: &mut App) {
     let Some(m) = &app.manifest else { return };
     let client_id = m.auth.msa_client_id.clone();
     let n = app.nadawca.clone();
-    let sciezka_auth = app.data().join("auth.json");
 
     app.blad_z_kodem = None;
     app.zajety = true;
@@ -689,14 +796,10 @@ pub fn zaloguj_microsoft(app: &mut App) {
                 Ok(msa::PollResult::Gotowe(t)) => {
                     return match msa::zaloguj_minecraft(&t).await {
                         Ok(konto) => {
-                            let _ = chmurka_core::auth::store::save(
-                                &sciezka_auth,
-                                &chmurka_core::auth::store::Zapis {
-                                    refresh_token: t.refresh_token,
-                                    nick: konto.name.clone(),
-                                },
-                            );
-                            let _ = n.send(Wiadomosc::Zalogowano(Box::new(konto)));
+                            let _ = n.send(Wiadomosc::ZapamietajKonto {
+                                konto: Box::new(konto),
+                                refresh_token: t.refresh_token,
+                            });
                         }
                         Err(e) => zglos(e, &n),
                     };

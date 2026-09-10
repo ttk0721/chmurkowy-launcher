@@ -47,7 +47,7 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                         app.widok = Widok::Paczki;
                     }
                     let (etykieta, podpowiedz) = match &app.konto {
-                        Some(k) => (k.name.clone(), "Zmień konto"),
+                        Some(k) => (k.name.clone(), "Przełącz konto albo dodaj kolejne"),
                         None => ("Nie zalogowano".to_string(), "Kliknij, żeby się zalogować"),
                     };
                     if ui
