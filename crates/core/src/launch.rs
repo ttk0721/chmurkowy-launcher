@@ -144,7 +144,14 @@ mod tests {
             "arguments":{
               "game":["--username","${auth_player_name}","--uuid","${auth_uuid}",
                       "--accessToken","${auth_access_token}","--userType","${user_type}",
-                      "--gameDir","${game_directory}"],
+                      "--gameDir","${game_directory}",
+                      {"rules":[{"action":"allow","features":{"is_demo_user":true}}],"value":"--demo"},
+                      {"rules":[{"action":"allow","features":{"has_custom_resolution":true}}],
+                       "value":["--width","${resolution_width}","--height","${resolution_height}"]},
+                      {"rules":[{"action":"allow","features":{"is_quick_play_singleplayer":true}}],
+                       "value":["--quickPlaySingleplayer","${quickPlaySingleplayer}"]},
+                      {"rules":[{"action":"allow","features":{"is_quick_play_multiplayer":true}}],
+                       "value":["--quickPlayMultiplayer","${quickPlayMultiplayer}"]}],
               "jvm":["-DlibraryDirectory=${library_directory}","-cp","${classpath}"]
             },
             "libraries":[
@@ -241,6 +248,31 @@ mod tests {
         assert!(
             !a.iter().any(|x| x.starts_with("-Xms")),
             "gdy gracz zarzadza sterta, nie dokladamy wlasnego -Xms"
+        );
+    }
+
+    #[test]
+    fn nie_przekazujemy_quick_play_ani_trybu_demo() {
+        // Argumenty warunkowe z profilu vanilla byly doklejane do komendy, bo
+        // reguly sprawdzalismy tylko po systemie. Gra witala wtedy gracza
+        // ekranem „Failed to Quick Play — Could not find world”.
+        let a = argumenty(&[]);
+        for zakazany in [
+            "--demo",
+            "--quickPlaySingleplayer",
+            "--quickPlayMultiplayer",
+            "--quickPlayPath",
+            "--quickPlayRealms",
+        ] {
+            assert!(
+                !a.iter().any(|x| x == zakazany),
+                "{zakazany} nie ma prawa trafic do komendy: {a:?}"
+            );
+        }
+        // Nierozwiniete zmienne tez nie moga przejsc — to one powodowaly blad.
+        assert!(
+            !a.iter().any(|x| x.contains("${")),
+            "w komendzie zostala nierozwinieta zmienna: {a:?}"
         );
     }
 

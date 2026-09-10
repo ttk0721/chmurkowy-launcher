@@ -72,6 +72,10 @@ pub struct Rule {
     pub action: String,
     #[serde(default)]
     pub os: Option<RuleOs>,
+    /// Warunki zależne od możliwości launchera, np. `is_quick_play_singleplayer`.
+    /// Nie obsługujemy żadnej z nich, więc wszystkie są u nas fałszywe.
+    #[serde(default)]
+    pub features: Option<BTreeMap<String, bool>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -199,14 +203,27 @@ pub fn rules_allow(rules: &[Rule], os: Os) -> bool {
     }
     let mut wynik = false;
     for r in rules {
-        let pasuje = match &r.os {
+        let system_pasuje = match &r.os {
             None => true,
             Some(o) => match &o.name {
                 None => true,
                 Some(n) => n == os.nazwa_mojang(),
             },
         };
-        if pasuje {
+
+        // Launcher nie obsługuje żadnej z możliwości wymienianych w `features`
+        // (tryb demo, własna rozdzielczość, Quick Play), więc reguła pasuje tylko
+        // wtedy, gdy oczekuje ich wyłączenia.
+        //
+        // Pominięcie tego sprawdzenia doklejało do komendy gry argumenty `--demo`
+        // oraz `--quickPlaySingleplayer ${quickPlaySingleplayer}`, przez co
+        // Minecraft witał gracza ekranem „Failed to Quick Play”.
+        let mozliwosci_pasuja = match &r.features {
+            None => true,
+            Some(f) => f.values().all(|oczekiwane| !oczekiwane),
+        };
+
+        if system_pasuje && mozliwosci_pasuja {
             wynik = r.action == "allow";
         }
     }
@@ -270,6 +287,34 @@ mod tests {
         .unwrap();
         assert!(rules_allow(&r, Os::Linux));
         assert!(!rules_allow(&r, Os::Windows));
+    }
+
+    #[test]
+    fn reguly_z_features_nie_wlaczaja_argumentow_ktorych_nie_obslugujemy() {
+        // Prawdziwe reguly z profilu 1.21.1. Wczesniej wszystkie przechodzily,
+        // bo sprawdzalismy tylko pole `os`.
+        for warunek in [
+            r#"[{"action":"allow","features":{"is_demo_user":true}}]"#,
+            r#"[{"action":"allow","features":{"has_custom_resolution":true}}]"#,
+            r#"[{"action":"allow","features":{"has_quick_plays_support":true}}]"#,
+            r#"[{"action":"allow","features":{"is_quick_play_singleplayer":true}}]"#,
+            r#"[{"action":"allow","features":{"is_quick_play_multiplayer":true}}]"#,
+            r#"[{"action":"allow","features":{"is_quick_play_realms":true}}]"#,
+        ] {
+            let r: Vec<Rule> = serde_json::from_str(warunek).unwrap();
+            assert!(
+                !rules_allow(&r, Os::Linux),
+                "regula {warunek} nie moze przejsc"
+            );
+        }
+    }
+
+    #[test]
+    fn regula_oczekujaca_wylaczonej_mozliwosci_przechodzi() {
+        let r: Vec<Rule> =
+            serde_json::from_str(r#"[{"action":"allow","features":{"is_demo_user":false}}]"#)
+                .unwrap();
+        assert!(rules_allow(&r, Os::Linux));
     }
 
     #[test]
