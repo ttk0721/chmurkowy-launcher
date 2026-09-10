@@ -441,6 +441,24 @@ fn smiec_roboczy(nazwa: &str) -> bool {
         || nazwa.ends_with('~')
         || nazwa.contains(".toml_backup")
         || nazwa.contains(".json_backup")
+        // Dziennik moda z komputera utrzymującego. Graczom niepotrzebny,
+        // a rośnie z każdą rozgrywką.
+        || nazwa.ends_with(".log")
+        // Odcisk karty graficznej TEGO komputera. U każdego gracza jest inny,
+        // więc i tak zostanie nadpisany przy pierwszym uruchomieniu — a po
+        // drodze mówi wszystkim, jaką kartę ma utrzymujący paczkę.
+        || nazwa == "sodium-fingerprint.json"
+        // Rozmiar i położenie okna wczesnego ładowania: sprawa jednego ekranu,
+        // nie paczki.
+        || nazwa == "early_window_reference.properties"
+}
+
+/// Katalog, który mod zakłada na własne potrzeby w czasie działania.
+///
+/// Do paczki nie ma czego wkładać: u gracza powstanie sam, a u nas zbiera
+/// zapiski z rozgrywek utrzymującego.
+fn katalog_smieci(nazwa: &str) -> bool {
+    nazwa.eq_ignore_ascii_case("log") || nazwa.eq_ignore_ascii_case("logs")
 }
 
 /// Katalog konfiguracji, który mod zakłada osobno dla każdego świata.
@@ -467,7 +485,7 @@ fn zbierz_configi(katalog: &Path, prefiks: &str, out: &mut Vec<(String, PathBuf,
         }
         let rel = format!("{prefiks}/{nazwa}");
         if w.path().is_dir() {
-            if katalog_na_swiat(prefiks, &nazwa) {
+            if katalog_na_swiat(prefiks, &nazwa) || katalog_smieci(&nazwa) {
                 continue;
             }
             zbierz_configi(&w.path(), &rel, out);
@@ -486,6 +504,25 @@ mod testy_paczowania {
     fn kopie_configow_neoforge_nie_jada_do_paczki() {
         assert!(smiec_roboczy("chloride-client.toml_backup1"));
         assert!(smiec_roboczy("chloride-client.toml_backup2"));
+    }
+
+    /// Te cztery wpisy naprawde jechaly do graczy: dwa dzienniki moda,
+    /// odcisk karty graficznej utrzymujacego i polozenie jego okna.
+    #[test]
+    fn slady_dzialania_moda_nie_jada_do_paczki() {
+        assert!(smiec_roboczy("CSC_Record.log"));
+        assert!(smiec_roboczy("CSC_Warn.log"));
+        assert!(smiec_roboczy("sodium-fingerprint.json"));
+        assert!(smiec_roboczy("early_window_reference.properties"));
+        assert!(katalog_smieci("Log"));
+        assert!(katalog_smieci("logs"));
+    }
+
+    #[test]
+    fn zwykle_katalogi_configow_zostaja() {
+        assert!(!katalog_smieci("fancymenu"));
+        assert!(!katalog_smieci("customization"));
+        assert!(!katalog_smieci("xaero"));
     }
 
     #[test]
