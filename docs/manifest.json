@@ -2272,6 +2272,15 @@
       ]
     },
     {
+      "path": "mods/witherreincarnated-1.21.1-1.0.5.jar",
+      "policy": "mirror",
+      "sha512": "7341fb6914bb9a922993c4481fbae966d9ed0321c8e625fd67fd626795c61ad989204abcdc1acafe983dea49084ae1e0772359fa6d4e7aedbe2e4ecd5539c622",
+      "size": 12616597,
+      "urls": [
+        "https://cdn.modrinth.com/data/YDc8cRWF/versions/6d4I4VPO/witherreincarnated-1.21.1-1.0.5.jar"
+      ]
+    },
+    {
       "path": "mods/worldweaver-21.0.25.jar",
       "policy": "mirror",
       "sha512": "23926e6f737f9d73797ea7e5dfac2e6611a6cecdb768f236465c05e5750108100b6dbeb911e5f55b987f81a30f786e30a5910904dec6751e5c56bc8bf78eb2a7",
@@ -6262,7 +6271,7 @@
     },
     "minecraft": "1.21.1",
     "name": "Chmurkowy Serwer",
-    "version": "2026.09.10-6"
+    "version": "2026.09.10-7"
   },
   "schema": 1
 }
