@@ -83,7 +83,17 @@ pub fn zastosuj_motyw(ctx: &egui::Context) {
     // Cel dotykowy/klikalny — minimum z wytycznych to 44 px.
     styl.spacing.interact_size.y = 30.0;
 
-    ctx.set_style(styl);
+    // Launcher ma wyglądać tak samo niezależnie od motywu systemu.
+    //
+    // `set_style` zapisuje styl tylko dla motywu aktywnego w tej chwili.
+    // Na Windowsie, gdzie jasny motyw jest domyślny, egui przełączało się
+    // na swój jasny zestaw i nasze kolory przepadały: tła paneli zostawały
+    // ciemne, bo rysujemy je własną ramką, ale przyciski i pola tekstowe
+    // robiły się **białe**. W jednym oknie wyglądało to jak dwa różne
+    // programy. `all_styles_mut` wpisuje ten sam styl do obu zestawów,
+    // a `set_theme` przestaje iść za ustawieniem systemu.
+    ctx.set_theme(egui::ThemePreference::Dark);
+    ctx.all_styles_mut(|s| *s = styl.clone());
 }
 
 fn zainstaluj_czcionki(ctx: &egui::Context) {
@@ -214,4 +224,50 @@ pub fn przycisk_ikona(ui: &mut egui::Ui, ikona: Ikona, podpowiedz: &str) -> egui
     }
 
     odp.on_hover_text(podpowiedz)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Na Windowsie jasny motyw systemu jest domyslny. Wczesniej `set_style`
+    /// zapisywal nasze kolory tylko do zestawu aktywnego w chwili wywolania,
+    /// wiec po przelaczeniu na jasny egui siegalo po swoje wizualia:
+    /// przyciski i pola tekstowe robily sie biale, a tla paneli zostawaly
+    /// ciemne, bo rysujemy je wlasna ramka. W jednym oknie wygladalo to
+    /// jak dwa rozne programy.
+    #[test]
+    fn nasze_kolory_obowiazuja_w_obu_motywach_systemu() {
+        let ctx = egui::Context::default();
+        zastosuj_motyw(&ctx);
+
+        for motyw in [egui::Theme::Dark, egui::Theme::Light] {
+            let s = ctx.style_of(motyw);
+            assert_eq!(
+                s.visuals.widgets.inactive.weak_bg_fill, PANEL,
+                "tlo przycisku w motywie {motyw:?} nie jest nasze"
+            );
+            assert_eq!(
+                s.visuals.panel_fill, TLO,
+                "tlo panelu w motywie {motyw:?} nie jest nasze"
+            );
+            assert_eq!(
+                s.visuals.extreme_bg_color, PANEL,
+                "tlo pola tekstowego w motywie {motyw:?} nie jest nasze"
+            );
+            assert!(s.visuals.dark_mode, "motyw {motyw:?} musi zostac ciemny");
+        }
+    }
+
+    /// Nie idziemy za ustawieniem systemu — inaczej jasny Windows znow
+    /// przelaczylby wyglad w polowie dzialania programu.
+    #[test]
+    fn nie_idziemy_za_motywem_systemu() {
+        let ctx = egui::Context::default();
+        zastosuj_motyw(&ctx);
+        assert_eq!(
+            ctx.options(|o| o.theme_preference),
+            egui::ThemePreference::Dark
+        );
+    }
 }
