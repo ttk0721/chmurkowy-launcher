@@ -100,33 +100,24 @@ pub fn build_command(p: &LaunchParams) -> Result<std::process::Command, LaunchEr
         cmd.arg(format!("-Xmx{}M", p.max_mb));
     }
 
-    // Nastawy odśmiecacza dla ciasnej pamięci.
+    // Celowo NIE dokładamy tu własnych nastaw odśmiecacza ani limitu
+    // metaspace.
     //
-    // Domyślny G1 zbiera rzadko i dużymi partiami. Przy paczce z 261 modami
-    // na maszynie, gdzie sterta ledwo starcza, kończy się to długimi
-    // przestojami: procesor stoi na jednym procencie, skacze do czterdziestu
-    // na czas zbierania i tak w kółko. Z zewnątrz wygląda to na zawieszenie.
+    // Próbowaliśmy: `-XX:MaxMetaspaceSize=512M` miało powstrzymać obszar,
+    // który przy tylu modach rośnie i rośnie. Skutek był taki, że przy 349
+    // plikach modów gra dobijała do limitu **w trakcie rozgrywki** — klasy
+    // wczytują się leniwie, więc pierwszy nowy potwór albo nowa struktura
+    // przy generowaniu terenu kończyły się `OutOfMemoryError: Metaspace`.
+    // Gra nie padała od razu, tylko wchodziła w korkociąg pełnych zbiórek:
+    // kolejne ticki serwera trwały 40, 80 i 120 sekund, obraz stawał na
+    // jednej klatce i zostawało tylko ubicie procesu.
     //
-    // Krótszy cel pauzy i wcześniejszy start cyklu każą zbierać częściej,
-    // za to po trochu. `MaxMetaspaceSize` trzyma w ryzach obszar, który przy
-    // tylu modach potrafi rosnąć bez końca i wypycha proces poza pamięć.
+    // Metaspace ma rosnąć tyle, ile trzeba — ogranicza go pamięć systemu,
+    // a nie my. Cel pauzy odśmiecacza też zostawiamy Javie: domyślne
+    // ustawienia działały tu bez zarzutu, a nasze zgadywanie tylko zaszkodziło.
     //
-    // Każdą z tych nastaw gracz może nadpisać własnym parametrem — dokładamy
-    // tylko te, których sam nie podał.
-    for (przedrostek, nastawa) in [
-        ("-XX:+UseG1GC", "-XX:+UseG1GC"),
-        ("-XX:MaxGCPauseMillis", "-XX:MaxGCPauseMillis=50"),
-        ("-XX:G1HeapRegionSize", "-XX:G1HeapRegionSize=16M"),
-        (
-            "-XX:InitiatingHeapOccupancyPercent",
-            "-XX:InitiatingHeapOccupancyPercent=35",
-        ),
-        ("-XX:MaxMetaspaceSize", "-XX:MaxMetaspaceSize=512M"),
-    ] {
-        if !p.dodatkowe.iter().any(|a| a.starts_with(przedrostek)) {
-            cmd.arg(nastawa);
-        }
-    }
+    // Gracz, który wie, co robi, nadal może podać swoje parametry
+    // w Ustawieniach — trafią do komendy nietknięte.
     for a in p.dodatkowe {
         cmd.arg(a);
     }
@@ -265,34 +256,43 @@ mod tests {
         assert!(a.contains(&"-Xmx4096M".to_string()));
     }
 
-    /// Na ciasnej pamieci domyslny odsmiecacz robi dlugie przestoje —
-    /// z zewnatrz nie do odroznienia od zawieszenia.
+    /// Limit metaspace wywrocil rozgrywke na maszynie testera: przy 349
+    /// plikach modow gra dobijala do 512 MB w trakcie gry, przy generowaniu
+    /// terenu, i wchodzila w korkociag pelnych zbiorek — ticki po 40, 80
+    /// i 120 sekund, jedna klatka na sekunde, koniec przez ubicie procesu.
+    /// Metaspace ma rosnac tyle, ile trzeba.
     #[test]
-    fn dokladamy_nastawy_odsmiecacza() {
+    fn nie_ograniczamy_metaspace() {
         let a = argumenty(&[]);
-        for oczekiwana in [
-            "-XX:+UseG1GC",
-            "-XX:MaxGCPauseMillis=50",
-            "-XX:G1HeapRegionSize=16M",
-            "-XX:InitiatingHeapOccupancyPercent=35",
-            "-XX:MaxMetaspaceSize=512M",
+        assert!(
+            !a.iter().any(|x| x.starts_with("-XX:MaxMetaspaceSize")),
+            "limit metaspace zawiesza gre przy tej liczbie modow: {a:?}"
+        );
+    }
+
+    /// Domyslne nastawy odsmiecacza dzialaly tu bez zarzutu. Nasze wlasne
+    /// byly zgadywaniem pod maszyne, ktorej problem lezal zupelnie gdzie
+    /// indziej — i tylko zaszkodzily.
+    #[test]
+    fn nie_narzucamy_wlasnych_nastaw_odsmiecacza() {
+        let a = argumenty(&[]);
+        for zakazana in [
+            "-XX:MaxGCPauseMillis",
+            "-XX:InitiatingHeapOccupancyPercent",
+            "-XX:G1HeapRegionSize",
         ] {
-            assert!(a.iter().any(|x| x == oczekiwana), "brakuje {oczekiwana}: {a:?}");
+            assert!(
+                !a.iter().any(|x| x.starts_with(zakazana)),
+                "{zakazana} nie ma prawa trafic do komendy: {a:?}"
+            );
         }
     }
 
-    /// Gracz, ktory sam dobral nastawe, ma miec ostatnie slowo. Dwie te same
-    /// opcje w jednej komendzie to zrodlo bledow nie do wysledzenia.
+    /// Wlasne parametry gracza nadal maja przechodzic nietkniete.
     #[test]
-    fn wlasna_nastawa_odsmiecacza_wypiera_nasza() {
-        let a = argumenty(&["-XX:MaxGCPauseMillis=200".to_string()]);
-        assert!(a.contains(&"-XX:MaxGCPauseMillis=200".to_string()));
-        assert!(
-            !a.iter().any(|x| x == "-XX:MaxGCPauseMillis=50"),
-            "nie moze byc dwoch nastaw tej samej opcji: {a:?}"
-        );
-        // Pozostale nastawy zostaja — nadpisanie jednej nie kasuje reszty.
-        assert!(a.contains(&"-XX:MaxMetaspaceSize=512M".to_string()));
+    fn wlasne_nastawy_gracza_przechodza() {
+        let a = argumenty(&["-XX:MaxMetaspaceSize=1G".to_string()]);
+        assert!(a.contains(&"-XX:MaxMetaspaceSize=1G".to_string()));
     }
 
     #[test]
