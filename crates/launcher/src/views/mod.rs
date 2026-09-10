@@ -4,6 +4,7 @@ pub mod login;
 pub mod main;
 pub mod packs;
 pub mod settings;
+pub mod update;
 
 use crate::theme::{self, Ikona};
 

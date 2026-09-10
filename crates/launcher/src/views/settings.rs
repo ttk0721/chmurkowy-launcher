@@ -279,22 +279,32 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                             .color(theme::AKCENT),
                         );
                         ui.add_space(theme::S1);
-                        let klucz = if cfg!(target_os = "windows") {
-                            "windows-x64"
-                        } else {
-                            "linux-x64"
-                        };
-                        if let Some(adres) = m.launcher.urls.get(klucz).cloned() {
-                            if ui.add(theme::przycisk_zwykly("Pobierz nową wersję")).clicked() {
-                                if let Err(e) = open::that(&adres) {
-                                    app.komunikat =
-                                        Some(format!("Nie udało się otworzyć przeglądarki: {e}"));
-                                }
-                            }
+                        // Wcześniej stał tu przycisk otwierający przeglądarkę
+                        // z linkiem do GitHuba — zaszłość sprzed samoaktualizacji.
+                        // Gracz miał wtedy sam pobrać plik i podmienić go ręcznie,
+                        // co przy dziesięciolatku nie ma prawa się udać.
+                        let ma_plik = m
+                            .launcher
+                            .urls
+                            .contains_key(chmurka_core::aktualizacja::klucz_systemu());
+                        if super::przycisk_warunkowy(
+                            ui,
+                            "Zaktualizuj teraz",
+                            ma_plik && !app.zajety,
+                            if ma_plik {
+                                "Poczekaj, aż launcher skończy to, co teraz robi."
+                            } else {
+                                "Dla tego systemu nie ma jeszcze gotowego pliku."
+                            },
+                        )
+                        .clicked()
+                        {
+                            app.zaktualizuj_recznie();
                         }
                         ui.add_space(4.0);
                         ui.label(theme::drobny(
-                            "Podmień plik launchera. Folder data zostaje nietknięty.",
+                            "Launcher pobierze nową wersję, podmieni się i uruchomi ponownie. \
+                             Nic nie musisz robić, a folder data zostaje nietknięty.",
                         ));
                     }
                 }

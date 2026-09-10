@@ -18,6 +18,7 @@ pub enum Widok {
     Paczki,
     Blad,
     Konsola,
+    Aktualizacja,
 }
 
 /// Wiadomości płynące z zadań w tle do wątku rysującego.
@@ -259,7 +260,20 @@ impl App {
     /// Cokolwiek pójdzie nie tak, zostaje przy starej wersji i wpuszcza
     /// gracza do gry. Nieudana aktualizacja nie może być powodem, dla którego
     /// ktoś nie zagra.
+    /// Wywoływane samo, gdy przyjdzie manifest.
     fn zaktualizuj_sie(&mut self) {
+        self.zaktualizuj(false);
+    }
+
+    /// Wywoływane z Ustawień, gdy gracz kliknie „Zaktualizuj teraz”.
+    ///
+    /// Ręczne kliknięcie omija znacznik nieudanej próby: skoro gracz prosi
+    /// wprost, to nie nam mu odmawiać, bo poprzednim razem coś nie wyszło.
+    pub fn zaktualizuj_recznie(&mut self) {
+        self.zaktualizuj(true);
+    }
+
+    fn zaktualizuj(&mut self, recznie: bool) {
         use chmurka_core::aktualizacja::{self, Decyzja};
 
         // W trakcie instalacji albo gry nie ma o czym mówić — podmiana pliku
@@ -286,17 +300,21 @@ impl App {
                 ));
                 return;
             }
-            Decyzja::JuzProbowano(w) => {
+            Decyzja::JuzProbowano(w) if !recznie => {
                 self.log.push(format!(
                     "Aktualizacja do {w} raz się nie powiodła — zostaję przy {biezaca}."
                 ));
                 return;
             }
-            Decyzja::Nowsza { .. } => {}
+            Decyzja::JuzProbowano(_) | Decyzja::Nowsza { .. } => {}
         }
 
         let Some(url) = url else { return };
         self.zajety = true;
+        // Bez własnego ekranu cała aktualizacja wyglądała tak: okno znika
+        // i po chwili wraca. Teraz widać, co się dzieje i że nic nie trzeba
+        // klikać ani niczego pobierać z przeglądarki.
+        self.widok = Widok::Aktualizacja;
         self.log
             .push(format!("Aktualizuję launcher do {najnowsza}…"));
 
@@ -316,6 +334,8 @@ impl App {
                     let _ = n.send(Wiadomosc::Notatka(format!(
                         "Nie udało się zaktualizować launchera ({e}). Gram na tej wersji."
                     )));
+                    // Nieudana aktualizacja nie może zostawić gracza na ekranie
+                    // z napisem „za chwilę się zamknę" — wracamy tam, skąd przyszedł.
                     let _ = n.send(Wiadomosc::Wolny);
                 }
             }
@@ -422,6 +442,9 @@ impl App {
                 Wiadomosc::Wolny => {
                     self.zajety = false;
                     self.postep = None;
+                    if self.widok == Widok::Aktualizacja {
+                        self.widok = Widok::Glowny;
+                    }
                 }
                 Wiadomosc::ZrestartujDo(exe) => {
                     // Nowy plik leży już pod nazwą, spod której wystartowaliśmy.
@@ -494,6 +517,7 @@ impl eframe::App for App {
             Widok::Paczki => crate::views::packs::rysuj(self, ctx),
             Widok::Blad => crate::views::error::rysuj(self, ctx),
             Widok::Konsola => crate::views::console::rysuj(self, ctx),
+            Widok::Aktualizacja => crate::views::update::rysuj(self, ctx),
         }
     }
 }
