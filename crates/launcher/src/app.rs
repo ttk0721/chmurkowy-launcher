@@ -31,6 +31,11 @@ pub enum Wiadomosc {
     /// Gra ruszyła — czas schować okno, jeśli gracz sobie tego życzy.
     GraWystartowala,
     GraZakonczona(Option<i32>),
+    /// Nowa wersja launchera leży już pod tą ścieżką. Trzeba ją odpalić
+    /// i zakończyć bieżący proces.
+    ZrestartujDo(PathBuf),
+    /// Robota w tle skończona, interfejs znów jest do dyspozycji gracza.
+    Wolny,
 }
 
 pub struct App {
@@ -140,6 +145,9 @@ impl App {
         if app.widok == Widok::Paczki {
             app.odswiez_paczki();
         }
+        // Poprzednia wersja launchera leży obok pod nazwą z „.stary".
+        // Teraz na pewno już nie jest uruchomiona, więc można ją skasować.
+        chmurka_core::aktualizacja::posprzataj_po_podmianie();
         app.wczytaj_manifest();
         app.wznow_sesje();
         app
@@ -193,6 +201,78 @@ impl App {
         });
     }
 
+    /// Podmienia launcher na najnowszy, jeśli manifest podaje nowszy.
+    ///
+    /// Poprawki wychodzą czasem po kilka na godzinę i nie da się prosić
+    /// dziesięciolatka, żeby pobierał plik z GitHuba. Wystarczy powiedzieć
+    /// „zamknij i odpal ponownie" — resztę launcher robi sam.
+    ///
+    /// Cokolwiek pójdzie nie tak, zostaje przy starej wersji i wpuszcza
+    /// gracza do gry. Nieudana aktualizacja nie może być powodem, dla którego
+    /// ktoś nie zagra.
+    fn zaktualizuj_sie(&mut self) {
+        use chmurka_core::aktualizacja::{self, Decyzja};
+
+        // W trakcie instalacji albo gry nie ma o czym mówić — podmiana pliku
+        // spod działającego procesu to ostatnia rzecz, jakiej wtedy trzeba.
+        if self.zajety {
+            return;
+        }
+        let Some(m) = &self.manifest else { return };
+
+        let biezaca = env!("CARGO_PKG_VERSION");
+        let najnowsza = m.launcher.latest_version.clone();
+        let url = m
+            .launcher
+            .urls
+            .get(aktualizacja::klucz_systemu())
+            .cloned();
+        let data = self.data();
+
+        match aktualizacja::zdecyduj(biezaca, &najnowsza, url.as_deref(), &data) {
+            Decyzja::Aktualna => return,
+            Decyzja::BrakAdresu => {
+                self.log.push(format!(
+                    "Jest launcher {najnowsza}, ale manifest nie podaje pliku dla tego systemu."
+                ));
+                return;
+            }
+            Decyzja::JuzProbowano(w) => {
+                self.log.push(format!(
+                    "Aktualizacja do {w} raz się nie powiodła — zostaję przy {biezaca}."
+                ));
+                return;
+            }
+            Decyzja::Nowsza { .. } => {}
+        }
+
+        let Some(url) = url else { return };
+        self.zajety = true;
+        self.log
+            .push(format!("Aktualizuję launcher do {najnowsza}…"));
+
+        let n = self.nadawca.clone();
+        let n2 = n.clone();
+        let postep: Arc<dyn Fn(Progress) + Send + Sync> = Arc::new(move |p| {
+            let _ = n2.send(Wiadomosc::Postep(p));
+        });
+
+        self.runtime.spawn(async move {
+            let dl = chmurka_core::net::Downloader::new(4);
+            match aktualizacja::pobierz_i_podmien(&url, &najnowsza, &data, &dl, postep).await {
+                Ok(exe) => {
+                    let _ = n.send(Wiadomosc::ZrestartujDo(exe));
+                }
+                Err(e) => {
+                    let _ = n.send(Wiadomosc::Notatka(format!(
+                        "Nie udało się zaktualizować launchera ({e}). Gram na tej wersji."
+                    )));
+                    let _ = n.send(Wiadomosc::Wolny);
+                }
+            }
+        });
+    }
+
     /// Próbuje odtworzyć poprzednie logowanie bez pytania użytkownika.
     /// Niepowodzenie jest ciche — użytkownik po prostu zobaczy ekran logowania.
     fn wznow_sesje(&mut self) {
@@ -230,7 +310,10 @@ impl App {
 
         while let Ok(w) = self.odbiorca.try_recv() {
             match w {
-                Wiadomosc::Manifest(m) => self.manifest = Some(*m),
+                Wiadomosc::Manifest(m) => {
+                    self.manifest = Some(*m);
+                    self.zaktualizuj_sie();
+                }
                 Wiadomosc::Postep(p) => {
                     if p.stage == Stage::Ready {
                         self.log.push(p.label.clone());
@@ -275,6 +358,26 @@ impl App {
                         "Gra zakończyła się kodem {}",
                         kod.map(|k| k.to_string()).unwrap_or_else(|| "nieznanym".into())
                     ));
+                }
+                Wiadomosc::Wolny => {
+                    self.zajety = false;
+                    self.postep = None;
+                }
+                Wiadomosc::ZrestartujDo(exe) => {
+                    // Nowy plik leży już pod nazwą, spod której wystartowaliśmy.
+                    // Odpalamy go i schodzimy z drogi — gracz zobaczy okno,
+                    // które na moment znika i wraca w nowej wersji.
+                    match chmurka_core::aktualizacja::uruchom_ponownie(&exe) {
+                        Ok(()) => self.zakoncz = true,
+                        Err(e) => {
+                            self.zajety = false;
+                            self.postep = None;
+                            self.log.push(format!(
+                                "Nowy launcher jest już na dysku, ale nie dał się uruchomić \
+                                 ({e}). Zamknij i odpal launcher ponownie."
+                            ));
+                        }
+                    }
                 }
             }
         }

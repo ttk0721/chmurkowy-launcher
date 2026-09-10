@@ -31,7 +31,7 @@ enum Polecenie {
         version: String,
         /// Najnowsza wersja launchera — launcher porownuje ja ze swoja
         /// i informuje gracza o dostepnej aktualizacji.
-        #[arg(long, default_value = "0.4.5")]
+        #[arg(long, default_value = "0.4.6")]
         launcher_version: String,
     },
     /// Instaluje wszystko do wskazanego katalogu danych.
@@ -345,11 +345,16 @@ fn pack_build(
         "java": { "major": 21, "distribution": "temurin" },
         "memory": { "min_mb": 512, "max_mb": 4096 },
         "auth": { "msa_client_id": "00000000402b5328" },
+        // Adresy celowo wskazuja konkretne wydanie, a nie „latest". Launcher
+        // podmienia sie sam, wiec musi dostac dokladnie te wersje, ktora
+        // manifest oglasza. Przy „latest" klient siegajacy po plik, zanim CI
+        // skonczy budowanie, pobralby po cichu poprzednia binarke i uznal,
+        // ze aktualizacja nie wskoczyla.
         "launcher": {
             "latest_version": launcher_version,
             "urls": {
-                "windows-x64": format!("https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-windows-x64.exe"),
-                "linux-x64": format!("https://github.com/ttk0721/chmurkowy-launcher/releases/latest/download/ChmurkowyLauncher-linux-x64")
+                "windows-x64": adres_wydania(launcher_version, "ChmurkowyLauncher-windows-x64.exe"),
+                "linux-x64": adres_wydania(launcher_version, "ChmurkowyLauncher-linux-x64")
             }
         },
         "mirror_dirs": ["mods"],
@@ -412,6 +417,11 @@ fn adres_wlasny(base_url: &str, sha512: &str) -> String {
     )
 }
 
+/// Adres pliku z konkretnego wydania na GitHubie.
+fn adres_wydania(wersja: &str, plik: &str) -> String {
+    format!("https://github.com/ttk0721/chmurkowy-launcher/releases/download/v{wersja}/{plik}")
+}
+
 /// Czy to plik roboczy, który powstał u utrzymującego i nie ma czego szukać
 /// w paczce?
 ///
@@ -460,6 +470,17 @@ mod testy_paczowania {
         assert!(!smiec_roboczy("chloride-client.toml"));
         assert!(!smiec_roboczy("iris.properties"));
         assert!(!smiec_roboczy("options.txt"));
+    }
+
+    /// Launcher podmienia sie sam, wiec adres musi wskazywac dokladnie te
+    /// wersje, ktora manifest oglasza — nie „to, co akurat jest najnowsze".
+    #[test]
+    fn adres_wskazuje_konkretne_wydanie() {
+        assert_eq!(
+            adres_wydania("0.4.6", "ChmurkowyLauncher-linux-x64"),
+            "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.6/ChmurkowyLauncher-linux-x64"
+        );
+        assert!(!adres_wydania("0.4.6", "x").contains("latest"));
     }
 
     #[test]

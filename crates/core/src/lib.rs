@@ -1,3 +1,4 @@
+pub mod aktualizacja;
 pub mod auth;
 pub mod bledy;
 pub mod game_install;
