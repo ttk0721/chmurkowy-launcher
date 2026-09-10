@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Chmurkowy Launcher
+Comment=Minecraft z paczką modów Chmurkowego Serwera
+GenericName=Launcher Minecrafta
+# Ścieżkę wstawia install.sh — w archiwum jej nie ma, bo katalog domowy
+# każdy ma inny.
+Exec=@EXEC@
+Icon=chmurkowy-launcher
+Terminal=false
+Categories=Game;
+StartupNotify=true
+StartupWMClass=ChmurkowyLauncher
+Keywords=minecraft;gra;mody;

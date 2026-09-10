@@ -7,6 +7,7 @@ pub mod java;
 pub mod konsola;
 pub mod launch;
 pub mod manifest;
+pub mod miejsca;
 pub mod narzedzia;
 pub mod net;
 pub mod pack_sync;

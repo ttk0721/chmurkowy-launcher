@@ -41,7 +41,10 @@ pub enum Wiadomosc {
 }
 
 pub struct App {
-    pub katalog: PathBuf,
+    /// Gdzie leżą gra, paczka, ustawienia i logi. Od 0.4.14 to katalog
+    /// użytkownika, a nie katalog obok pliku launchera — instalacja nie jest
+    /// miejscem na dwugigabajtowe światy gracza.
+    katalog_danych: PathBuf,
     pub widok: Widok,
     pub manifest: Option<Manifest>,
     pub konto: Option<Account>,
@@ -86,7 +89,13 @@ impl App {
             .build()
             .expect("runtime tokio");
 
-        let katalog_danych = katalog.join("data");
+        // Stare instalacje trzymaly dane obok pliku launchera. Przenosimy je
+        // raz, przy pierwszym uruchomieniu tej wersji — nikt nie pobiera
+        // paczki drugi raz i nikt nie traci swiata z singleplayera.
+        let docelowy = chmurka_core::miejsca::katalog_uzytkownika()
+            .unwrap_or_else(|| katalog.clone());
+        let (katalog_danych, przeprowadzka) =
+            chmurka_core::miejsca::ustal(&katalog, &docelowy);
         let plik_ustawien = katalog_danych.join("settings.json");
         let pierwsze_uruchomienie = !plik_ustawien.is_file();
         let mut ustawienia = Ustawienia::wczytaj(&plik_ustawien);
@@ -98,11 +107,12 @@ impl App {
                 ustawienia.pamiec_mb = chmurka_core::pamiec::zalecana_mb(mb);
             }
         }
+        let sciezka_logu = katalog_danych.join("logs").join("game.log");
         // ksni zaklada dzialajacy runtime tokio, wiec ikone tworzymy w jego kontekscie.
         let zasobnik = runtime.block_on(crate::zasobnik::utworz(nadawca_zas));
 
         let mut app = Self {
-            katalog,
+            katalog_danych,
             // Furtka do pracy nad wyglądem: CHMURKA_WIDOK=logowanie|ustawienia
             widok: match std::env::var("CHMURKA_WIDOK").as_deref() {
                 Ok("logowanie") => Widok::Logowanie,
@@ -125,7 +135,7 @@ impl App {
             zajety: false,
             gra_dziala: false,
             konsola: chmurka_core::konsola::Konsola::nowa(
-                katalog_danych.join("logs").join("game.log"),
+                sciezka_logu,
             ),
             schowaj_okno: false,
             przywroc_okno: false,
@@ -150,6 +160,10 @@ impl App {
                 .dla_uzytkownika(),
             );
         }
+        let opis = przeprowadzka.opis();
+        if !opis.is_empty() {
+            app.log.push(opis);
+        }
         if pierwsze_uruchomienie {
             app.zapisz_ustawienia();
         }
@@ -166,7 +180,7 @@ impl App {
     }
 
     pub fn data(&self) -> PathBuf {
-        self.katalog.join("data")
+        self.katalog_danych.clone()
     }
 
     /// Przeładowuje stan paczek z plików gry.

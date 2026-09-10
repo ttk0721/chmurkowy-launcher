@@ -65,21 +65,57 @@ jobs:
             exit 1
           fi
 
+      # Goła binarka zostaje w wydaniu obok instalatora: to po nią sięga
+      # samoaktualizacja launchera, podmieniajac wlasny plik.
       - name: Zmiana nazwy
         shell: bash
         run: cp "target/release/${{ matrix.nazwa }}" "${{ matrix.artefakt }}"
 
+      # --- Pakowanie ---
+
+      - name: Archiwum instalacyjne (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          KAT=ChmurkowyLauncher-linux
+          mkdir -p "$KAT"
+          cp target/release/ChmurkowyLauncher "$KAT/"
+          cp packaging/linux/install.sh packaging/linux/uninstall.sh "$KAT/"
+          cp packaging/linux/chmurkowy-launcher.desktop "$KAT/"
+          cp crates/launcher/assets/ikona.png "$KAT/"
+          chmod +x "$KAT/ChmurkowyLauncher" "$KAT"/*.sh
+          tar czf ChmurkowyLauncher-linux-x64.tar.gz "$KAT"
+          tar tzf ChmurkowyLauncher-linux-x64.tar.gz
+
+      - name: Instalator (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            Write-Host "Inno Setup nie jest zainstalowany — dokladam."
+            choco install innosetup --no-progress -y
+          }
+          Copy-Item target\release\ChmurkowyLauncher.exe packaging\windows\
+          $wersja = "${{ github.ref_name }}" -replace '^v', ''
+          & $iscc "/DWersja=$wersja" packaging\windows\chmurkowy.iss
+          Copy-Item packaging\windows\ChmurkowyLauncher-setup.exe .
+          Get-Item ChmurkowyLauncher-setup.exe | Format-List Name, Length
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artefakt }}
-          path: ${{ matrix.artefakt }}
+          path: |
+            ${{ matrix.artefakt }}
+            ChmurkowyLauncher-linux-x64.tar.gz
+            ChmurkowyLauncher-setup.exe
+          if-no-files-found: ignore
 
       # --- Wydanie rusza od razu po Linuksie ---
       #
       # Linux kompiluje sie w ~6 minut, Windows w ~11. Czekanie na oba trzymalo
       # gotowa binarke w szufladzie przez te dodatkowe minuty, choc nikomu nie
       # byla do niczego potrzebna. Publikujemy wiec od razu, z adnotacja,
-      # ze plik dla Windowsa jeszcze sie kompiluje — dokleja go zadanie ponizej.
+      # ze pliki dla Windowsa jeszcze sie kompiluja — doklada je zadanie ponizej.
       #
       # Opis wydania bierzemy z tresci adnotowanego tagu: changelog powstaje
       # razem z wersja i nie ma osobnego pliku, ktory mozna zapomniec. Bez
@@ -99,12 +135,14 @@ jobs:
           echo "--- treść wydania ---"
           cat notatki.md
 
-      - name: Wydanie z binarką Linuksa
+      - name: Wydanie z plikami Linuksa
         if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           body_path: notatki.md
-          files: ${{ matrix.artefakt }}
+          files: |
+            ChmurkowyLauncher-linux-x64
+            ChmurkowyLauncher-linux-x64.tar.gz
 
   # Windows dolacza do gotowego juz wydania i zdejmuje adnotacje o czekaniu.
   dolacz-windowsa:
@@ -128,7 +166,9 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           body_path: notatki.md
-          files: ChmurkowyLauncher-windows-x64.exe
+          files: |
+            ChmurkowyLauncher-windows-x64.exe
+            ChmurkowyLauncher-setup.exe
 
   # Gdy Windows nie wyszedl, a Linux zdazyl juz opublikowac wydanie, w opisie
   # zostalaby obietnica pliku, ktory nigdy nie przyjdzie. Prostujemy ja sami,
@@ -157,6 +197,6 @@ jobs:
 
           ---
           ⚠️ **Budowanie wersji na Windowsa nie powiodło się.** Na razie jest tu
-          tylko plik dla Linuksa.
+          tylko wersja dla Linuksa.
           STOPKA
           gh release edit "$GITHUB_REF_NAME" --notes-file notatki.md

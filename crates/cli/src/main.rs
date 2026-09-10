@@ -31,7 +31,7 @@ enum Polecenie {
         version: String,
         /// Najnowsza wersja launchera — launcher porownuje ja ze swoja
         /// i informuje gracza o dostepnej aktualizacji.
-        #[arg(long, default_value = "0.4.13")]
+        #[arg(long, default_value = "0.4.14")]
         launcher_version: String,
     },
     /// Instaluje wszystko do wskazanego katalogu danych.

@@ -1,25 +1,56 @@
 # Chmurkowy Launcher
 
-Przenośny launcher paczki modów Chmurkowego Serwera — Minecraft 1.21.1 z NeoForge.
+Launcher paczki modów Chmurkowego Serwera — Minecraft 1.21.1 z NeoForge.
 
-Jeden plik wykonywalny. Po uruchomieniu pobiera Javę, instaluje Minecrafta,
-synchronizuje paczkę modów i odpala grę — wszystko w katalogu obok siebie.
-Deinstalacja polega na skasowaniu folderu: launcher nie zapisuje niczego
-w systemie, rejestrze ani w `~/.minecraft`.
+Instalujesz raz. Potem launcher sam sprawdza przy każdym starcie, czy jest
+nowsza wersja, i sam się aktualizuje — nie trzeba niczego pobierać ręcznie.
+Po uruchomieniu pobiera Javę, instaluje Minecrafta, synchronizuje paczkę modów
+i odpala grę. Nie dotyka `~/.minecraft` ani innych instalacji gry.
 
-## Pobieranie
+## Instalacja
 
-[Releases](../../releases) — `ChmurkowyLauncher-windows-x64.exe` lub
-`ChmurkowyLauncher-linux-x64`.
+[Releases](../../releases)
 
-Wrzuć plik do pustego folderu i uruchom. Pierwsze uruchomienie pobiera
-około 1,8 GB, kolejne startują od razu.
+**Windows** — `ChmurkowyLauncher-setup.exe`
 
-Wersja linuksowa to zwykły plik wykonywalny — nie AppImage ani Flatpak.
-Budowana jest na Ubuntu 22.04, więc wymaga glibc 2.35 lub nowszego
-(Ubuntu 22.04+, Debian 12+, Fedora 36+, Mint 21+, Arch). Poza glibc potrzebuje
-tylko bibliotek graficznych i dźwiękowych, które są w każdym środowisku
-graficznym — reszta ładuje się dopiero w czasie działania.
+Instaluje się dla Twojego konta, bez pytania o hasło administratora, i dodaje
+skrót w menu Start. Odinstalowanie jak każdego innego programu, przez
+„Aplikacje i funkcje".
+
+**Linux** — `ChmurkowyLauncher-linux-x64.tar.gz`
+
+```bash
+tar xzf ChmurkowyLauncher-linux-x64.tar.gz
+cd ChmurkowyLauncher-linux
+./install.sh
+```
+
+Instaluje do katalogu domowego, bez `sudo`, i dodaje wpis w menu aplikacji.
+Odinstalowanie: `./uninstall.sh` (światy i ustawienia zostają) albo
+`./uninstall.sh --wszystko`.
+
+Wymaga glibc 2.35 lub nowszego — Ubuntu 22.04+, Debian 12+, Mint 21+,
+Fedora 36+, Arch. Poza tym tylko biblioteki graficzne i dźwiękowe, które są
+w każdym środowisku graficznym.
+
+Pierwsze uruchomienie pobiera około 1,8 GB, kolejne startują od razu.
+
+### Gdzie trafiają pliki
+
+Gra, paczka modów, światy i ustawienia leżą osobno od samego programu:
+
+| System | Katalog |
+|---|---|
+| Windows | `%LOCALAPPDATA%\ChmurkowyLauncher\data` |
+| Linux | `~/.local/share/chmurkowy-launcher/data` |
+
+Dzięki temu aktualizacja launchera nie rusza Twoich światów, a odinstalowanie
+programu ich nie kasuje. Kto miał starszą wersję z folderem `data` obok pliku,
+nie musi nic robić — launcher przeniesie dane sam przy pierwszym uruchomieniu.
+
+W wydaniach są też gołe pliki wykonywalne (`ChmurkowyLauncher-linux-x64`,
+`ChmurkowyLauncher-windows-x64.exe`). To po nie sięga samoaktualizacja; do
+zwykłego użytku weź instalator.
 
 ## Co jest w środku
 
