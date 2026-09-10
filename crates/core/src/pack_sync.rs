@@ -142,7 +142,11 @@ fn zbierz(katalog: &Path, prefiks: &str, out: &mut Vec<String>) {
             continue;
         }
         let rel = format!("{prefiks}/{nazwa}");
-        if wpis.path().is_dir() {
+        // Bez `file_type` (które nie podąża za dowiązaniami) dowiązanie
+        // wskazujące na przodka zapętliłoby rekurencję aż do przepełnienia
+        // stosu, czyli wywrócenia launchera.
+        let katalog = wpis.file_type().map(|t| t.is_dir()).unwrap_or(false);
+        if katalog {
             zbierz(&wpis.path(), &rel, out);
         } else {
             out.push(rel);

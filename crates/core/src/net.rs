@@ -153,11 +153,33 @@ impl Downloader {
         let mut plik = tokio::fs::File::create(czesciowy)
             .await
             .map_err(|e| e.to_string())?;
+        // Strażnik braku postępu. `read_timeout` pilnuje przerw między
+        // odczytami, ale serwer sączący po kilka bajtów co kilkanaście sekund
+        // formalnie nigdy nie milczy — każdy odczyt mieści się w limicie,
+        // a pobieranie stoi. Wymagamy, żeby w każdym oknie przyszła
+        // sensowna porcja danych; inaczej kończymy próbę błędem, który
+        // trafia w istniejącą pętlę ponowień i listę zapasowych adresów.
+        let mut okno_start = tokio::time::Instant::now();
+        let mut okno_bajty: u64 = 0;
+
         let mut strumien = odp.bytes_stream();
         while let Some(kawalek) = strumien.next().await {
             let kawalek = kawalek.map_err(|e| e.to_string())?;
             plik.write_all(&kawalek).await.map_err(|e| e.to_string())?;
             pobrane += kawalek.len() as u64;
+
+            okno_bajty += kawalek.len() as u64;
+            if okno_start.elapsed() >= crate::limity::BRAK_POSTEPU {
+                if okno_bajty < crate::limity::NAJMNIEJ_BAJTOW_NA_OKNO {
+                    return Err(format!(
+                        "pobieranie stoi w miejscu: {okno_bajty} B w ciągu {} s",
+                        crate::limity::BRAK_POSTEPU.as_secs()
+                    ));
+                }
+                okno_start = tokio::time::Instant::now();
+                okno_bajty = 0;
+            }
+
             if pobrane - ostatni_meldunek >= CO_ILE {
                 ostatni_meldunek = pobrane;
                 melduj(pobrane, calosc);

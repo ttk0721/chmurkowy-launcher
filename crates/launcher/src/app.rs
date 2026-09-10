@@ -287,17 +287,31 @@ impl App {
         }
     }
 
-    fn wczytaj_manifest(&mut self) {
+    /// Pobiera manifest — jedyna brama do wszystkiego, co launcher robi.
+    ///
+    /// Trzy podejścia z narastającą przerwą: chwilowe mrugnięcie hostingu
+    /// nie może kończyć się ekranem błędu, skoro wystarczy poczekać sekundę.
+    /// Dopiero gdy wszystkie padną, gracz cokolwiek widzi.
+    pub fn wczytaj_manifest(&mut self) {
         let n = self.nadawca.clone();
         let adres = env!("CHMURKA_MANIFEST_URL").to_string();
         self.w_tle(async move {
-            match pobierz_manifest(&adres).await {
-                Ok(m) => {
-                    let _ = n.send(Wiadomosc::Manifest(Box::new(m)));
+            const PROBY: u32 = 3;
+            let mut ostatni = None;
+            for proba in 0..PROBY {
+                match pobierz_manifest(&adres).await {
+                    Ok(m) => {
+                        let _ = n.send(Wiadomosc::Manifest(Box::new(m)));
+                        return;
+                    }
+                    Err(e) => ostatni = Some(e),
                 }
-                Err(e) => {
-                    let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
+                if proba + 1 < PROBY {
+                    tokio::time::sleep(std::time::Duration::from_millis(800 * (1 << proba))).await;
                 }
+            }
+            if let Some(e) = ostatni {
+                let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
             }
         });
     }

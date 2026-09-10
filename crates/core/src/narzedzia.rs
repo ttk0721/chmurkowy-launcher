@@ -214,7 +214,12 @@ fn nadaj_prawa_rekurencyjnie(katalog: &Path) {
         };
         for w in wpisy.flatten() {
             let s = w.path();
-            if s.is_dir() {
+            // `file_type` z `read_dir` NIE podąża za dowiązaniami, w odróżnieniu
+            // od `is_dir()`. Archiwum z dowiązaniem wskazującym na własnego
+            // przodka zapętliłoby chodzenie po drzewie: kolejka rosłaby bez
+            // końca, a gracz stałby na „Rozpakowuję…" na zawsze.
+            let katalog = w.file_type().map(|t| t.is_dir()).unwrap_or(false);
+            if katalog {
                 kolejka.push(s);
             } else if k.file_name().map(|n| n == "bin").unwrap_or(false) {
                 nadaj_prawa_wykonywania(&s);

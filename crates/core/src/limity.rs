@@ -30,6 +30,18 @@ pub const BRAK_POSTEPU: Duration = Duration::from_secs(60);
 /// i wolne łącze, a jednocześnie granica, po której wiadomo, że stanął.
 pub const INSTALATOR: Duration = Duration::from_secs(15 * 60);
 
+/// Ile bajtów musi przyjść w oknie [`BRAK_POSTEPU`], żeby uznać pobieranie
+/// za żywe.
+///
+/// Sam `read_timeout` tego nie łapie: zepsuty serwer może słać po kilka
+/// bajtów co kilkanaście sekund i formalnie nigdy nie milczeć. Każdy odczyt
+/// mieści się wtedy w limicie, a pobranie 180 MB trwałoby miesiącami —
+/// z paskiem postępu stojącym w miejscu, bo meldujemy co 400 kB.
+///
+/// 64 kB na minutę to około kilobajta na sekundę. Wolniej niż modem z lat
+/// dziewięćdziesiątych; to nie jest już powolne łącze, tylko zepsute.
+pub const NAJMNIEJ_BAJTOW_NA_OKNO: u64 = 64 * 1024;
+
 /// Klient do krótkich żądań: manifest, logowanie, profil gracza.
 pub fn klient_maly() -> reqwest::Client {
     reqwest::Client::builder()

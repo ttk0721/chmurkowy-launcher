@@ -33,6 +33,13 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 {
                     app.blad_z_kodem = None;
                     app.widok = Widok::Glowny;
+                    // Bez tego „Spróbuj ponownie" wracało na ekran główny
+                    // z wiecznym kręciołkiem: manifest pobieraliśmy tylko raz,
+                    // przy starcie, więc nie było czego próbować ponownie.
+                    // Sam limit czasu zamieniłby jedno zawieszenie na drugie.
+                    if app.manifest.is_none() {
+                        app.wczytaj_manifest();
+                    }
                 }
                 if ui
                     .add(theme::przycisk_zwykly("Kopiuj szczegóły dla administracji"))
