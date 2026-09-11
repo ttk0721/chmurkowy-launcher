@@ -30,6 +30,22 @@ pub const BRAK_POSTEPU: Duration = Duration::from_secs(60);
 /// i wolne łącze, a jednocześnie granica, po której wiadomo, że stanął.
 pub const INSTALATOR: Duration = Duration::from_secs(15 * 60);
 
+/// Komenda wpisana przez gracza w Ustawieniach (przed startem, po wyjściu).
+///
+/// Limit jest tu ważniejszy niż gdziekolwiek indziej, bo treść wpisuje
+/// człowiek: literówka w skrypcie albo program czekający na wciśnięcie
+/// klawisza zawiesiłby start gry na zawsze, a launcher nie ma jak pokazać
+/// takiemu procesowi konsoli. Dwie minuty starczą na kopię zapasową świata
+/// czy podmianę konfiguracji.
+pub const KOMENDA_GRACZA: Duration = Duration::from_secs(2 * 60);
+
+/// Zapytanie Javy o wersję (`java -version`).
+///
+/// Zdrowa Java odpowiada w ułamku sekundy. Gdy ścieżka wskazuje na plik
+/// w zawieszonym zasobie sieciowym, proces potrafi wisieć bez końca —
+/// a dzieje się to w Ustawieniach, gdzie gracz patrzy na przycisk i czeka.
+pub const SPRAWDZENIE_JAVY: Duration = Duration::from_secs(15);
+
 /// Ile bajtów musi przyjść w oknie [`BRAK_POSTEPU`], żeby uznać pobieranie
 /// za żywe.
 ///

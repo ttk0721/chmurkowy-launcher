@@ -170,8 +170,11 @@ fn bez_wersji(koordynat: &str) -> String {
 pub fn merge(child: VersionJson, parent: VersionJson) -> VersionJson {
     // Biblioteki rodzica idą pierwsze, ale przy kolizji współrzędnej Maven
     // wygrywa wersja z profilu potomnego — NeoForge celowo podbija np. ASM.
-    let nadpisane: std::collections::BTreeSet<String> =
-        child.libraries.iter().map(|l| bez_wersji(&l.name)).collect();
+    let nadpisane: std::collections::BTreeSet<String> = child
+        .libraries
+        .iter()
+        .map(|l| bez_wersji(&l.name))
+        .collect();
 
     let mut libraries: Vec<Library> = parent
         .libraries
@@ -197,7 +200,45 @@ pub fn merge(child: VersionJson, parent: VersionJson) -> VersionJson {
     }
 }
 
+/// Możliwości launchera, o które pytają reguły `features` w profilu wersji.
+///
+/// Profil Mojanga opisuje argumenty warunkowo: „doklej `--width` i `--height`,
+/// **jeśli** launcher obsługuje własną rozdzielczość”. Długo odpowiadaliśmy
+/// „nie” na każde takie pytanie i to była prawda — dopóki rozmiar okna nie
+/// stał się ustawieniem.
+///
+/// Domyślnie wszystko jest wyłączone, więc argumenty Quick Play i tryb demo
+/// nadal nie mają prawa trafić do komendy. To one witały gracza ekranem
+/// „Failed to Quick Play — Could not find world”, gdy reguły sprawdzaliśmy
+/// tylko po systemie.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Mozliwosci {
+    /// Gracz ustawił własny rozmiar okna gry, więc `--width`/`--height`
+    /// mają sens.
+    pub wlasna_rozdzielczosc: bool,
+}
+
+impl Mozliwosci {
+    /// Czy launcher obsługuje możliwość o tej nazwie.
+    ///
+    /// Nieznane nazwy są fałszywe celowo: nowa wersja Minecrafta może dołożyć
+    /// możliwość, o której nic nie wiemy, a zgadywanie „chyba umiemy”
+    /// kończy się argumentem ze zmienną, której nie potrafimy podstawić.
+    pub fn ma(&self, nazwa: &str) -> bool {
+        match nazwa {
+            "has_custom_resolution" => self.wlasna_rozdzielczosc,
+            _ => false,
+        }
+    }
+}
+
+/// Reguły przy domyślnych możliwościach launchera.
 pub fn rules_allow(rules: &[Rule], os: Os) -> bool {
+    rules_allow_z(rules, os, &Mozliwosci::default())
+}
+
+/// Reguły z uwzględnieniem tego, co launcher naprawdę potrafi.
+pub fn rules_allow_z(rules: &[Rule], os: Os, moz: &Mozliwosci) -> bool {
     if rules.is_empty() {
         return true;
     }
@@ -211,16 +252,16 @@ pub fn rules_allow(rules: &[Rule], os: Os) -> bool {
             },
         };
 
-        // Launcher nie obsługuje żadnej z możliwości wymienianych w `features`
-        // (tryb demo, własna rozdzielczość, Quick Play), więc reguła pasuje tylko
-        // wtedy, gdy oczekuje ich wyłączenia.
-        //
-        // Pominięcie tego sprawdzenia doklejało do komendy gry argumenty `--demo`
-        // oraz `--quickPlaySingleplayer ${quickPlaySingleplayer}`, przez co
-        // Minecraft witał gracza ekranem „Failed to Quick Play”.
+        // Reguła pasuje tylko wtedy, gdy KAŻDA wymieniona możliwość jest
+        // dokładnie w stanie, którego oczekuje. Profil pyta zarówno
+        // o włączone („doklej --width, jeśli umiesz”), jak i o wyłączone
+        // („doklej --width 854, jeśli nie umiesz”) — jedno i drugie musi
+        // działać, inaczej gra dostanie rozmiar okna dwa razy.
         let mozliwosci_pasuja = match &r.features {
             None => true,
-            Some(f) => f.values().all(|oczekiwane| !oczekiwane),
+            Some(f) => f
+                .iter()
+                .all(|(nazwa, oczekiwane)| moz.ma(nazwa) == *oczekiwane),
         };
 
         if system_pasuje && mozliwosci_pasuja {
@@ -307,6 +348,60 @@ mod tests {
                 "regula {warunek} nie moze przejsc"
             );
         }
+    }
+
+    /// Gdy gracz narzuci rozmiar okna, ta jedna mozliwosc ma sie wlaczyc —
+    /// i tylko ta. Reszta zostaje wylaczona, bo nadal jej nie obslugujemy.
+    #[test]
+    fn wlaczona_mozliwosc_otwiera_swoja_regule_i_zadnej_innej() {
+        let moz = Mozliwosci {
+            wlasna_rozdzielczosc: true,
+        };
+        let wlasna: Vec<Rule> = serde_json::from_str(
+            r#"[{"action":"allow","features":{"has_custom_resolution":true}}]"#,
+        )
+        .unwrap();
+        assert!(rules_allow_z(&wlasna, Os::Linux, &moz));
+
+        for warunek in [
+            r#"[{"action":"allow","features":{"is_demo_user":true}}]"#,
+            r#"[{"action":"allow","features":{"is_quick_play_singleplayer":true}}]"#,
+            r#"[{"action":"allow","features":{"is_quick_play_multiplayer":true}}]"#,
+        ] {
+            let r: Vec<Rule> = serde_json::from_str(warunek).unwrap();
+            assert!(
+                !rules_allow_z(&r, Os::Linux, &moz),
+                "regula {warunek} nie moze przejsc tylko dlatego, ze ustawiono rozmiar okna"
+            );
+        }
+    }
+
+    /// Regula moze pytac o kilka mozliwosci naraz — musi pasowac kazda.
+    #[test]
+    fn regula_o_kilku_mozliwosciach_wymaga_zgodnosci_wszystkich() {
+        let moz = Mozliwosci {
+            wlasna_rozdzielczosc: true,
+        };
+        let r: Vec<Rule> = serde_json::from_str(
+            r#"[{"action":"allow","features":{"has_custom_resolution":true,"is_demo_user":true}}]"#,
+        )
+        .unwrap();
+        assert!(!rules_allow_z(&r, Os::Linux, &moz));
+    }
+
+    /// Nieznana mozliwosc jest falszywa. Nowa wersja Minecrafta moze dolozyc
+    /// taka, o ktorej nic nie wiemy — zgadywanie „chyba umiemy" konczy sie
+    /// argumentem ze zmienna, ktorej nie potrafimy podstawic.
+    #[test]
+    fn nieznana_mozliwosc_jest_falszywa() {
+        let moz = Mozliwosci {
+            wlasna_rozdzielczosc: true,
+        };
+        let r: Vec<Rule> = serde_json::from_str(
+            r#"[{"action":"allow","features":{"has_cos_czego_nie_znamy":true}}]"#,
+        )
+        .unwrap();
+        assert!(!rules_allow_z(&r, Os::Linux, &moz));
     }
 
     #[test]

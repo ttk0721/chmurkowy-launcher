@@ -81,16 +81,19 @@ async fn main() -> Result<()> {
         } => {
             let (wersja, java) = przygotuj(&manifest, &data).await?;
             let konto = chmurka_core::auth::offline::offline_account(&nick);
-            let mut cmd = chmurka_core::launch::build_command(&chmurka_core::launch::LaunchParams {
-                java: &java.java_bin,
-                mc_dir: &data.join("mc"),
-                game_dir: &data.join("instance"),
-                version: &wersja,
-                account: &konto,
-                min_mb: 512,
-                max_mb: 4096,
-                dodatkowe: &[],
-            })?;
+            // Narzędzie wiersza poleceń celowo nie czyta ustawień gracza —
+            // służy do sprawdzania samej paczki, więc uruchamia grę tak,
+            // jak wyglądałoby to bez żadnej konfiguracji.
+            let mut cmd =
+                chmurka_core::launch::build_command(&chmurka_core::launch::LaunchParams::zwykle(
+                    &java.java_bin,
+                    &data.join("mc"),
+                    &data.join("instance"),
+                    &wersja,
+                    &konto,
+                    512,
+                    4096,
+                ))?;
             println!("Uruchamiam grę…");
             let status = cmd.status()?;
             println!("Gra zakończyła się kodem {:?}", status.code());
@@ -149,7 +152,8 @@ async fn przygotuj(
             // Co cwierc pobrania — widac ruch, a konsola nie tonie w meldunkach.
             progress::Jednostka::Bajty => {
                 let cwiartka = (p.total / 4).max(1);
-                p.done == p.total || p.done / cwiartka != (p.done.saturating_sub(400 * 1024)) / cwiartka
+                p.done == p.total
+                    || p.done / cwiartka != (p.done.saturating_sub(400 * 1024)) / cwiartka
             }
             progress::Jednostka::Nieznana => true,
         };
@@ -256,7 +260,10 @@ fn pack_build(
     // 3. Rozjazd między metadanymi a plikami przerywa budowanie.
     // Mod bez metadanych nie ma skad byc pobrany, wiec cicha zgoda dalaby
     // testerom niekompletna paczke.
-    let brakujace: Vec<&String> = jary.iter().filter(|j| !wpisy_meta.contains_key(*j)).collect();
+    let brakujace: Vec<&String> = jary
+        .iter()
+        .filter(|j| !wpisy_meta.contains_key(*j))
+        .collect();
     if !brakujace.is_empty() {
         bail!("mody bez metadanych, nie wiadomo skąd je pobrać: {brakujace:?}");
     }

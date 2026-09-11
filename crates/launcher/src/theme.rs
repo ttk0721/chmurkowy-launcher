@@ -20,6 +20,12 @@ pub const TEKST: Color32 = Color32::from_rgb(233, 238, 246);
 pub const TEKST_PRZYGASZONY: Color32 = Color32::from_rgb(154, 167, 186);
 pub const BLAD: Color32 = Color32::from_rgb(248, 113, 113);
 pub const SUKCES: Color32 = Color32::from_rgb(74, 222, 128);
+/// Bursztyn na ostrzeżenia, które nie są błędami.
+///
+/// Czerwień znaczy „coś się zepsuło" i na stałym pasku w zakładce byłaby
+/// kłamstwem — nic się jeszcze nie stało. Ten kolor mówi „uważaj", a nie
+/// „awaria", i przestaje straszyć po drugim spojrzeniu.
+pub const OSTRZEZENIE: Color32 = Color32::from_rgb(251, 191, 36);
 
 /// Skala odstępów oparta na 8 px. Jedna skala dla całego launchera —
 /// bez tego każdy ekran miał własne, przypadkowe wartości.
@@ -140,7 +146,9 @@ pub fn naglowek(tekst: &str, rozmiar: f32) -> egui::RichText {
 }
 
 pub fn drobny(tekst: &str) -> egui::RichText {
-    egui::RichText::new(tekst).size(12.0).color(TEKST_PRZYGASZONY)
+    egui::RichText::new(tekst)
+        .size(12.0)
+        .color(TEKST_PRZYGASZONY)
 }
 
 /// Główny przycisk akcji — jedyny wypełniony akcentem element na ekranie,
@@ -190,10 +198,13 @@ pub fn przycisk_ikona(ui: &mut egui::Ui, ikona: Ikona, podpowiedz: &str) -> egui
     let (rect, odp) = ui.allocate_exact_size(egui::vec2(bok, bok), egui::Sense::click());
 
     let tlo = if odp.hovered() { PANEL_JASNY } else { PANEL };
-    ui.painter()
-        .rect_filled(rect, CornerRadius::same(8), tlo);
+    ui.painter().rect_filled(rect, CornerRadius::same(8), tlo);
 
-    let kolor = if odp.hovered() { TEKST } else { TEKST_PRZYGASZONY };
+    let kolor = if odp.hovered() {
+        TEKST
+    } else {
+        TEKST_PRZYGASZONY
+    };
     let s = Stroke::new(1.6_f32, kolor);
     let c = rect.center();
     let r = 5.0;

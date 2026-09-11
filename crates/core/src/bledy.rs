@@ -92,8 +92,11 @@ impl BladUzytkownika {
             "INST-01" => Samonaprawa::JavaOdNowa,
             // Pliki gry są niekompletne albo popsute.
             "INST-02" | "INST-03" | "INST-04" => Samonaprawa::GraOdNowa,
-            // Dysk pełny, brak uprawnień, logowanie, padnięta gra, zła paczka:
+            // Dysk pełny, brak uprawnień, logowanie, padnięta gra, zła paczka
+            // oraz wszystko, co gracz sam wpisał w Ustawieniach (USTAW-*):
             // powtórka nic nie zmieni, a kasowanie plików tylko zaszkodzi.
+            // Przy własnej komendzie ponowienie byłoby wręcz szkodliwe —
+            // uruchomiłoby ją trzy razy pod rząd.
             _ => Samonaprawa::Nic,
         }
     }
@@ -131,6 +134,12 @@ pub enum BladLaunchera {
     Logowanie(#[from] AuthError),
     #[error("operacja na pliku {0}: {1}")]
     Plik(String, std::io::Error),
+    /// Własna komenda gracza z zakładki „Zaawansowane".
+    #[error(transparent)]
+    Komenda(#[from] crate::komendy::BladKomendy),
+    /// Java wskazana ręcznie w zakładce „Java" nie nadaje się do gry.
+    #[error("Java wskazana w Ustawieniach nie nadaje się do gry: {powod}")]
+    WlasnaJava { sciezka: String, powod: String },
     /// Siatka bezpieczeństwa: coś, czego nie potrafimy zaklasyfikować.
     /// Nie powinno się zdarzyć — jeśli się zdarza, brakuje nam kategorii.
     #[error("nierozpoznany błąd: {0}")]
@@ -180,6 +189,17 @@ impl BladLaunchera {
             BladLaunchera::Paczka(e) => z_paczki(e),
             BladLaunchera::Logowanie(e) => z_logowania(e),
             BladLaunchera::Plik(sciezka, e) => z_pliku(sciezka, e),
+            BladLaunchera::Komenda(e) => z_komendy(e),
+            BladLaunchera::WlasnaJava { sciezka, powod } => BladUzytkownika::nowy(
+                "USTAW-01",
+                "Java wskazana w Ustawieniach nie działa",
+                "W Ustawieniach, w zakładce „Java”, wpisana jest własna ścieżka do Javy.                  Launcher nie potrafi jej użyć, więc gra nie ruszy.",
+                &[
+                    "Wejdź w Ustawienia → Java i kliknij „Przywróć domyślne”.                      Launcher wróci wtedy do Javy, którą pobiera sam, i to zwykle                      załatwia sprawę.",
+                    "Jeśli chcesz zostać przy własnej Javie, kliknij obok pola                      „Sprawdź” — launcher powie, co jest z nią nie tak.",
+                ],
+                format!("{sciezka}\n{powod}"),
+            ),
             BladLaunchera::Nieznany(tresc) => BladUzytkownika::nowy(
                 "INNY-01",
                 "Coś poszło nie tak, ale nie wiemy co",
@@ -249,6 +269,60 @@ fn z_sieci(e: &NetError) -> BladUzytkownika {
 }
 
 // --- PLIKI ---
+
+/// Własna komenda gracza — z zakładki „Zaawansowane".
+///
+/// Te błędy są inne od wszystkich pozostałych: przyczyna nie leży ani
+/// w launcherze, ani w plikach gry, tylko w tekście, który ktoś sam wpisał.
+/// Rada „napraw instalację" byłaby tu myląca, bo instalacja jest w porządku.
+fn z_komendy(e: &crate::komendy::BladKomendy) -> BladUzytkownika {
+    use crate::komendy::{BladKomendy, Etap};
+
+    let (etap, komenda) = match e {
+        BladKomendy::NieUruchomil { etap, komenda, .. }
+        | BladKomendy::Zawiesila { etap, komenda, .. }
+        | BladKomendy::Zwrocila { etap, komenda, .. } => (*etap, komenda.clone()),
+    };
+
+    // Komenda „po zakończeniu gry" nie ma prawa nikomu popsuć grania —
+    // gra już się skończyła. Mówimy o tym spokojniej.
+    let gra_ucierpiala = etap == Etap::Przed;
+
+    let (kod, tytul, co) = match e {
+        BladKomendy::Zawiesila { sekundy, .. } => (
+            "USTAW-03",
+            "Twoja komenda się zawiesiła",
+            format!(
+                "Komenda, którą wpisałeś w Ustawieniach ({}), nie skończyła się                  w ciągu {sekundy} sekund, więc launcher ją przerwał. Najczęściej                  znaczy to, że komenda na coś czeka — na hasło albo na wciśnięcie                  klawisza — a nie ma jak o to zapytać.",
+                etap.opis()
+            ),
+        ),
+        _ => (
+            "USTAW-02",
+            if gra_ucierpiala {
+                "Twoja komenda nie wykonała się poprawnie"
+            } else {
+                "Komenda po zakończeniu gry nie wykonała się poprawnie"
+            },
+            format!(
+                "Komenda, którą wpisałeś w Ustawieniach ({}), zakończyła się błędem.",
+                etap.opis()
+            ),
+        ),
+    };
+
+    let mut kroki: Vec<&str> = vec![
+        "Wejdź w Ustawienia → Zaawansowane i sprawdź wpisaną komendę.          Szczegóły poniżej zawierają to, co sama wypisała.",
+        "Wyczyść pole, jeśli nie wiesz, skąd się tam wzięło — puste jest bezpieczne          i niczego nie psuje.",
+    ];
+    if gra_ucierpiala {
+        kroki.push(
+            "Dopóki komenda się nie wykona, launcher nie uruchomi gry — tak ma być,              bo komendy przed startem zwykle coś przygotowują.",
+        );
+    }
+
+    BladUzytkownika::nowy(kod, tytul, co, &kroki, format!("{komenda}\n{e}"))
+}
 
 fn z_pliku(sciezka: &str, e: &std::io::Error) -> BladUzytkownika {
     // ENOSPC na Linuksie i macOS, ERROR_DISK_FULL na Windowsie.
@@ -665,6 +739,107 @@ mod tests {
         std::io::Error::new(kind, "test")
     }
 
+    /// Samonaprawa uruchamia akcje po trzy razy. Przy wlasnej komendzie
+    /// gracza byloby to wrecz szkodliwe — „zrob kopie swiata" wykonaloby sie
+    /// trzykrotnie, a literowka w skrypcie kazalaby czekac trzy limity czasu.
+    #[test]
+    fn wlasne_ustawienia_gracza_nigdy_nie_ida_do_samonaprawy() {
+        use crate::komendy::{BladKomendy, Etap};
+
+        let komenda = BladLaunchera::Komenda(BladKomendy::Zwrocila {
+            etap: Etap::Przed,
+            komenda: "cp swiat swiat.bak".into(),
+            kod: Some(1),
+            wyjscie: "cp: nie ma takiego pliku".into(),
+        });
+        let b = komenda.dla_uzytkownika();
+        assert_eq!(b.kod, "USTAW-02");
+        assert_eq!(b.samonaprawa(), Samonaprawa::Nic);
+
+        let java = BladLaunchera::WlasnaJava {
+            sciezka: "/usr/bin/nie-java".into(),
+            powod: "to nie wyglada na Jave".into(),
+        };
+        let b = java.dla_uzytkownika();
+        assert_eq!(b.kod, "USTAW-01");
+        assert_eq!(b.samonaprawa(), Samonaprawa::Nic);
+    }
+
+    /// Zawieszona komenda ma wlasny kod, bo rada jest inna: nie „popraw
+    /// komende", tylko „ona na cos czeka".
+    #[test]
+    fn zawieszona_komenda_ma_wlasny_kod() {
+        use crate::komendy::{BladKomendy, Etap};
+
+        let b = BladLaunchera::Komenda(BladKomendy::Zawiesila {
+            etap: Etap::Przed,
+            komenda: "sudo cos".into(),
+            sekundy: 120,
+        })
+        .dla_uzytkownika();
+        assert_eq!(b.kod, "USTAW-03");
+        assert!(b.co_sie_stalo.contains("120"));
+        assert_eq!(b.samonaprawa(), Samonaprawa::Nic);
+    }
+
+    /// Komenda po zakonczeniu gry niczego juz nie psuje — komunikat nie moze
+    /// straszyc gracza, ze cos sie nie uruchomilo.
+    #[test]
+    fn komenda_po_grze_mowi_lagodniej_niz_ta_przed() {
+        use crate::komendy::{BladKomendy, Etap};
+
+        let zrob = |etap| {
+            BladLaunchera::Komenda(BladKomendy::Zwrocila {
+                etap,
+                komenda: "echo x".into(),
+                kod: Some(1),
+                wyjscie: String::new(),
+            })
+            .dla_uzytkownika()
+        };
+        let przed = zrob(Etap::Przed);
+        let po = zrob(Etap::Po);
+
+        assert_ne!(przed.tytul, po.tytul);
+        assert!(przed
+            .co_zrobic
+            .iter()
+            .any(|k| k.contains("nie uruchomi gry")));
+        assert!(
+            !po.co_zrobic.iter().any(|k| k.contains("nie uruchomi gry")),
+            "gra juz sie skonczyla, nie ma czego nie uruchomic"
+        );
+    }
+
+    /// Kazdy blad, ktory pokazujemy graczowi, musi miec co najmniej jeden
+    /// konkretny krok do wykonania. Okno z samym „cos poszlo nie tak" jest
+    /// bezuzyteczne dla rodzica, ktory nie zna sie na komputerach.
+    #[test]
+    fn nowe_bledy_ustawien_maja_konkretne_kroki() {
+        use crate::komendy::{BladKomendy, Etap};
+
+        let bledy = [
+            BladLaunchera::WlasnaJava {
+                sciezka: "/x".into(),
+                powod: "y".into(),
+            },
+            BladLaunchera::Komenda(BladKomendy::NieUruchomil {
+                etap: Etap::Przed,
+                komenda: "x".into(),
+                powod: "y".into(),
+            }),
+        ];
+        for e in &bledy {
+            let b = e.dla_uzytkownika();
+            assert!(!b.co_zrobic.is_empty(), "{} bez krokow", b.kod);
+            assert!(
+                b.co_zrobic.iter().any(|k| k.contains("Ustawienia")),
+                "{} ma odsylac tam, gdzie lezy przyczyna",
+                b.kod
+            );
+        }
+    }
+
     #[test]
     fn brak_uprawnien_ma_wlasny_kod() {
         let b = BladLaunchera::Plik("data/mods".into(), io(std::io::ErrorKind::PermissionDenied))
@@ -717,7 +892,9 @@ mod tests {
             b.co_zrobic
         );
         assert!(
-            b.co_zrobic.iter().any(|r| r.contains("więcej, niż on pokazuje")),
+            b.co_zrobic
+                .iter()
+                .any(|r| r.contains("więcej, niż on pokazuje")),
             "gracz musi uslyszec, ze gra bierze wiecej niz sterta"
         );
     }
@@ -747,7 +924,9 @@ mod tests {
         );
         // Zadna rada nie moze kazac podnosic suwaka — nie ma juz czego podnosic.
         assert!(
-            b.co_zrobic.iter().all(|r| !r.contains("Dobierz automatycznie")),
+            b.co_zrobic
+                .iter()
+                .all(|r| !r.contains("Dobierz automatycznie")),
             "to slepa uliczka na maszynie, ktora dala juz wszystko: {:?}",
             b.co_zrobic
         );
@@ -880,11 +1059,13 @@ mod tests {
     fn tresc_komunikatu_nie_decyduje_o_kodzie() {
         let b = BladLaunchera::Logowanie(AuthError::Xbox {
             powod: PowodXbox::RegionNiedostepny,
-            szczegoly: "XSTS: HTTP 401, XErr 2148916235 (Xbox Live niedostępny w tym kraju)"
-                .into(),
+            szczegoly: "XSTS: HTTP 401, XErr 2148916235 (Xbox Live niedostępny w tym kraju)".into(),
         })
         .dla_uzytkownika();
-        assert_eq!(b.kod, "KONTO-06", "slowo Xbox w tresci nie moze przewazyc o kodzie");
+        assert_eq!(
+            b.kod, "KONTO-06",
+            "slowo Xbox w tresci nie moze przewazyc o kodzie"
+        );
     }
 
     /// Szczegoly to jedyny slad dla administracji — musza przetrwac
@@ -911,8 +1092,8 @@ mod tests {
                 kod: None,
                 ogon_logu: String::new(),
                 wlasne_argumenty: false,
-            zabita_przez_system: false,
-            sterta_mb: 4096,
+                zabita_przez_system: false,
+                sterta_mb: 4096,
             },
         ];
         for p in przypadki {
@@ -968,8 +1149,20 @@ mod tests {
     #[test]
     fn samonaprawa_nie_kasuje_plikow_gdy_to_nie_pomoze() {
         for kod in [
-            "PLIK-01", "PLIK-02", "KONTO-01", "KONTO-02", "KONTO-03", "KONTO-04", "KONTO-05",
-            "GRA-01", "GRA-02", "GRA-03", "GRA-04", "PACZKA-01", "PACZKA-02", "INNY-01",
+            "PLIK-01",
+            "PLIK-02",
+            "KONTO-01",
+            "KONTO-02",
+            "KONTO-03",
+            "KONTO-04",
+            "KONTO-05",
+            "GRA-01",
+            "GRA-02",
+            "GRA-03",
+            "GRA-04",
+            "PACZKA-01",
+            "PACZKA-02",
+            "INNY-01",
         ] {
             let b = BladUzytkownika::nowy(kod, "t", "c", &["r"], "s");
             assert_eq!(

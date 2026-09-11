@@ -2,8 +2,8 @@ use crate::zasobnik::{Zasobnik, ZdarzenieZasobnika};
 use chmurka_core::auth::{msa, msa::DeviceCode, Account};
 use chmurka_core::bledy::{BladLaunchera, BladUzytkownika};
 use chmurka_core::manifest::Manifest;
-use chmurka_core::progress::{Progress, Stage};
 use chmurka_core::paczki::{StanShaderow, StanZasobow};
+use chmurka_core::progress::{Progress, Stage};
 use chmurka_core::ustawienia::{podziel_argumenty, Ustawienia};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -43,6 +43,12 @@ pub enum Wiadomosc {
     ZrestartujDo(PathBuf),
     /// Robota w tle skończona, interfejs znów jest do dyspozycji gracza.
     Wolny,
+    /// Odpowiedź Javy wskazanej w Ustawieniach na pytanie o wersję.
+    JavaSprawdzona(Box<Result<chmurka_core::javy::InfoJavy, String>>),
+    /// Javy znalezione na tym komputerze.
+    JavyZnalezione(Vec<PathBuf>),
+    /// Plik wskazany w oknie wyboru „Przeglądaj".
+    JavaWybrana(PathBuf),
 }
 
 pub struct App {
@@ -64,6 +70,15 @@ pub struct App {
     pub pokaz_szczegoly: bool,
     /// Czy pokazać okno potwierdzenia odinstalowania.
     pub pyta_o_odinstalowanie: bool,
+    /// Która zakładka Ustawień jest otwarta.
+    pub zakladka: crate::views::settings::Zakladka,
+    /// Zakładka, przed którą czeka jeszcze ostrzeżenie „to dla zaawansowanych".
+    pub ostrzezenie_zakladki: Option<crate::views::settings::Zakladka>,
+    /// Wynik ostatniego „Sprawdź" w zakładce Java. `None`, gdy nie pytano.
+    pub wynik_javy: Option<Result<chmurka_core::javy::InfoJavy, String>>,
+    /// Javy znalezione na komputerze po kliknięciu „Wykryj". `None`, gdy
+    /// jeszcze nie szukano — to co innego niż „szukano i nic nie ma".
+    pub kandydaci_javy: Option<Vec<PathBuf>>,
     /// Kiedy ostatnio udało się pobrać manifest. Przycisk „Sprawdź ponownie"
     /// odpowiada z pamięci, dopóki ten czas jest świeży.
     pub ostatnie_sprawdzenie: Option<std::time::Instant>,
@@ -81,6 +96,11 @@ pub struct App {
     schowaj_okno: bool,
     przywroc_okno: bool,
     zakoncz: bool,
+    /// Furtka do pracy nad wyglądem: gdzie zapisać zawartość okna.
+    /// Patrz `CHMURKA_ZRZUT` niżej.
+    zrzut: Option<PathBuf>,
+    /// Ile klatek narysowano. Liczy się tylko przy robieniu zrzutu.
+    klatki: u32,
     pub nadawca: Sender<Wiadomosc>,
     odbiorca: Receiver<Wiadomosc>,
     odbiorca_zasobnika: Receiver<ZdarzenieZasobnika>,
@@ -121,10 +141,9 @@ impl App {
         // Stare instalacje trzymaly dane obok pliku launchera. Przenosimy je
         // raz, przy pierwszym uruchomieniu tej wersji — nikt nie pobiera
         // paczki drugi raz i nikt nie traci swiata z singleplayera.
-        let docelowy = chmurka_core::miejsca::katalog_uzytkownika()
-            .unwrap_or_else(|| katalog.clone());
-        let (katalog_danych, przeprowadzka) =
-            chmurka_core::miejsca::ustal(&katalog, &docelowy);
+        let docelowy =
+            chmurka_core::miejsca::katalog_uzytkownika().unwrap_or_else(|| katalog.clone());
+        let (katalog_danych, przeprowadzka) = chmurka_core::miejsca::ustal(&katalog, &docelowy);
         let plik_ustawien = katalog_danych.join("settings.json");
         let pierwsze_uruchomienie = !plik_ustawien.is_file();
         let mut ustawienia = Ustawienia::wczytaj(&plik_ustawien);
@@ -172,17 +191,21 @@ impl App {
             log: Vec::new(),
             pokaz_szczegoly: false,
             pyta_o_odinstalowanie: false,
+            zakladka: crate::views::settings::Zakladka::Ogolne,
+            ostrzezenie_zakladki: None,
+            wynik_javy: None,
+            kandydaci_javy: None,
             ostatnie_sprawdzenie: None,
             ustawienia,
             zasoby: StanZasobow::default(),
             shadery: StanShaderow::default(),
             zajety: false,
             gra_dziala: false,
-            konsola: chmurka_core::konsola::Konsola::nowa(
-                sciezka_logu,
-            ),
+            konsola: chmurka_core::konsola::Konsola::nowa(sciezka_logu),
             schowaj_okno: false,
             przywroc_okno: false,
+            zrzut: std::env::var_os("CHMURKA_ZRZUT").map(PathBuf::from),
+            klatki: 0,
             zakoncz: false,
             nadawca,
             odbiorca,
@@ -191,6 +214,16 @@ impl App {
             _zasobnik: zasobnik,
             runtime: Some(runtime),
         };
+        // Furtka do pracy nad wyglądem: CHMURKA_ZAKLADKA=gra|java|zaawansowane.
+        // Idzie tą samą drogą co kliknięcie w pasek zakładek, więc przy świeżych
+        // ustawieniach pokaże też okno ostrzeżenia — inaczej nie dałoby się go
+        // obejrzeć bez ręcznego klikania.
+        if let Ok(nazwa) = std::env::var("CHMURKA_ZAKLADKA") {
+            if let Some(z) = crate::views::settings::Zakladka::z_nazwy(&nazwa) {
+                crate::views::settings::otworz_zakladke(&mut app, z);
+            }
+        }
+
         // Podgląd ekranu błędu przy pracy nad wyglądem: CHMURKA_WIDOK=blad
         if app.widok == Widok::Blad {
             app.blad_z_kodem = Some(
@@ -225,7 +258,7 @@ impl App {
 
     /// Uruchamia zadanie w tle. Cicho odpuszcza, gdy launcher jest już
     /// w trakcie zamykania — wtedy nie ma po co niczego zaczynać.
-    fn w_tle<F>(&self, zadanie: F)
+    pub(crate) fn w_tle<F>(&self, zadanie: F)
     where
         F: std::future::Future<Output = ()> + Send + 'static,
     {
@@ -380,6 +413,75 @@ impl App {
         self.zaktualizuj(false);
     }
 
+    /// Pyta wskazaną Javę o wersję i pokazuje odpowiedź w zakładce Java.
+    ///
+    /// Idzie w tło, bo `java -version` na zawieszonym zasobie sieciowym potrafi
+    /// trwać — a robi się to pod przyciskiem, przy którym gracz stoi i patrzy.
+    pub fn sprawdz_jave(&mut self, sciezka: std::path::PathBuf) {
+        self.zajety = true;
+        self.wynik_javy = None;
+        let n = self.nadawca.clone();
+        self.w_tle(async move {
+            let wynik = chmurka_core::javy::sprawdz(&sciezka)
+                .await
+                .map_err(|e| e.to_string());
+            let _ = n.send(Wiadomosc::JavaSprawdzona(Box::new(wynik)));
+        });
+    }
+
+    /// Otwiera systemowe okno wyboru pliku dla ścieżki do Javy.
+    ///
+    /// Okno idzie w tło, bo wariant portalowy `rfd` czeka na odpowiedź systemu
+    /// po D-Bus. Wywołane wprost zamroziłoby rysowanie launchera na cały czas,
+    /// gdy okno stoi otwarte.
+    pub fn wybierz_jave(&mut self) {
+        self.zajety = true;
+        let n = self.nadawca.clone();
+        let start = self
+            .ustawienia
+            .java
+            .wlasna()
+            .and_then(|p| p.parent().map(std::path::Path::to_path_buf));
+        self.w_tle(async move {
+            let wybor = tokio::task::spawn_blocking(move || {
+                let mut okno = rfd::FileDialog::new().set_title("Wskaż plik wykonywalny Javy");
+                if let Some(k) = start {
+                    okno = okno.set_directory(k);
+                }
+                okno.pick_file()
+            })
+            .await
+            .ok()
+            .flatten();
+
+            match wybor {
+                Some(p) => {
+                    let _ = n.send(Wiadomosc::JavaWybrana(p));
+                }
+                // Zamknięcie okna bez wyboru to nie błąd — trzeba tylko oddać
+                // graczowi przyciski, bo inaczej zostają wyszarzone na zawsze.
+                None => {
+                    let _ = n.send(Wiadomosc::Wolny);
+                }
+            }
+        });
+    }
+
+    /// Szuka Javy w typowych miejscach na tym komputerze.
+    pub fn wykryj_javy(&mut self) {
+        self.zajety = true;
+        let n = self.nadawca.clone();
+        self.w_tle(async move {
+            // Chodzenie po katalogach to praca blokująca — na wolnym dysku
+            // albo przy zamontowanym zasobie sieciowym zablokowałaby wątek,
+            // na którym stoi cała reszta zadań w tle.
+            let lista = tokio::task::spawn_blocking(chmurka_core::javy::znajdz_kandydatow)
+                .await
+                .unwrap_or_default();
+            let _ = n.send(Wiadomosc::JavyZnalezione(lista));
+        });
+    }
+
     /// Odpowiada na „Sprawdź ponownie".
     ///
     /// Pyta serwer tylko wtedy, gdy od ostatniego sprawdzenia minęło dość
@@ -418,11 +520,7 @@ impl App {
 
         let biezaca = env!("CARGO_PKG_VERSION");
         let najnowsza = m.launcher.latest_version.clone();
-        let url = m
-            .launcher
-            .urls
-            .get(aktualizacja::klucz_systemu())
-            .cloned();
+        let url = m.launcher.urls.get(aktualizacja::klucz_systemu()).cloned();
         let data = self.data();
 
         match aktualizacja::zdecyduj(biezaca, &najnowsza, url.as_deref(), &data) {
@@ -431,8 +529,7 @@ impl App {
                 // przycisk. Przy sprawdzeniu automatycznym milczymy, bo to
                 // stan normalny przy kazdym starcie.
                 if recznie {
-                    self.komunikat =
-                        Some(format!("Masz już najnowszą wersję ({biezaca})."));
+                    self.komunikat = Some(format!("Masz już najnowszą wersję ({biezaca})."));
                 }
                 return;
             }
@@ -589,8 +686,8 @@ impl App {
                         },
                         Err(e) => {
                             let _ = n.send(Wiadomosc::BladZKodem(Box::new(
-                                    BladLaunchera::Logowanie(e).dla_uzytkownika(),
-                                )));
+                                BladLaunchera::Logowanie(e).dla_uzytkownika(),
+                            )));
                         }
                     }
                 });
@@ -660,6 +757,22 @@ impl App {
                     self.widok = Widok::Glowny;
                     self.komunikat = None;
                 }
+                Wiadomosc::JavaSprawdzona(wynik) => {
+                    self.wynik_javy = Some(*wynik);
+                    self.zajety = false;
+                }
+                Wiadomosc::JavyZnalezione(lista) => {
+                    self.kandydaci_javy = Some(lista);
+                    self.zajety = false;
+                }
+                Wiadomosc::JavaWybrana(sciezka) => {
+                    self.ustawienia.java.sciezka = sciezka.display().to_string();
+                    self.zapisz_ustawienia();
+                    self.zajety = false;
+                    // Od razu sprawdzamy, co gracz wybrał. Wskazanie złego pliku
+                    // ma się wyjaśnić tutaj, a nie dopiero po kliknięciu GRAJ.
+                    self.sprawdz_jave(sciezka);
+                }
                 Wiadomosc::GraWystartowala => {
                     self.gra_dziala = true;
                     // Miedzy klknieciem GRAJ a pojawieniem sie okna gry mija
@@ -674,6 +787,13 @@ impl App {
                 Wiadomosc::GraZakonczona(kod) => {
                     // Gracz mógł w grze włączyć albo wyłączyć paczki — czytamy od nowa.
                     self.odswiez_paczki();
+                    // Tylko po normalnym wyjściu z gry. Gdy gra pada, wiadomość
+                    // idzie inną drogą i launcher zostaje, żeby pokazać błąd —
+                    // zamknięcie się w takiej chwili zabrałoby graczowi jedyne
+                    // wyjaśnienie, jakie ma.
+                    if self.ustawienia.gra.zamknij_po_grze {
+                        self.zakoncz = true;
+                    }
                     self.zajety = false;
                     self.gra_dziala = false;
                     self.postep = None;
@@ -686,7 +806,8 @@ impl App {
                     }
                     self.log.push(format!(
                         "Gra zakończyła się kodem {}",
-                        kod.map(|k| k.to_string()).unwrap_or_else(|| "nieznanym".into())
+                        kod.map(|k| k.to_string())
+                            .unwrap_or_else(|| "nieznanym".into())
                     ));
                 }
                 Wiadomosc::Wolny => {
@@ -753,6 +874,9 @@ impl eframe::App for App {
             ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
             ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
             ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
+        if self.zrzut.is_some() {
+            zrob_zrzut(self, ctx);
         }
 
         // W trakcie gry nic się nie zmienia aż do jej zakończenia, więc odpytujemy
@@ -860,10 +984,9 @@ pub fn uruchom(app: &mut App) {
 
     app.w_tle(async move {
         let n2 = n.clone();
-        let postep: Arc<dyn Fn(Progress) + Send + Sync> =
-            Arc::new(move |p| {
-                let _ = n2.send(Wiadomosc::Postep(p));
-            });
+        let postep: Arc<dyn Fn(Progress) + Send + Sync> = Arc::new(move |p| {
+            let _ = n2.send(Wiadomosc::Postep(p));
+        });
 
         odpal_z_samonaprawa(&data, &m, &konto, &ustawienia, postep, &n).await;
     });
@@ -891,16 +1014,8 @@ async fn odpal_z_samonaprawa(
     const PODEJSCIA: u32 = 3;
     for podejscie in 1..=PODEJSCIA {
         let ruszyla = Arc::new(AtomicBool::new(false));
-        let e = match przygotuj_i_odpal(
-            data,
-            m,
-            konto,
-            ustawienia,
-            postep.clone(),
-            n,
-            &ruszyla,
-        )
-        .await
+        let e = match przygotuj_i_odpal(data, m, konto, ustawienia, postep.clone(), n, &ruszyla)
+            .await
         {
             Ok(()) => return,
             Err(e) => e,
@@ -963,7 +1078,16 @@ async fn przygotuj_i_odpal(
     let instancja = data.join("instance");
     std::fs::create_dir_all(&instancja).map_err(plik(&instancja))?;
 
-    let java = java::ensure(data, m.java.major, &dl, postep.clone()).await?;
+    // Gracz mógł w Ustawieniach wskazać własną Javę. Sprawdzamy ją, zanim
+    // cokolwiek pobierzemy — zła ścieżka ma się wyjaśnić od razu, a nie po
+    // kwadransie instalowania.
+    let java = match ustawienia.java.wlasna() {
+        Some(sciezka) => {
+            postep(Progress::trwa(Stage::Java, "Sprawdzam wskazaną Javę…"));
+            wlasna_java(&sciezka, m.java.major, ustawienia.java.pomin_sprawdzanie).await?
+        }
+        None => java::ensure(data, m.java.major, &dl, postep.clone()).await?,
+    };
     let profil = game_install::ensure_loader(
         &mc,
         &java,
@@ -990,9 +1114,7 @@ async fn przygotuj_i_odpal(
     // Biblioteki dźwięku są dodatkiem, nie warunkiem działania paczki —
     // gdy pobranie się nie uda, gra i tak ma wystartować, a mod poradzi sobie sam.
     if ustawienia.biblioteki_dzwieku && !m.narzedzia.is_empty() {
-        if let Err(e) =
-            narzedzia::zapewnij(&instancja, &m.narzedzia, &dl, postep.clone()).await
-        {
+        if let Err(e) = narzedzia::zapewnij(&instancja, &m.narzedzia, &dl, postep.clone()).await {
             let _ = n.send(Wiadomosc::Notatka(format!(
                 "Nie udało się przygotować bibliotek dźwięku ({e}). Gra ruszy, a mod \
                  zapyta o nie sam, gdy będą potrzebne."
@@ -1001,15 +1123,60 @@ async fn przygotuj_i_odpal(
     }
 
     let dodatkowe = podziel_argumenty(&ustawienia.dodatkowe_argumenty);
+    let srodowisko = ustawienia.zaawansowane.srodowisko();
+    let opakowanie = komendy::rozbij_opakowanie(&ustawienia.zaawansowane.komenda_wrapper);
+    let minimum = ustawienia.minimum_sterty_mb();
+
+    // Komendy gracza dostają te same zmienne, których używa Prism Launcher —
+    // gotowe skrypty przenoszą się między launcherami bez przeróbek.
+    let kontekst = komendy::Kontekst {
+        nazwa: m.pack.name.clone(),
+        id: "chmurka".into(),
+        katalog_instancji: instancja.clone(),
+        katalog_mc: mc.clone(),
+        java: java.java_bin.clone(),
+        argumenty_javy: {
+            let mut a = vec![
+                format!("-Xms{minimum}M"),
+                format!("-Xmx{}M", ustawienia.pamiec_mb),
+            ];
+            a.extend(dodatkowe.iter().cloned());
+            a.join(" ")
+        },
+    };
+
+    // Komenda przed startem ma prawo przerwać uruchamianie. Tak ma być:
+    // wpisuje się tu rzeczy typu „zrób kopię świata", a granie na świecie,
+    // którego kopia się nie udała, jest dokładnie tym, przed czym ta komenda
+    // miała chronić.
+    if !ustawienia.zaawansowane.komenda_przed.trim().is_empty() {
+        let _ = n.send(Wiadomosc::Postep(Progress::trwa(
+            Stage::Ready,
+            "Wykonuję Twoją komendę przed startem…",
+        )));
+        komendy::uruchom(
+            komendy::Etap::Przed,
+            &ustawienia.zaawansowane.komenda_przed,
+            &instancja,
+            &kontekst,
+            &srodowisko,
+        )
+        .await?;
+    }
+
     let mut cmd = launch::build_command(&launch::LaunchParams {
         java: &java.java_bin,
         mc_dir: &mc,
         game_dir: &instancja,
         version: &wersja,
         account: konto,
-        min_mb: m.memory.min_mb,
+        min_mb: minimum,
         max_mb: ustawienia.pamiec_mb,
         dodatkowe: &dodatkowe,
+        okno: ustawienia.gra.rozmiar(),
+        pelny_ekran: ustawienia.gra.pelny_ekran,
+        srodowisko: &srodowisko,
+        opakowanie: &opakowanie,
     })?;
 
     // Log gry leci prosto do pliku, a nie do pamięci launchera. Dzięki temu
@@ -1041,6 +1208,23 @@ async fn przygotuj_i_odpal(
         .map_err(|e| BladLaunchera::Plik("oczekiwanie na grę".into(), std::io::Error::other(e)))?
         .map_err(|e| BladLaunchera::Plik("oczekiwanie na grę".into(), e))?;
 
+    // Komenda po zakończeniu — w przeciwieństwie do tej przed startem NIE
+    // przerywa niczego. Gra już się skończyła, nie ma czego chronić, a okno
+    // błędu po udanej rozgrywce tylko by przestraszyło.
+    if let Err(e) = komendy::uruchom(
+        komendy::Etap::Po,
+        &ustawienia.zaawansowane.komenda_po,
+        &instancja,
+        &kontekst,
+        &srodowisko,
+    )
+    .await
+    {
+        let _ = n.send(Wiadomosc::Notatka(format!(
+            "Twoja komenda po zakończeniu gry nie wykonała się poprawnie ({e}).              Sama gra zakończyła się normalnie."
+        )));
+    }
+
     if status.success() {
         let _ = n.send(Wiadomosc::GraZakonczona(status.code()));
         return Ok(());
@@ -1063,6 +1247,105 @@ async fn przygotuj_i_odpal(
         wlasne_argumenty: !dodatkowe.is_empty(),
         zabita_przez_system: zabita_przez_system(&status),
         sterta_mb: ustawienia.pamiec_mb,
+    })
+}
+
+/// Furtka do pracy nad wyglądem: `CHMURKA_ZRZUT=/ścieżka/okno.ppm`.
+///
+/// Zapisuje zawartość **okna launchera**, a nie ekranu — to jedyny sposób,
+/// żeby obejrzeć układ bez wchodzenia komukolwiek na pulpit, i jedyny, który
+/// działa tak samo pod Waylandem, pod X11 i na Windowsie.
+///
+/// PPM, bo to dwie linijki nagłówka i surowe bajty. Dokładanie biblioteki
+/// do PNG-ów po to, żeby rozejrzeć się po własnym oknie, byłoby przesadą —
+/// `magick` przerobi to na cokolwiek.
+fn zrob_zrzut(app: &mut App, ctx: &egui::Context) {
+    let Some(cel) = app.zrzut.clone() else {
+        return;
+    };
+    app.klatki += 1;
+    ctx.request_repaint();
+
+    // Kilka klatek na ustabilizowanie układu: pierwsza jest rysowana, zanim
+    // panele poznają swoje rozmiary, więc zrzut z niej pokazuje coś innego
+    // niż to, co gracz zobaczy.
+    const PO_ILU_KLATKACH: u32 = 8;
+    if app.klatki == PO_ILU_KLATKACH {
+        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
+        return;
+    }
+    if app.klatki <= PO_ILU_KLATKACH {
+        return;
+    }
+
+    let obraz = ctx.input(|i| {
+        i.events.iter().find_map(|e| match e {
+            egui::Event::Screenshot { image, .. } => Some(image.clone()),
+            _ => None,
+        })
+    });
+    let Some(obraz) = obraz else {
+        // Nie przyszedł jeszcze. Po kilkunastu klatkach dajemy spokój, żeby
+        // launcher nie został otwarty na zawsze.
+        if app.klatki > PO_ILU_KLATKACH + 60 {
+            app.zakoncz = true;
+        }
+        return;
+    };
+
+    let [szer, wys] = obraz.size;
+    let mut bajty = format!("P6\n{szer} {wys}\n255\n").into_bytes();
+    for p in &obraz.pixels {
+        bajty.extend_from_slice(&[p.r(), p.g(), p.b()]);
+    }
+    match std::fs::write(&cel, &bajty) {
+        Ok(()) => eprintln!("zrzut zapisany: {} ({szer}x{wys})", cel.display()),
+        Err(e) => eprintln!("nie udało się zapisać zrzutu: {e}"),
+    }
+    app.zakoncz = true;
+}
+
+/// Sprawdza Javę wskazaną ręcznie w Ustawieniach.
+///
+/// Wskazanie złego pliku kończy się grą, która nie startuje, a komunikat JVM
+/// o tym, że coś nie jest programem, nie mówi nic. Dlatego pytamy Javę o wersję
+/// zanim zaczniemy cokolwiek pobierać — i mówimy wprost, co jest nie tak.
+async fn wlasna_java(
+    sciezka: &Path,
+    wymagany: u32,
+    pomin_sprawdzanie: bool,
+) -> Result<chmurka_core::java::JavaInstall, BladLaunchera> {
+    use chmurka_core::javy;
+
+    let blad = |powod: String| BladLaunchera::WlasnaJava {
+        sciezka: sciezka.display().to_string(),
+        powod,
+    };
+
+    let info = javy::sprawdz(sciezka)
+        .await
+        .map_err(|e| blad(e.to_string()))?;
+
+    if !pomin_sprawdzanie {
+        if info.major != wymagany {
+            return Err(blad(format!(
+                "paczka potrzebuje Javy {wymagany}, a ta jest w wersji {} ({})",
+                info.major, info.wersja
+            )));
+        }
+        // 32-bitowa JVM nie zaadresuje 4 GB sterty, których wymaga paczka.
+        // Bez tego sprawdzenia gracz dostaje „Could not reserve enough space
+        // for object heap" i nie ma pojęcia, co z tym zrobić.
+        if !info.bity64 {
+            return Err(blad(
+                "to Java 32-bitowa, a paczka potrzebuje więcej pamięci, niż taka potrafi objąć"
+                    .into(),
+            ));
+        }
+    }
+
+    Ok(chmurka_core::java::JavaInstall {
+        java_bin: javy::do_uruchamiania(sciezka),
     })
 }
 

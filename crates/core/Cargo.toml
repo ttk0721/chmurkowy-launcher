@@ -21,3 +21,6 @@ zip = "8.6.0"
 
 [dev-dependencies]
 tempfile = "3.27.0"
+# `test-util` daje zegar, ktory da sie przewinac. Bez niego test limitu czasu
+# dla komendy gracza musialby naprawde czekac dwie minuty.
+tokio = { version = "1.53.1", features = ["test-util"] }

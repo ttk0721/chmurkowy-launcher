@@ -114,7 +114,10 @@ pub async fn ensure(
 
 /// Archiwa Adoptium mają jeden katalog na wierzchu (np. `jdk-21.0.12+7-jre`),
 /// więc binarki szukamy o poziom głębiej, nie na sztywno.
-fn znajdz_binarke(katalog: &Path, os: Os) -> Option<PathBuf> {
+///
+/// Publiczne, bo Ustawienia pokazują wprost, której Javy launcher używa —
+/// bez tego zakładka Java mówiłaby „pobranej przez launcher" i tyle.
+pub fn znajdz_binarke(katalog: &Path, os: Os) -> Option<PathBuf> {
     let nazwa = nazwa_javy(os);
     let bezposrednio = katalog.join("bin").join(nazwa);
     if bezposrednio.is_file() {
