@@ -96,6 +96,8 @@ Minecrafta byłoby gorsze od każdego błędu.
 | `KONTO-08` | To konto jest zablokowane przez Microsoft | nie |
 | `KONTO-09` | Logowanie zostało odrzucone | nie |
 | `KONTO-10` | Kod stracił ważność | nie |
+| `KONTO-11` | Microsoft nie wpuszcza tego konta | nie |
+| `KONTO-12` | Zapisane logowanie wygasło | nie |
 | `USTAW-01` | Java wskazana w Ustawieniach nie działa | nie |
 | `USTAW-02` | Twoja komenda nie wykonała się poprawnie / Komenda po zakończeniu gry nie wykonała się poprawnie | nie |
 | `USTAW-03` | Twoja komenda się zawiesiła | nie |
@@ -473,6 +475,48 @@ logowania.
     2. Wpisz go od razu; nie odświeżaj strony z kodem i nie otwieraj jej dwa razy.
     3. Jeśli logujesz się z telefonu, miej launcher otwarty do końca — on czeka
        na potwierdzenie.
+
+`KONTO-11` — Microsoft nie wpuszcza tego konta
+
+:   Kod został wpisany poprawnie i jeszcze nie wygasł, ale Microsoft nie wydał
+    dostępu. Tak odpowiada, gdy konto wymaga czegoś, czego okienko z kodem nie
+    potrafi pokazać: potwierdzenia tożsamości, zgody rodzica albo akceptacji
+    nowego regulaminu.
+
+    1. Otwórz w przeglądarce account.microsoft.com i zaloguj się na to samo
+       konto — Microsoft pokaże tam, czego mu brakuje.
+    2. Jeśli to konto dziecka w rodzinie Microsoft, zgodę musi kliknąć rodzic
+       ze swojego konta.
+    3. Gdy przeglądarka przestanie o cokolwiek pytać, wróć do launchera
+       i kliknij „Zaloguj przez Microsoft” jeszcze raz.
+    4. Do tego czasu możesz grać w trybie offline — świat i postępy zostaną.
+
+    **Ponawianie tutaj nie pomoże.** To jedyny kod z rodziny `KONTO`, przy
+    którym kolejne kliknięcie „Zaloguj przez Microsoft” na pewno da ten sam
+    wynik, dopóki nikt nie załatwi sprawy w przeglądarce.
+
+`KONTO-12` — Zapisane logowanie wygasło
+
+:   Launcher miał zapamiętane logowanie do tego konta, ale Microsoft już go nie
+    przyjmuje. Dzieje się tak po zmianie hasła, po dłuższej przerwie w graniu
+    albo gdy ktoś wylogował urządzenia w ustawieniach konta.
+
+    1. Kliknij „Zaloguj przez Microsoft” — wystarczy zalogować się jeszcze raz.
+    2. Nic nie przepadło: świat, ustawienia i paczka modów zostają na miejscu.
+    3. Jeśli logowanie znów się nie uda, skopiuj szczegóły przyciskiem poniżej
+       i wyślij je administracji.
+
+!!! uwaga
+
+    `KONTO-10`, `KONTO-11` i `KONTO-12` wyglądają w odpowiedzi Microsoftu tak
+    samo — wszystkie trzy przychodzą jako `invalid_grant`. Launcher rozróżnia je
+    po tym, **o co pytał i kiedy**, a nie po treści komunikatu:
+
+    * przy odświeżaniu zapamiętanego logowania → `KONTO-12` (żadnego kodu wtedy
+      na ekranie nie było, więc rady o przepisywaniu kodu byłyby bez sensu);
+    * przy kodzie urządzenia, gdy termin ważności już minął → `KONTO-10`;
+    * przy kodzie urządzenia, gdy termin jeszcze nie minął → `KONTO-11`, bo kod
+      nie mógł wygasnąć, więc przyczyna leży po stronie konta.
 
 !!! uwaga
 

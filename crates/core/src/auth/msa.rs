@@ -46,8 +46,35 @@ pub enum PowodOdmowy {
     Odrzucone,
     /// Kod urządzenia stracił ważność albo został już raz wymieniony.
     KodNiewazny,
+    /// Kod był jeszcze ważny, a Microsoft i tak nie wydał dostępu.
+    ///
+    /// Zostaje wtedy, gdy konto wymaga czegoś, czego okienko z kodem nie
+    /// potrafi pokazać: potwierdzenia tożsamości, zgody rodzica w rodzinie
+    /// Microsoft albo akceptacji nowego regulaminu. Ponawianie nie pomoże ani
+    /// za dziesiątym razem — dopóki nikt nie załatwi tego w przeglądarce,
+    /// odpowiedź będzie identyczna.
+    KontoWymagaDzialania,
+    /// Zapamiętane logowanie przestało być przyjmowane przez Microsoft.
+    ///
+    /// Dotyczy odświeżania, nie kodu urządzenia — żadnego kodu wtedy na ekranie
+    /// nie było, więc rady o przepisywaniu go są tu bez sensu. Zdarza się po
+    /// zmianie hasła, po dłuższej przerwie i po wylogowaniu urządzeń
+    /// w ustawieniach konta.
+    ZapisaneLogowanieWygaslo,
     /// Coś, czego nie rozpoznajemy. Szczegóły niosą kod i opis od Microsoftu.
     Inny,
+}
+
+/// Ten sam kod błędu znaczy co innego przy odświeżaniu niż przy kodzie
+/// urządzenia, bo inne jest pytanie, które zadaliśmy. `invalid_grant` przy
+/// odświeżaniu nie mówi nic o żadnym kodzie — mówi, że zapisany token już nie
+/// działa. Tak samo `access_denied`: przy odświeżaniu znaczy, że ktoś odebrał
+/// launcherowi dostęp w ustawieniach konta, a nie że kliknął „Nie” w okienku.
+pub fn powod_odmowy_odswiezania(kod: &str) -> PowodOdmowy {
+    match kod {
+        "invalid_grant" | "access_denied" => PowodOdmowy::ZapisaneLogowanieWygaslo,
+        _ => PowodOdmowy::Inny,
+    }
 }
 
 /// Tłumaczy kod błędu z odpowiedzi Microsoftu na powód, który da się objaśnić.
@@ -61,6 +88,33 @@ pub fn powod_odmowy(kod: &str) -> PowodOdmowy {
         // jedno albo drugie.
         "invalid_grant" => PowodOdmowy::KodNiewazny,
         _ => PowodOdmowy::Inny,
+    }
+}
+
+/// Doprecyzowuje odmowę wiedzą, której samo `poll_once` nie ma: czy kod
+/// urządzenia zdążył już wygasnąć.
+///
+/// Microsoft oddaje `invalid_grant` i przy kodzie przeterminowanym, i wtedy gdy
+/// po prostu nie chce wydać dostępu temu kontu. Rozróżnienie po treści opisu
+/// byłoby zgadywaniem z angielskiego zdania, które może się zmienić bez
+/// uprzedzenia. Zegar zgadywaniem nie jest: kod urządzenia żyje kilkanaście
+/// minut, więc odmowa, która przyszła przed terminem, na pewno nie jest
+/// wygaśnięciem.
+///
+/// Ma to znaczenie praktyczne, bo rady się wykluczają. Przy wygaśnięciu trzeba
+/// wziąć nowy kod i wpisać go szybciej. Przy odmowie dla konta nowy kod niczego
+/// nie zmieni i gracz może ponawiać bez końca — trzeba odwiedzić konto
+/// Microsoft w przeglądarce.
+pub fn doprecyzuj_odmowe(blad: AuthError, kod_mogl_wygasnac: bool) -> AuthError {
+    match blad {
+        AuthError::Odmowa {
+            powod: PowodOdmowy::KodNiewazny,
+            szczegoly,
+        } if !kod_mogl_wygasnac => AuthError::Odmowa {
+            powod: PowodOdmowy::KontoWymagaDzialania,
+            szczegoly,
+        },
+        inny => inny,
     }
 }
 
@@ -274,10 +328,17 @@ pub async fn poll_once(client_id: &str, device_code: &str) -> Result<PollResult,
 }
 
 pub async fn refresh(client_id: &str, refresh_token: &str) -> Result<Tokens, AuthError> {
+    // Pola są opcjonalne, bo ta sama odpowiedź niesie albo tokeny, albo błąd.
+    // Wcześniej były wymagane, więc odmowa Microsoftu rozbijała się o parser
+    // i szła dalej jako „nieoczekiwany kształt odpowiedzi" — czyli KONTO-05
+    // z radą „uważnie przepisz kod", mimo że przy odświeżaniu żadnego kodu
+    // gracz nie widział.
     #[derive(Deserialize)]
     struct Odp {
-        access_token: String,
-        refresh_token: String,
+        access_token: Option<String>,
+        refresh_token: Option<String>,
+        error: Option<String>,
+        error_description: Option<String>,
     }
     let tekst = klient()
         .post(TOKEN)
@@ -295,10 +356,19 @@ pub async fn refresh(client_id: &str, refresh_token: &str) -> Result<Tokens, Aut
         .map_err(|e| AuthError::Siec(e.to_string()))?;
     let o: Odp =
         serde_json::from_str(&tekst).map_err(|_| AuthError::odmowa(bezpieczny_opis(&tekst)))?;
-    Ok(Tokens {
-        access_token: o.access_token,
-        refresh_token: o.refresh_token,
-    })
+    if let (Some(a), Some(r)) = (o.access_token, o.refresh_token) {
+        return Ok(Tokens {
+            access_token: a,
+            refresh_token: r,
+        });
+    }
+    match o.error.as_deref() {
+        Some(kod) => Err(AuthError::Odmowa {
+            powod: powod_odmowy_odswiezania(kod),
+            szczegoly: opis_odmowy(kod, o.error_description.as_deref()),
+        }),
+        None => Err(AuthError::odmowa(bezpieczny_opis(&tekst))),
+    }
 }
 
 pub fn opis_xerr(kod: u64) -> String {
@@ -562,6 +632,83 @@ mod tests {
         assert_eq!(powod_odmowy("access_denied"), PowodOdmowy::Odrzucone);
         assert_eq!(powod_odmowy("invalid_grant"), PowodOdmowy::KodNiewazny);
         assert_eq!(powod_odmowy("cos_zupelnie_nowego"), PowodOdmowy::Inny);
+    }
+
+    /// Ten sam kod bledu, inne pytanie — inny wniosek. Przy odswiezaniu zadnego
+    /// kodu urzadzenia nie bylo, wiec `invalid_grant` nie moze znaczyc
+    /// „kod stracil waznosc", a `access_denied` nie moze znaczyc „gracz kliknal
+    /// Nie w okienku" — okienka nie bylo.
+    #[test]
+    fn odswiezanie_tlumaczy_kody_inaczej_niz_kod_urzadzenia() {
+        assert_eq!(powod_odmowy("invalid_grant"), PowodOdmowy::KodNiewazny);
+        assert_eq!(
+            powod_odmowy_odswiezania("invalid_grant"),
+            PowodOdmowy::ZapisaneLogowanieWygaslo
+        );
+
+        assert_eq!(powod_odmowy("access_denied"), PowodOdmowy::Odrzucone);
+        assert_eq!(
+            powod_odmowy_odswiezania("access_denied"),
+            PowodOdmowy::ZapisaneLogowanieWygaslo
+        );
+
+        assert_eq!(
+            powod_odmowy_odswiezania("cos_zupelnie_nowego"),
+            PowodOdmowy::Inny
+        );
+    }
+
+    /// Tester dostawal „Kod stracil waznosc" przy odmowie, ktora przychodzila
+    /// od razu po rozpoczeciu logowania, i ponawial dziesiec razy bez skutku.
+    /// Kod urzadzenia zyje kilkanascie minut, wiec odmowa przed terminem nie
+    /// moze byc wygasnieciem.
+    #[test]
+    fn odmowa_przed_terminem_to_nie_wygasniecie_kodu() {
+        let powod = |b: &AuthError| match b {
+            AuthError::Odmowa { powod, .. } => *powod,
+            inny => panic!("spodziewano sie odmowy, jest {inny:?}"),
+        };
+        let odmowa = || AuthError::Odmowa {
+            powod: PowodOdmowy::KodNiewazny,
+            szczegoly: "invalid_grant: The user could not be authenticated".into(),
+        };
+
+        assert_eq!(
+            powod(&doprecyzuj_odmowe(odmowa(), false)),
+            PowodOdmowy::KontoWymagaDzialania,
+            "kod byl jeszcze wazny — to nie wygasniecie"
+        );
+        assert_eq!(
+            powod(&doprecyzuj_odmowe(odmowa(), true)),
+            PowodOdmowy::KodNiewazny,
+            "termin minal — wygasniecie jest tu wlasciwym wyjasnieniem"
+        );
+    }
+
+    /// Doprecyzowanie dotyczy wylacznie `invalid_grant`. Odrzucenie zgody przez
+    /// gracza znaczy to samo niezaleznie od tego, ile zostalo do terminu.
+    #[test]
+    fn doprecyzowanie_nie_rusza_pozostalych_odmow() {
+        for powod in [PowodOdmowy::Odrzucone, PowodOdmowy::Inny] {
+            let wynik = doprecyzuj_odmowe(
+                AuthError::Odmowa {
+                    powod,
+                    szczegoly: "x".into(),
+                },
+                false,
+            );
+            match wynik {
+                AuthError::Odmowa { powod: p, .. } => assert_eq!(p, powod),
+                inny => panic!("spodziewano sie odmowy, jest {inny:?}"),
+            }
+        }
+
+        // Wygasniecie kodu ma wlasny wariant bledu i nie jest odmowa —
+        // doprecyzowanie musi je przepuscic nietkniete.
+        assert!(matches!(
+            doprecyzuj_odmowe(AuthError::Wygasl, false),
+            AuthError::Wygasl
+        ));
     }
 
     /// Dlugi opis od Microsoftu jest przycinany — potrafi miec kilka zdan

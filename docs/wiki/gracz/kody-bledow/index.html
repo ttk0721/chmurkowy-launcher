@@ -1705,6 +1705,16 @@ Minecrafta byłoby gorsze od każdego błędu.</p>
 <td>nie</td>
 </tr>
 <tr>
+<td><code>KONTO-11</code></td>
+<td>Microsoft nie wpuszcza tego konta</td>
+<td>nie</td>
+</tr>
+<tr>
+<td><code>KONTO-12</code></td>
+<td>Zapisane logowanie wygasło</td>
+<td>nie</td>
+</tr>
+<tr>
 <td><code>USTAW-01</code></td>
 <td>Java wskazana w Ustawieniach nie działa</td>
 <td>nie</td>
@@ -2153,7 +2163,51 @@ kilkanaście minut. Ten już się przeterminował albo został wcześniej użyty
    na potwierdzenie.</li>
 </ol>
 </dd>
+<dt><code>KONTO-11</code> — Microsoft nie wpuszcza tego konta</dt>
+<dd>
+<p>Kod został wpisany poprawnie i jeszcze nie wygasł, ale Microsoft nie wydał
+dostępu. Tak odpowiada, gdy konto wymaga czegoś, czego okienko z kodem nie
+potrafi pokazać: potwierdzenia tożsamości, zgody rodzica albo akceptacji
+nowego regulaminu.</p>
+<ol>
+<li>Otwórz w przeglądarce account.microsoft.com i zaloguj się na to samo
+   konto — Microsoft pokaże tam, czego mu brakuje.</li>
+<li>Jeśli to konto dziecka w rodzinie Microsoft, zgodę musi kliknąć rodzic
+   ze swojego konta.</li>
+<li>Gdy przeglądarka przestanie o cokolwiek pytać, wróć do launchera
+   i kliknij „Zaloguj przez Microsoft” jeszcze raz.</li>
+<li>Do tego czasu możesz grać w trybie offline — świat i postępy zostaną.</li>
+</ol>
+<p><strong>Ponawianie tutaj nie pomoże.</strong> To jedyny kod z rodziny <code>KONTO</code>, przy
+którym kolejne kliknięcie „Zaloguj przez Microsoft” na pewno da ten sam
+wynik, dopóki nikt nie załatwi sprawy w przeglądarce.</p>
+</dd>
+<dt><code>KONTO-12</code> — Zapisane logowanie wygasło</dt>
+<dd>
+<p>Launcher miał zapamiętane logowanie do tego konta, ale Microsoft już go nie
+przyjmuje. Dzieje się tak po zmianie hasła, po dłuższej przerwie w graniu
+albo gdy ktoś wylogował urządzenia w ustawieniach konta.</p>
+<ol>
+<li>Kliknij „Zaloguj przez Microsoft” — wystarczy zalogować się jeszcze raz.</li>
+<li>Nic nie przepadło: świat, ustawienia i paczka modów zostają na miejscu.</li>
+<li>Jeśli logowanie znów się nie uda, skopiuj szczegóły przyciskiem poniżej
+   i wyślij je administracji.</li>
+</ol>
+</dd>
 </dl>
+<div class="admonition uwaga">
+<p class="admonition-title">Uwaga</p>
+<p><code>KONTO-10</code>, <code>KONTO-11</code> i <code>KONTO-12</code> wyglądają w odpowiedzi Microsoftu tak
+samo — wszystkie trzy przychodzą jako <code>invalid_grant</code>. Launcher rozróżnia je
+po tym, <strong>o co pytał i kiedy</strong>, a nie po treści komunikatu:</p>
+<ul>
+<li>przy odświeżaniu zapamiętanego logowania → <code>KONTO-12</code> (żadnego kodu wtedy
+  na ekranie nie było, więc rady o przepisywaniu kodu byłyby bez sensu);</li>
+<li>przy kodzie urządzenia, gdy termin ważności już minął → <code>KONTO-10</code>;</li>
+<li>przy kodzie urządzenia, gdy termin jeszcze nie minął → <code>KONTO-11</code>, bo kod
+  nie mógł wygasnąć, więc przyczyna leży po stronie konta.</li>
+</ul>
+</div>
 <div class="admonition uwaga">
 <p class="admonition-title">Uwaga</p>
 <p><code>KONTO-05</code> jest kodem zbiorczym i dostajesz go wtedy, gdy launcher nie

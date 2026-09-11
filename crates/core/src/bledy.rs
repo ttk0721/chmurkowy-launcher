@@ -624,6 +624,43 @@ fn z_logowania(e: &AuthError) -> BladUzytkownika {
                 ],
                 szczegoly.clone(),
             ),
+            // Kod był jeszcze ważny, a Microsoft i tak odmówił. Rada
+            // „weź nowy kod" jest tu najgorsza z możliwych: gracz ponawia,
+            // dostaje to samo i ma prawo uznać, że launcher jest zepsuty.
+            PowodOdmowy::KontoWymagaDzialania => BladUzytkownika::nowy(
+                "KONTO-11",
+                "Microsoft nie wpuszcza tego konta",
+                "Kod został wpisany poprawnie i jeszcze nie wygasł, ale Microsoft nie wydał \
+                 dostępu. Tak odpowiada, gdy konto wymaga czegoś, czego okienko z kodem nie \
+                 potrafi pokazać: potwierdzenia tożsamości, zgody rodzica albo akceptacji \
+                 nowego regulaminu. Ponawianie tutaj nic nie zmieni.",
+                &[
+                    "Otwórz w przeglądarce account.microsoft.com i zaloguj się na to samo konto — \
+                     Microsoft pokaże tam, czego mu brakuje.",
+                    "Jeśli to konto dziecka w rodzinie Microsoft, zgodę musi kliknąć rodzic \
+                     ze swojego konta.",
+                    "Gdy przeglądarka przestanie o cokolwiek pytać, wróć tutaj i kliknij \
+                     „Zaloguj przez Microsoft” jeszcze raz.",
+                    "Do tego czasu możesz grać w trybie offline — świat i postępy zostaną.",
+                ],
+                szczegoly.clone(),
+            ),
+            // Odświeżanie zapisanego logowania, nie kod urządzenia. Gracz nic
+            // nie przepisywał, więc rada o przepisywaniu byłaby tu dziwaczna.
+            PowodOdmowy::ZapisaneLogowanieWygaslo => BladUzytkownika::nowy(
+                "KONTO-12",
+                "Zapisane logowanie wygasło",
+                "Launcher miał zapamiętane logowanie do tego konta, ale Microsoft już go nie \
+                 przyjmuje. Dzieje się tak po zmianie hasła, po dłuższej przerwie w graniu \
+                 albo gdy ktoś wylogował urządzenia w ustawieniach konta.",
+                &[
+                    "Kliknij „Zaloguj przez Microsoft” — wystarczy zalogować się jeszcze raz.",
+                    "Nic nie przepadło: świat, ustawienia i paczka modów zostają na miejscu.",
+                    "Jeśli logowanie znów się nie uda, skopiuj szczegóły przyciskiem poniżej \
+                     i wyślij je administracji.",
+                ],
+                szczegoly.clone(),
+            ),
             PowodOdmowy::Inny => BladUzytkownika::nowy(
                 "KONTO-05",
                 "Logowanie nie powiodło się",
@@ -1089,15 +1126,49 @@ mod tests {
 
         let odrzucone = zrob(PowodOdmowy::Odrzucone);
         let niewazny = zrob(PowodOdmowy::KodNiewazny);
+        let konto = zrob(PowodOdmowy::KontoWymagaDzialania);
         let inny = zrob(PowodOdmowy::Inny);
 
         assert_eq!(odrzucone.kod, "KONTO-09");
         assert_eq!(niewazny.kod, "KONTO-10");
+        assert_eq!(konto.kod, "KONTO-11");
         assert_eq!(inny.kod, "KONTO-05");
 
-        // Trzy rozne tytuly — inaczej podzial nie ma sensu.
+        // Cztery rozne tytuly — inaczej podzial nie ma sensu.
         assert_ne!(odrzucone.tytul, niewazny.tytul);
-        assert_ne!(niewazny.tytul, inny.tytul);
+        assert_ne!(niewazny.tytul, konto.tytul);
+        assert_ne!(konto.tytul, inny.tytul);
+
+        // Sedno podzialu: przy odmowie dla konta ponawianie nie pomaga, wiec
+        // nie wolno tu napisac, ze kod stracil waznosc ani kazac brac nowego.
+        // To wlasnie ta rada zapetlila testera przy 0.4.26.
+        assert!(
+            !konto.co_zrobic.iter().any(|k| k.contains("nowy kod")),
+            "{:?}",
+            konto.co_zrobic
+        );
+        assert!(
+            !konto.tytul.contains("ważnoś"),
+            "tytul nie moze obiecywac wygasniecia: {}",
+            konto.tytul
+        );
+        // Odwrotnie niz przy KONTO-10: tutaj trzeba graczowi wprost napisac,
+        // ze kod byl dobry. Inaczej bedzie go przepisywal jeszcze staranniej.
+        assert!(
+            konto.co_sie_stalo.contains("nie wygasł"),
+            "{}",
+            konto.co_sie_stalo
+        );
+        // ...i odwrotnie: gracz musi dostac namiar na przegladarke, bo tylko
+        // tam Microsoft pokaze, czego mu brakuje.
+        assert!(
+            konto
+                .co_zrobic
+                .iter()
+                .any(|k| k.contains("account.microsoft.com")),
+            "{:?}",
+            konto.co_zrobic
+        );
 
         // Rada o przepisywaniu kodu nie ma sensu, gdy kod przepisano dobrze,
         // tylko nie potwierdzono zgody.
@@ -1108,9 +1179,37 @@ mod tests {
         );
 
         // Szczegoly techniczne musza doniesc opis od Microsoftu do administracji.
-        for b in [&odrzucone, &niewazny, &inny] {
+        for b in [&odrzucone, &niewazny, &konto, &inny] {
             assert!(b.szczegoly.contains("AADSTS70008"), "{}", b.szczegoly);
         }
+    }
+
+    /// Odswiezanie zapisanego logowania nie pokazuje graczowi zadnego kodu,
+    /// wiec rady o przepisywaniu kodu sa tam bez sensu. Wczesniej odmowa przy
+    /// odswiezaniu ladowala pod KONTO-05 wlasnie z taka rada.
+    #[test]
+    fn wygasle_zapisane_logowanie_nie_kaze_przepisywac_kodu() {
+        use crate::auth::msa::PowodOdmowy;
+
+        let b = BladLaunchera::Logowanie(AuthError::Odmowa {
+            powod: PowodOdmowy::ZapisaneLogowanieWygaslo,
+            szczegoly: "invalid_grant: The user must sign in again".into(),
+        })
+        .dla_uzytkownika();
+
+        assert_eq!(b.kod, "KONTO-12");
+        for krok in &b.co_zrobic {
+            assert!(
+                !krok.contains("przepisz") && !krok.contains("kod urządzenia"),
+                "{krok}"
+            );
+        }
+        // Gracz ma sie bac, ze straci swiat — trzeba to uprzedzic wprost.
+        assert!(
+            b.co_zrobic.iter().any(|k| k.contains("Nic nie przepadło")),
+            "{:?}",
+            b.co_zrobic
+        );
     }
 
     /// Zadna z nowych odmow nie moze isc do samonaprawy — ponawianie logowania
@@ -1122,6 +1221,8 @@ mod tests {
         for powod in [
             PowodOdmowy::Odrzucone,
             PowodOdmowy::KodNiewazny,
+            PowodOdmowy::KontoWymagaDzialania,
+            PowodOdmowy::ZapisaneLogowanieWygaslo,
             PowodOdmowy::Inny,
         ] {
             let b = BladLaunchera::Logowanie(AuthError::Odmowa {

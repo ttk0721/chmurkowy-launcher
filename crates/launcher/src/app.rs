@@ -1095,7 +1095,20 @@ pub fn zaloguj_microsoft(app: &mut App) {
                         Err(e) => zglos(e, &n),
                     };
                 }
-                Err(e) => return zglos(e, &n),
+                // Zanim ogłosimy graczowi powód, dokładamy to, czego sam
+                // `poll_once` nie wie: ile zostało do terminu. Bez tego każde
+                // `invalid_grant` szło jako „kod stracił ważność", także wtedy
+                // gdy odmowa przyszła w drugiej sekundzie logowania — a wtedy
+                // rada „weź nowy kod” zapętla gracza na amen.
+                //
+                // Zapas jest na rozjazd zegarów i czas przelotu odpowiedzi:
+                // przy terminie tuż-tuż uczciwiej przyznać, że kod mógł wygasnąć.
+                Err(e) => {
+                    const ZAPAS: std::time::Duration = std::time::Duration::from_secs(30);
+                    let mogl_wygasnac =
+                        koniec.saturating_duration_since(std::time::Instant::now()) < ZAPAS;
+                    return zglos(msa::doprecyzuj_odmowe(e, mogl_wygasnac), &n);
+                }
             }
         }
     });
