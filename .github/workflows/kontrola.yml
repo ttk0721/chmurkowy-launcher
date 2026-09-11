@@ -9,6 +9,10 @@ name: Kontrola
 # i o to chodzi tutaj.
 on:
   pull_request:
+  # Kolejka scalania. Bez tego wyzwalacza kontrole NIE uruchamiaja sie dla
+  # wpisow w kolejce, a kolejka czeka na nie bezterminowo — czyli wlaczenie
+  # kolejki zatrzymaloby scalanie calkowicie zamiast je przyspieszyc.
+  merge_group:
   push:
     branches: [main]
   workflow_dispatch:
