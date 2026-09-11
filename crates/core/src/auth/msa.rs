@@ -14,10 +14,7 @@ pub enum AuthError {
     #[error("kod wygasł — spróbuj zalogować się jeszcze raz")]
     Wygasl,
     #[error("Xbox Live odmówił: {szczegoly}")]
-    Xbox {
-        powod: PowodXbox,
-        szczegoly: String,
-    },
+    Xbox { powod: PowodXbox, szczegoly: String },
     #[error("to konto Microsoft nie ma kupionego Minecrafta")]
     BrakGry,
 }
@@ -51,7 +48,7 @@ pub fn powod_xerr(kod: u64) -> PowodXbox {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct DeviceCode {
     pub user_code: String,
     pub device_code: String,
@@ -62,10 +59,39 @@ pub struct DeviceCode {
     pub expires_in_s: u64,
 }
 
-#[derive(Debug, Clone)]
+/// `device_code` jest sekretem — kto go ma, ten odbierze token zamiast gracza.
+/// `user_code` przeciwnie: gracz ma go przepisać, więc pokazujemy go wprost.
+impl std::fmt::Debug for DeviceCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DeviceCode")
+            .field("user_code", &self.user_code)
+            .field("device_code", &"<ukryty>")
+            .field("verification_uri", &self.verification_uri)
+            .field("interval_s", &self.interval_s)
+            .field("expires_in_s", &self.expires_in_s)
+            .finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct Tokens {
     pub access_token: String,
     pub refresh_token: String,
+}
+
+/// Wypisanie tokenów zastąpione znacznikiem.
+///
+/// Wyprowadzony `Debug` wypisywał je w całości. Nikt tego dziś nie robi, ale
+/// wystarczy jedno `{:?}` w komunikacie błędu, żeby żywy token gracza trafił
+/// do `game.log` albo do raportu wklejanego na czacie — a takie linijki
+/// dopisuje się w pośpiechu, przy szukaniu zupełnie innej usterki.
+impl std::fmt::Debug for Tokens {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Tokens")
+            .field("access_token", &"<ukryty>")
+            .field("refresh_token", &"<ukryty>")
+            .finish()
+    }
 }
 
 #[derive(Debug)]
@@ -95,8 +121,43 @@ pub async fn begin(client_id: &str) -> Result<DeviceCode, AuthError> {
         .send()
         .await
         .map_err(|e| AuthError::Siec(e.to_string()))?;
-    let tekst = odp.text().await.map_err(|e| AuthError::Siec(e.to_string()))?;
-    serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(tekst))
+    let tekst = odp
+        .text()
+        .await
+        .map_err(|e| AuthError::Siec(e.to_string()))?;
+    serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(bezpieczny_opis(&tekst)))
+}
+
+/// Zamienia odpowiedź serwera uwierzytelniania na opis, który wolno pokazać.
+///
+/// To jest zabezpieczenie, a nie kosmetyka. Treść błędu wędruje dalej jako
+/// `AuthError::Odmowa`, stamtąd do pola `szczegoly`, a stamtąd pod przycisk
+/// „Kopiuj szczegóły dla administracji" — czyli na czat, na oczy obcych.
+/// Wkładanie tam surowej odpowiedzi z endpointu tokenów znaczyło, że przy
+/// nieoczekiwanym kształcie odpowiedzi **żywy token gracza szedł w świat**.
+///
+/// Przepuszczamy więc wyłącznie pola `error` i `error_description` — te są po
+/// to, żeby je czytać. Wszystko inne, łącznie z `access_token`, zostaje tutaj.
+pub fn bezpieczny_opis(tekst: &str) -> String {
+    const ILE_ZNAKOW: usize = 200;
+
+    match serde_json::from_str::<serde_json::Value>(tekst) {
+        Ok(v) => {
+            let kod = v.get("error").and_then(|x| x.as_str());
+            let opis = v.get("error_description").and_then(|x| x.as_str());
+            match (kod, opis) {
+                (None, None) => "odpowiedź w nieoczekiwanym kształcie".to_string(),
+                (k, o) => skrot(
+                    format!("{} {}", k.unwrap_or(""), o.unwrap_or("")).trim(),
+                    ILE_ZNAKOW,
+                ),
+            }
+        }
+        // Odpowiedź, która nie jest JSON-em, to zwykle strona błędu serwera
+        // pośredniczącego. Tokenu w niej nie ma, ale i tak ją tniemy — nie ma
+        // powodu wklejać komuś na czat kilobajtów cudzego HTML-a.
+        Err(_) => skrot(tekst.trim(), ILE_ZNAKOW),
+    }
 }
 
 pub fn zinterpretuj_blad(kod: &str) -> Option<PollResult> {
@@ -129,7 +190,8 @@ pub async fn poll_once(client_id: &str, device_code: &str) -> Result<PollResult,
         .await
         .map_err(|e| AuthError::Siec(e.to_string()))?;
 
-    let o: Odp = serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(tekst.clone()))?;
+    let o: Odp =
+        serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(bezpieczny_opis(&tekst)))?;
 
     if let (Some(a), Some(r)) = (o.access_token, o.refresh_token) {
         return Ok(PollResult::Gotowe(Tokens {
@@ -143,7 +205,7 @@ pub async fn poll_once(client_id: &str, device_code: &str) -> Result<PollResult,
             None if kod == "expired_token" => Err(AuthError::Wygasl),
             None => Err(AuthError::Odmowa(kod.to_string())),
         },
-        None => Err(AuthError::Odmowa(tekst)),
+        None => Err(AuthError::Odmowa(bezpieczny_opis(&tekst))),
     }
 }
 
@@ -167,7 +229,8 @@ pub async fn refresh(client_id: &str, refresh_token: &str) -> Result<Tokens, Aut
         .text()
         .await
         .map_err(|e| AuthError::Siec(e.to_string()))?;
-    let o: Odp = serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(tekst))?;
+    let o: Odp =
+        serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(bezpieczny_opis(&tekst)))?;
     Ok(Tokens {
         access_token: o.access_token,
         refresh_token: o.refresh_token,
@@ -205,7 +268,10 @@ fn skrot(s: &str, ile: usize) -> String {
 /// a każdy taki przypadek lądował pod jednym workiem KONTO-05.
 async fn odczytaj(odp: reqwest::Response) -> Result<(reqwest::StatusCode, String), AuthError> {
     let status = odp.status();
-    let tekst = odp.text().await.map_err(|e| AuthError::Siec(e.to_string()))?;
+    let tekst = odp
+        .text()
+        .await
+        .map_err(|e| AuthError::Siec(e.to_string()))?;
     Ok((status, tekst))
 }
 
@@ -399,6 +465,93 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
 mod tests {
     use super::*;
 
+    /// Odpowiedz z endpointu tokenow, ktora nie ma ksztaltu, jakiego oczekujemy.
+    /// Zawiera ZYWY token dostepu — dokladnie to, co wczesniej szlo w calosci
+    /// do raportu wklejanego przez gracza na czat.
+    const ODPOWIEDZ_Z_TOKENEM: &str = r#"{"token_type":"Bearer","expires_in":86400,
+        "access_token":"EwAIA+pvBAAUKods6vX7RFshxTTnbfcpbCAAAZjAdkwIiJ",
+        "scope":"XboxLive.signin"}"#;
+
+    /// Najwazniejszy test w tym pliku.
+    ///
+    /// Cztery miejsca w module wkladaly surowa tresc odpowiedzi do
+    /// `AuthError::Odmowa`, a ta wedruje do pola `szczegoly` i stamtad pod
+    /// przycisk „Kopiuj szczegoly dla administracji" — czyli na czat.
+    /// Przy nieoczekiwanym ksztalcie odpowiedzi szedl tam zywy token.
+    #[test]
+    fn tresc_odpowiedzi_nie_wynosi_tokenu() {
+        let opis = bezpieczny_opis(ODPOWIEDZ_Z_TOKENEM);
+        assert!(
+            !opis.contains("EwAIA+pvBAAUKods6vX7RFshxTTnbfcpbCAAAZjAdkwIiJ"),
+            "token wyszedl na zewnatrz: {opis}"
+        );
+        assert!(
+            !opis.contains("access_token"),
+            "nawet nazwa pola nie ma po co wychodzic: {opis}"
+        );
+    }
+
+    /// Prawdziwy blad OAuth ma przejsc w calosci — po to sie go czyta.
+    #[test]
+    fn prawdziwy_blad_oauth_przechodzi() {
+        let opis = bezpieczny_opis(
+            r#"{"error":"invalid_grant","error_description":"The user has revoked access."}"#,
+        );
+        assert!(opis.contains("invalid_grant"), "{opis}");
+        assert!(opis.contains("revoked"), "{opis}");
+    }
+
+    /// Odpowiedz, ktora nie jest JSON-em, to zwykle strona bledu posrednika.
+    /// Tokenu w niej nie ma, ale nie ma tez powodu wklejac komus kilobajtow
+    /// cudzego HTML-a.
+    #[test]
+    fn nie_json_jest_ucinany() {
+        let dlugi = "<html>".to_string() + &"x".repeat(5000) + "</html>";
+        let opis = bezpieczny_opis(&dlugi);
+        assert!(
+            opis.chars().count() <= 201,
+            "za dlugie: {} znakow",
+            opis.chars().count()
+        );
+    }
+
+    /// Odpowiedz bez zadnego z pol bledu nie moze przepuscic reszty tresci.
+    #[test]
+    fn json_bez_pol_bledu_nie_wynosi_niczego() {
+        let opis = bezpieczny_opis(r#"{"cos":"zupelnie innego","refresh_token":"M.C123_BAY"}"#);
+        assert!(!opis.contains("M.C123_BAY"), "{opis}");
+        assert!(!opis.contains("zupelnie innego"), "{opis}");
+    }
+
+    /// Wyprowadzony `Debug` wypisywal oba tokeny w calosci. Wystarczy jedno
+    /// `{:?}` w komunikacie bledu, zeby trafily do logu albo do raportu.
+    #[test]
+    fn debug_nie_wypisuje_tokenow() {
+        let t = Tokens {
+            access_token: "TAJNY-DOSTEP".into(),
+            refresh_token: "TAJNY-ODSWIEZ".into(),
+        };
+        let s = format!("{t:?}");
+        assert!(!s.contains("TAJNY-DOSTEP"), "{s}");
+        assert!(!s.contains("TAJNY-ODSWIEZ"), "{s}");
+    }
+
+    /// `device_code` jest sekretem: kto go ma, odbierze token zamiast gracza.
+    /// `user_code` gracz ma przepisac, wiec zostaje widoczny.
+    #[test]
+    fn debug_ukrywa_device_code_ale_nie_user_code() {
+        let k = DeviceCode {
+            user_code: "V3REVW36".into(),
+            device_code: "TAJNY-KOD-URZADZENIA".into(),
+            verification_uri: "https://microsoft.com/link".into(),
+            interval_s: 5,
+            expires_in_s: 900,
+        };
+        let s = format!("{k:?}");
+        assert!(!s.contains("TAJNY-KOD-URZADZENIA"), "{s}");
+        assert!(s.contains("V3REVW36"), "gracz ma go przepisac: {s}");
+    }
+
     #[test]
     fn czyta_odpowiedz_device_code() {
         // Ksztalt sprawdzony empirycznie na login.live.com/oauth20_connect.srf
@@ -428,7 +581,9 @@ mod tests {
 
     #[test]
     fn tlumaczy_kody_xsts_na_polski() {
-        assert!(opis_xerr(2148916233).contains("konta Xbox") || opis_xerr(2148916233).contains("Xbox"));
+        assert!(
+            opis_xerr(2148916233).contains("konta Xbox") || opis_xerr(2148916233).contains("Xbox")
+        );
         assert!(opis_xerr(2148916238).contains("dziecka"));
         assert!(opis_xerr(999).contains("999"));
     }
@@ -454,10 +609,7 @@ mod tests {
             xerr_z_tresci(r#"{"XErr":2148916238,"Message":""}"#),
             Some(2148916238)
         );
-        assert_eq!(
-            xerr_z_tresci(r#"{"XErr":"2148916233"}"#),
-            Some(2148916233)
-        );
+        assert_eq!(xerr_z_tresci(r#"{"XErr":"2148916233"}"#), Some(2148916233));
         assert_eq!(xerr_z_tresci("<html>502 Bad Gateway</html>"), None);
         assert_eq!(xerr_z_tresci("{}"), None);
     }
