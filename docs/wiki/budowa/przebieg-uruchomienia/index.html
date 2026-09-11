@@ -1,0 +1,2424 @@
+
+<!doctype html>
+<html lang="pl" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Dokumentacja launchera paczki modów Chmurkowego Serwera">
+      
+      
+      
+        <link rel="canonical" href="https://ttk0721.github.io/chmurkowy-launcher/wiki/budowa/przebieg-uruchomienia/">
+      
+      
+        <link rel="prev" href="../architektura/">
+      
+      
+        <link rel="next" href="../manifest/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Od kliknięcia GRAJ do gry - Chmurkowy Launcher</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#od-klikniecia-graj-do-gry" class="md-skip">
+          Przejdź do treści
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Nagłówek">
+    <a href="../.." title="Chmurkowy Launcher" class="md-header__button md-logo" aria-label="Chmurkowy Launcher" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Chmurkowy Launcher
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Od kliknięcia GRAJ do gry
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Przełącz na jasny"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Przełącz na jasny" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Przełącz na ciemny"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Przełącz na ciemny" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Przełącz na automatyczny"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Przełącz na automatyczny" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Szukaj" placeholder="Szukaj" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Szukaj">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Wyczyść" aria-label="Wyczyść" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicjowanie wyszukiwania
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ttk0721/chmurkowy-launcher" title="Przejdź do repozytorium" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ttk0721/chmurkowy-launcher
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Nawigacja" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Chmurkowy Launcher" class="md-nav__button md-logo" aria-label="Chmurkowy Launcher" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Chmurkowy Launcher
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ttk0721/chmurkowy-launcher" title="Przejdź do repozytorium" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ttk0721/chmurkowy-launcher
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../gracz/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dla gracza
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dla gracza
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/instalacja/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instalacja
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/pierwsze-uruchomienie/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pierwsze uruchomienie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/konta/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Konta
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/ustawienia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ustawienia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/problemy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gdy gra nie startuje
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/kody-bledow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kody błędów
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jak to działa
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jak to działa
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architektura/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architektura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Od kliknięcia GRAJ do gry
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Od kliknięcia GRAJ do gry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Spis treści">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Spis treści
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#skrot-kolejnosc-wywoan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skrót: kolejność wywołań
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#klikniecie-graj" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kliknięcie GRAJ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#katalogi-i-pobieracz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Katalogi i pobieracz
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-java" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Java
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Java">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#java-pobrana-przez-launcher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Java pobrana przez launcher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#java-wskazana-recznie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Java wskazana ręcznie
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-instalacja-neoforge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Instalacja NeoForge
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Instalacja NeoForge">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kiedy-instalacja-jest-kompletna-oba-pliki-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kiedy instalacja jest kompletna: oba pliki json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wstepne-pobranie-plikow-vanilla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wstępne pobranie plików vanilla
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trzy-podejscia-i-przeaczenie-na-ipv4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trzy podejścia i przełączenie na IPv4
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-wczytanie-profilu-wersji" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Wczytanie profilu wersji
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-biblioteki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Biblioteki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-zasoby-gry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Zasoby gry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-synchronizacja-paczki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Synchronizacja paczki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-biblioteki-dzwieku" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Biblioteki dźwięku
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-komenda-przed-startem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Komenda przed startem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-zbudowanie-komendy-uruchomienia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Zbudowanie komendy uruchomienia
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Zbudowanie komendy uruchomienia">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reguy-features-czyli-czego-w-komendzie-nie-ma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reguły features, czyli czego w komendzie nie ma
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pamiec-bez-wasnych-nastaw-odsmiecacza-i-metaspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pamięć: bez własnych nastaw odśmiecacza i metaspace
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-uruchomienie-i-nadzor-nad-procesem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Uruchomienie i nadzór nad procesem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#samonaprawa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Samonaprawa
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../manifest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manifest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../synchronizacja/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synchronizacja paczki
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../samoaktualizacja/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Samoaktualizacja
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gdzie leżą dane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../paczka/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paczka modów
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Paczka modów
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../paczka/zmiana-modow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dodanie i usunięcie moda
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../paczka/przebudowa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Przebudowa manifestu
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../paczka/hostowane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mody hostowane u nas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../projekt/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Praca nad projektem
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Praca nad projektem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projekt/wydanie/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wydanie nowej wersji
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projekt/kontrole/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kontrole i ochrona gałęzi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projekt/podpisy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Podpisywanie commitów
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Spis treści">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Spis treści
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#skrot-kolejnosc-wywoan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skrót: kolejność wywołań
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#klikniecie-graj" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kliknięcie GRAJ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#katalogi-i-pobieracz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Katalogi i pobieracz
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-java" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Java
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Java">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#java-pobrana-przez-launcher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Java pobrana przez launcher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#java-wskazana-recznie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Java wskazana ręcznie
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-instalacja-neoforge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Instalacja NeoForge
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Instalacja NeoForge">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kiedy-instalacja-jest-kompletna-oba-pliki-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kiedy instalacja jest kompletna: oba pliki json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wstepne-pobranie-plikow-vanilla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wstępne pobranie plików vanilla
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trzy-podejscia-i-przeaczenie-na-ipv4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trzy podejścia i przełączenie na IPv4
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-wczytanie-profilu-wersji" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Wczytanie profilu wersji
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-biblioteki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Biblioteki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-zasoby-gry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Zasoby gry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-synchronizacja-paczki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Synchronizacja paczki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-biblioteki-dzwieku" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Biblioteki dźwięku
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-komenda-przed-startem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Komenda przed startem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-zbudowanie-komendy-uruchomienia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Zbudowanie komendy uruchomienia
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Zbudowanie komendy uruchomienia">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reguy-features-czyli-czego-w-komendzie-nie-ma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reguły features, czyli czego w komendzie nie ma
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pamiec-bez-wasnych-nastaw-odsmiecacza-i-metaspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pamięć: bez własnych nastaw odśmiecacza i metaspace
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-uruchomienie-i-nadzor-nad-procesem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Uruchomienie i nadzór nad procesem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#samonaprawa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Samonaprawa
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/ttk0721/chmurkowy-launcher/edit/main/wiki/budowa/przebieg-uruchomienia.md" title="Edytuj tę stronę" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="od-klikniecia-graj-do-gry">Od kliknięcia GRAJ do gry<a class="headerlink" href="#od-klikniecia-graj-do-gry" title="Permanent link">&para;</a></h1>
+<p>Ta strona opisuje jedną ścieżkę w kodzie: od naciśnięcia przycisku GRAJ do
+procesu Minecrafta, który działa i którego launcher pilnuje aż do zamknięcia.
+Wszystko, co tu opisane, da się przeczytać w trzech funkcjach w
+<code>crates/launcher/src/app.rs</code> — <code>uruchom</code>, <code>odpal_z_samonaprawa</code>
+i <code>przygotuj_i_odpal</code> — oraz w modułach <code>crates/core</code>, które one wołają.</p>
+<p>Podział jest taki: launcher decyduje <strong>kiedy</strong> i <strong>w jakiej kolejności</strong>,
+a <code>chmurka-core</code> wie <strong>jak</strong>. W <code>app.rs</code> nie ma pobierania plików ani składania
+argumentów Javy, tylko wywołania po kolei i obsługa tego, co poszło nie tak.</p>
+<h2 id="skrot-kolejnosc-wywoan">Skrót: kolejność wywołań<a class="headerlink" href="#skrot-kolejnosc-wywoan" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Krok</th>
+<th>Funkcja</th>
+<th>Plik</th>
+<th>Co powstaje na dysku</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>java::ensure</code> albo <code>wlasna_java</code></td>
+<td><code>core/src/java.rs</code>, <code>launcher/src/app.rs</code></td>
+<td><code>data/java/&lt;major&gt;/…</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>game_install::ensure_loader</code></td>
+<td><code>core/src/game_install.rs</code></td>
+<td><code>data/mc/versions/&lt;profil&gt;/&lt;profil&gt;.json</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>version::load</code></td>
+<td><code>core/src/version.rs</code></td>
+<td>nic — czyta z dysku</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>game_install::ensure_libraries</code></td>
+<td><code>core/src/game_install.rs</code></td>
+<td><code>data/mc/libraries/…</code>, <code>data/mc/versions/&lt;id&gt;/&lt;id&gt;.jar</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>game_install::ensure_assets</code></td>
+<td><code>core/src/game_install.rs</code></td>
+<td><code>data/mc/assets/indexes/…</code>, <code>data/mc/assets/objects/…</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>pack_sync::plan</code> i <code>pack_sync::apply</code></td>
+<td><code>core/src/pack_sync.rs</code></td>
+<td><code>data/instance/…</code>, <code>data/state.json</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>narzedzia::zapewnij</code></td>
+<td><code>core/src/narzedzia.rs</code></td>
+<td>katalogi narzędzi w <code>data/instance/</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>komendy::uruchom</code> (etap <code>Przed</code>)</td>
+<td><code>core/src/komendy.rs</code></td>
+<td>zależy od gracza</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>launch::build_command</code></td>
+<td><code>core/src/launch.rs</code></td>
+<td>nic — składa <code>std::process::Command</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>spawn</code> i oczekiwanie na proces</td>
+<td><code>launcher/src/app.rs</code></td>
+<td><code>data/logs/game.log</code></td>
+</tr>
+</tbody>
+</table>
+<p>Ścieżki są podane względem katalogu danych. Gdzie on leży na poszczególnych
+systemach, opisuje <a href="../dane/">Gdzie leżą dane</a>.</p>
+<h2 id="klikniecie-graj">Kliknięcie GRAJ<a class="headerlink" href="#klikniecie-graj" title="Permanent link">&para;</a></h2>
+<p><code>uruchom</code> w <code>app.rs</code> nie robi nic samo z siebie, dopóki nie ma kompletu:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">let</span><span class="w"> </span><span class="p">(</span><span class="nb">Some</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="nb">Some</span><span class="p">(</span><span class="n">konto</span><span class="p">))</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">app</span><span class="p">.</span><span class="n">manifest</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span><span class="w"> </span><span class="n">app</span><span class="p">.</span><span class="n">konto</span><span class="p">.</span><span class="n">clone</span><span class="p">())</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="k">return</span><span class="p">;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">};</span>
+</code></pre></div>
+<p>Bez manifestu nie wiadomo, co instalować, bez konta nie ma czego podstawić
+w argumenty gry. Dalej funkcja kasuje poprzedni błąd, ustawia <code>zajety = true</code>
+(to wygasza przycisk), czyści log i przekazuje robotę do zadania w tle.</p>
+<p>Postęp wraca do wątku rysującego kanałem <code>Wiadomosc::Postep</code>. Funkcje z <code>core</code>
+nie wiedzą nic o egui — dostają domknięcie <code>Arc&lt;dyn Fn(Progress)&gt;</code> i wołają je,
+gdy mają coś do powiedzenia. Etapy pochodzą z <code>Stage</code> w <code>core/src/progress.rs</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Wariant <code>Stage</code></th>
+<th>Tekst w linii stanu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Manifest</code></td>
+<td>Sprawdzam paczkę</td>
+</tr>
+<tr>
+<td><code>Java</code></td>
+<td>Pobieram Javę</td>
+</tr>
+<tr>
+<td><code>Loader</code></td>
+<td>Instaluję NeoForge</td>
+</tr>
+<tr>
+<td><code>Libraries</code></td>
+<td>Pobieram biblioteki</td>
+</tr>
+<tr>
+<td><code>Assets</code></td>
+<td>Pobieram zasoby gry</td>
+</tr>
+<tr>
+<td><code>Pack</code></td>
+<td>Pobieram mody</td>
+</tr>
+<tr>
+<td><code>Narzedzia</code></td>
+<td>Pobieram biblioteki dźwięku</td>
+</tr>
+<tr>
+<td><code>Ready</code></td>
+<td>Gotowe</td>
+</tr>
+</tbody>
+</table>
+<p>Meldunki z etapu <code>Ready</code> trafiają dodatkowo do listy <code>app.log</code>, bo to pod nimi
+kryją się zdania w rodzaju „Wykonuję Twoją komendę przed startem…".</p>
+<h2 id="katalogi-i-pobieracz">Katalogi i pobieracz<a class="headerlink" href="#katalogi-i-pobieracz" title="Permanent link">&para;</a></h2>
+<p><code>przygotuj_i_odpal</code> zaczyna od trzech rzeczy:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">let</span><span class="w"> </span><span class="n">dl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">net</span><span class="p">::</span><span class="n">Downloader</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">let</span><span class="w"> </span><span class="n">mc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="s">"mc"</span><span class="p">);</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kd">let</span><span class="w"> </span><span class="n">instancja</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="s">"instance"</span><span class="p">);</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">std</span><span class="p">::</span><span class="n">fs</span><span class="p">::</span><span class="n">create_dir_all</span><span class="p">(</span><span class="o">&amp;</span><span class="n">instancja</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+</code></pre></div>
+<p>Rozdział katalogów jest celowy: w <code>mc/</code> leży sam Minecraft (wersje, biblioteki,
+zasoby), w <code>instance/</code> — paczka modów, konfiguracje i światy gracza. Dzięki temu
+samonaprawa może skasować <code>mc/</code> i pobrać grę od nowa, nie ruszając niczego, co
+należy do gracza.</p>
+<p>Ósemka w <code>Downloader::new(8)</code> to semafor: tyle pobrań idzie naraz.
+<code>fetch_many</code> trzyma w locie do szesnastu zadań (<code>buffer_unordered(16)</code>), ale
+każde i tak czeka na semafor, więc realny limit to osiem połączeń. Każdy adres
+z listy dostaje pełne trzy próby (<code>PROBY</code> w <code>core/src/net.rs</code>) z rosnącą
+przerwą, zanim pobieracz przejdzie do adresu zapasowego. Plik ląduje najpierw
+jako <code>&lt;pełna nazwa&gt;.part</code> i dopiero po sprawdzeniu sumy kontrolnej zmienia nazwę
+na docelową.</p>
+<h2 id="1-java">1. Java<a class="headerlink" href="#1-java" title="Permanent link">&para;</a></h2>
+<p>Sprawdzenie Javy jest pierwsze, przed jakimkolwiek pobieraniem. Powód jest
+w komentarzu w <code>app.rs</code>: zła ścieżka ma się wyjaśnić od razu, a nie po
+kwadransie instalowania.</p>
+<h3 id="java-pobrana-przez-launcher">Java pobrana przez launcher<a class="headerlink" href="#java-pobrana-przez-launcher" title="Permanent link">&para;</a></h3>
+<p><code>java::ensure(root, major, …)</code> szuka binarki w <code>data/java/&lt;major&gt;</code>. Gdy jej nie
+ma, pobiera JRE z Adoptium pod adresem budowanym przez <code>adoptium_url</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jre/hotspot/normal/eclipse
+</code></pre></div>
+<p>Pobranie idzie z <code>Expect::Any</code>, czyli bez sprawdzania sumy kontrolnej — Adoptium
+nie podaje jej w przekierowaniu. Zamiast tego wynik weryfikuje się inaczej:
+po rozpakowaniu archiwum musi się w nim znaleźć działający plik wykonywalny,
+a jeśli się nie znajdzie, <code>ensure</code> zwraca <code>JavaError::BrakBinarki</code>.</p>
+<p>Archiwum (<code>.zip</code> na Windowsie, <code>.tar.gz</code> gdzie indziej) ląduje w
+<code>data/java-&lt;major&gt;.&lt;rozszerzenie&gt;</code> i znika po rozpakowaniu. Samo rozpakowanie
+około 180 MB trwa kilka sekund, których nie da się zmierzyć z zewnątrz, więc
+przed nim leci <code>Progress::trwa(Stage::Java, "Rozpakowuję Javę…")</code> — pasek stoi,
+ale przynajmniej wiadomo dlaczego.</p>
+<p>Binarki szuka <code>znajdz_binarke</code>: najpierw <code>&lt;katalog&gt;/bin/&lt;nazwa&gt;</code>, a potem
+o poziom głębiej, bo archiwa Adoptium mają na wierzchu jeden katalog
+(np. <code>jdk-21.0.12+7-jre</code>). Nazwa zależy od systemu — na Windowsie to
+<code>javaw.exe</code>, bo <code>java.exe</code> otwierałaby obok gry okno konsoli.</p>
+<h3 id="java-wskazana-recznie">Java wskazana ręcznie<a class="headerlink" href="#java-wskazana-recznie" title="Permanent link">&para;</a></h3>
+<p>Gdy w Ustawieniach jest wpisana własna ścieżka (<code>ustawienia.java.wlasna()</code>),
+launcher woła <code>wlasna_java</code> zamiast <code>java::ensure</code>. Ta funkcja pyta wskazany
+plik o wersję przez <code>javy::sprawdz</code>, z limitem <code>limity::SPRAWDZENIE_JAVY</code>
+(15 sekund), i odrzuca dwa przypadki:</p>
+<ul>
+<li>numer główny inny niż <code>manifest.java.major</code> — paczka nie ruszy na innej Javie;</li>
+<li>32-bitową JVM — nie zaadresuje sterty, której wymaga paczka, a gracz
+  zobaczyłby tylko „Could not reserve enough space for object heap".</li>
+</ul>
+<p>Oba sprawdzenia można wyłączyć przełącznikiem <code>pomin_sprawdzanie</code>. Do samego
+uruchomienia gry ścieżka przechodzi jeszcze przez <code>javy::do_uruchamiania</code>, które
+na Windowsie podmienia wskazane <code>java.exe</code> na leżące obok <code>javaw.exe</code> — inaczej
+przy każdym uruchomieniu gry otwierałaby się druga, czarna konsola.</p>
+<div class="admonition uwaga">
+<p class="admonition-title">Uwaga</p>
+<p>Błąd własnej Javy (<code>USTAW-01</code>) nie podlega samonaprawie. Launcher nie ma
+prawa poprawiać ani kasować tego, co gracz sam wpisał w Ustawieniach.</p>
+</div>
+<h2 id="2-instalacja-neoforge">2. Instalacja NeoForge<a class="headerlink" href="#2-instalacja-neoforge" title="Permanent link">&para;</a></h2>
+<p><code>ensure_loader</code> uruchamia oficjalny instalator NeoForge w trybie bezobsługowym.
+To on łata <code>client.jar</code> procesorem <code>binarypatcher</code>, więc launcher nie musi
+odtwarzać tego procesu u siebie ani rozpowszechniać plików Mojanga.</p>
+<p>Nazwa profilu powstaje z manifestu: <code>&lt;kind&gt;-&lt;version&gt;</code>, czyli na przykład
+<code>neoforge-21.1.249</code>. Instalator pobierany jest z Mavena NeoForged:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.249/neoforge-21.1.249-installer.jar
+</code></pre></div>
+<p>Jeśli nie ma jeszcze <code>data/mc/launcher_profiles.json</code>, powstaje on tutaj —
+z pustą listą profili i pustą bazą logowania. Instalator sprawdza ten plik,
+zanim cokolwiek zrobi, i bez niego odmawia pracy.</p>
+<h3 id="kiedy-instalacja-jest-kompletna-oba-pliki-json">Kiedy instalacja jest kompletna: oba pliki json<a class="headerlink" href="#kiedy-instalacja-jest-kompletna-oba-pliki-json" title="Permanent link">&para;</a></h3>
+<p>Sprawdzenie „czy już jest zainstalowane" wymaga <strong>dwóch</strong> plików:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">fn</span><span class="w"> </span><span class="nf">instalacja_kompletna</span><span class="p">(</span><span class="n">json_profilu</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Path</span><span class="p">,</span><span class="w"> </span><span class="n">json_vanilla</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">Path</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">json_profilu</span><span class="p">.</span><span class="n">is_file</span><span class="p">()</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">json_vanilla</span><span class="p">.</span><span class="n">is_file</span><span class="p">()</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>Sam profil nie wystarcza, bo instalator zapisuje go, <strong>zanim</strong> ściągnie
+biblioteki. Po przerwanej instalacji na dysku zostaje więc
+<code>versions/neoforge-&lt;wersja&gt;/neoforge-&lt;wersja&gt;.json</code>, a katalog <code>libraries</code>
+w ogóle nie powstaje. Wcześniejsza wersja kodu brała ten plik za dowód gotowej
+instalacji, pomijała instalator i przewracała się dopiero przy wczytywaniu
+wersji, po której profil dziedziczy. Gracz dostawał wtedy <code>INST-03</code> i żadna
+liczba prób tego nie zmieniała — bo przy każdej kolejnej launcher znowu widział
+profil i znowu pomijał instalator.</p>
+<p>Drugi plik, <code>versions/&lt;wersja Minecrafta&gt;/&lt;wersja Minecrafta&gt;.json</code>, jest
+wskaźnikiem, że instalator naprawdę doszedł do końca. Dlatego po nieudanej
+próbie kod kasuje niedokończony profil:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// Niedokonczony profil musi zniknac, inaczej przy kolejnym starcie</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1">// wygladalby na gotowa instalacje i instalator juz by nie ruszyl.</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="kd">let</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">fs</span><span class="p">::</span><span class="n">remove_file</span><span class="p">(</span><span class="o">&amp;</span><span class="n">json_profilu</span><span class="p">);</span>
+</code></pre></div>
+<p>Ten warunek jest zabezpieczony testem <code>sam_profil_bez_czystej_wersji_to_nie_gotowa_instalacja</code>
+w <code>game_install.rs</code>.</p>
+<h3 id="wstepne-pobranie-plikow-vanilla">Wstępne pobranie plików vanilla<a class="headerlink" href="#wstepne-pobranie-plikow-vanilla" title="Permanent link">&para;</a></h3>
+<p>Zanim ruszy instalator, <code>zasiej_czysta_wersje</code> kładzie na dysku dwa pliki czystej
+wersji: <code>versions/&lt;mc&gt;/&lt;mc&gt;.json</code> i <code>versions/&lt;mc&gt;/&lt;mc&gt;.jar</code>.</p>
+<p>Instalator umie pobrać je sam — i to jest właśnie problem. Robi to własnym
+połączeniem z limitem pięciu sekund wpisanym na sztywno
+(<code>DownloadUtils.getConnection</code>). Na wolnej maszynie albo przy niesprawnym IPv6
+ten limit mija, zanim cokolwiek przyjdzie, i instalacja pada timeoutem — mimo że
+przeglądarka na tym samym komputerze otwiera strony normalnie. Gdy oba pliki już
+leżą na miejscu, instalator sprawdza <code>versions/&lt;wersja&gt;/&lt;wersja&gt;.jar</code>, widzi że
+jest, i pomija całą tę ścieżkę. Pobieraniem zajmuje się wtedy <code>Downloader</code>, który
+ma powtórki, adresy zapasowe i limit liczony od ciszy, a nie od całości.</p>
+<p>Sama funkcja idzie po kolei:</p>
+<ol>
+<li>kasuje <code>data/mc/version_manifest_v2.json</code>, jeśli został z poprzedniego razu,
+   i pobiera spis wersji Mojanga z jednego z dwóch adresów (<code>SPIS_WERSJI</code>);</li>
+<li>znajduje w spisie wpis o <code>id</code> równym wersji z manifestu paczki;</li>
+<li>pobiera profil wersji, sprawdzając <code>Expect::Sha1</code> z podanym w spisie hashem;</li>
+<li>czyta z profilu <code>downloads.client</code> i pobiera <code>client.jar</code>, znów po SHA-1;</li>
+<li>kasuje spis wersji.</li>
+</ol>
+<div class="admonition uwaga">
+<p class="admonition-title">Uwaga</p>
+<p>Kasowanie spisu przed pobraniem nie jest ozdobnikiem. Spis nie ma znanego
+z góry hasha, więc leci z <code>Expect::Any</code> — a pobieracz przy <code>Expect::Any</code>
+uznaje każdy istniejący plik za dobry i nie pobiera go ponownie. Bez
+skasowania launcher czytałby w kółko starą listę wersji.</p>
+</div>
+<h3 id="trzy-podejscia-i-przeaczenie-na-ipv4">Trzy podejścia i przełączenie na IPv4<a class="headerlink" href="#trzy-podejscia-i-przeaczenie-na-ipv4" title="Permanent link">&para;</a></h3>
+<p>Resztę plików instalator dociąga sam, tym samym krótkim limitem połączenia.
+Dlatego uruchamia się go w pętli:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">const</span><span class="w"> </span><span class="n">PROB</span><span class="p">:</span><span class="w"> </span><span class="kt">u32</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">for</span><span class="w"> </span><span class="n">proba</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">1</span><span class="o">..=</span><span class="n">PROB</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="err">…</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">proba</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="n">polecenie</span><span class="p">.</span><span class="n">arg</span><span class="p">(</span><span class="s">"-Djava.net.preferIPv4Stack=true"</span><span class="p">);</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+<p>Od drugiego podejścia Java dostaje polecenie trzymania się IPv4. Zepsute IPv6 to
+najczęstszy powód, dla którego przeglądarka działa, a Java stoi na timeoucie —
+czeka na adres, którego nie da się osiągnąć.</p>
+<p>Całe wywołanie wygląda tak:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&lt;java&gt; [-Djava.net.preferIPv4Stack=true] -jar &lt;profil&gt;-installer.jar --install-client &lt;data/mc&gt;
+</code></pre></div>
+<p>Proces dostaje <code>kill_on_drop(true)</code> oraz limit czasu <code>limity::INSTALATOR</code>, czyli
+15 minut. Ten limit też ma swoją historię: wcześniej kod czekał tu bez żadnej
+górnej granicy. Instalator ma limit <em>połączenia</em>, ale nie <em>odczytu</em>, więc mirror,
+który przyjmował połączenie i milkł w połowie, zatrzymywał go na zawsze,
+a razem z nim cały launcher. Trzy podejścia i przełączenie na IPv4 nie ruszały
+wtedy ani razu, bo pierwsze podejście się po prostu nie kończyło.</p>
+<p>Gdy instalator zwróci błąd, jego wyjście przechodzi przez dwa filtry:</p>
+<table>
+<thead>
+<tr>
+<th>Funkcja</th>
+<th>Do czego służy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wyglada_na_siec</code></td>
+<td>klasyfikuje <strong>pełne</strong> wyjście po ośmiu tropach (<code>SocketTimeoutException</code>, <code>timedFinishConnect</code>, <code>DownloadUtils</code>, …)</td>
+</tr>
+<tr>
+<td><code>bez_ramek_stosu</code></td>
+<td>usuwa linie zaczynające się od <code>at</code> i <code>...</code> z tekstu pokazywanego graczowi</td>
+</tr>
+<tr>
+<td><code>ogon</code></td>
+<td>przycina wynik do ostatnich 1200 znaków</td>
+</tr>
+</tbody>
+</table>
+<p>Kolejność jest istotna i obroniona testem <code>po_obcieciu_ramek_slad_sieci_znika</code>:
+cały ślad sieci potrafi siedzieć wyłącznie w ramkach stosu, które z okna błędu
+wylatują. Gdyby klasyfikować po tekście już obciętym, awaria sieciowa
+(<code>SIE-04</code>) wyglądałaby na zwykłą awarię instalatora (<code>INST-02</code>) — a to dwa różne
+komunikaty i dwa różne lekarstwa.</p>
+<p>Po udanej instalacji znikają <code>&lt;profil&gt;-installer.jar</code> i <code>&lt;profil&gt;-installer.jar.log</code>.
+Jeśli mimo sukcesu nie powstał profil, <code>ensure_loader</code> i tak zwraca błąd
+z komunikatem „instalator zakończył się sukcesem, ale nie powstał profil wersji".</p>
+<h2 id="3-wczytanie-profilu-wersji">3. Wczytanie profilu wersji<a class="headerlink" href="#3-wczytanie-profilu-wersji" title="Permanent link">&para;</a></h2>
+<p><code>version::load(&amp;mc.join("versions"), &amp;profil)</code> czyta <code>neoforge-&lt;wersja&gt;.json</code>,
+widzi w nim <code>inheritsFrom</code> i rekurencyjnie dokleja profil rodzica, czyli czystą
+wersję Minecrafta. Scalaniem zajmuje się <code>version::merge</code>:</p>
+<ul>
+<li><code>mainClass</code> i <code>id</code> biorą się z profilu potomnego;</li>
+<li>argumenty rodzica idą pierwsze, potem argumenty dziecka;</li>
+<li>biblioteki rodzica przechodzą tylko wtedy, gdy dziecko nie ma biblioteki o tej
+  samej współrzędnej Maven bez wersji (<code>org.ow2.asm:asm</code>). NeoForge celowo
+  podbija część bibliotek i ta sama biblioteka w dwóch wersjach na classpathie
+  byłaby błędem;</li>
+<li><code>assetIndex</code>, <code>assets</code> i <code>downloads</code> biorą się z dziecka, a gdy ich tam nie ma
+  — z rodzica.</li>
+</ul>
+<p>Błąd na tym etapie to <code>INST-03</code>, „Pliki gry są niekompletne".</p>
+<h2 id="4-biblioteki">4. Biblioteki<a class="headerlink" href="#4-biblioteki" title="Permanent link">&para;</a></h2>
+<p><code>ensure_libraries</code> przechodzi po <code>v.libraries</code> i buduje listę pobrań:</p>
+<ul>
+<li>wpisy odrzucone przez <code>rules_allow</code> dla bieżącego systemu są pomijane
+  (biblioteka tylko dla macOS nie ma czego szukać na Linuksie);</li>
+<li>wpisy bez <code>downloads.artifact</code> też są pomijane — część bibliotek kładzie sam
+  instalator NeoForge i nie ma dla nich adresu do pobrania;</li>
+<li>na koniec dokładany jest klient vanilla z <code>downloads.client</code>, pod ścieżkę
+  <code>versions/&lt;id&gt;/&lt;id&gt;.jar</code>, gdzie <code>id</code> pochodzi z wczytanego profilu.</li>
+</ul>
+<p>Klient vanilla jest potrzebny, bo NeoForge go <strong>łata, a nie zastępuje</strong>.</p>
+<p>Każde pobranie ma <code>Expect::Sha1</code> z hashem z profilu wersji, więc plik uszkodzony
+w połowie nie przejdzie i pobierze się jeszcze raz.</p>
+<h2 id="5-zasoby-gry">5. Zasoby gry<a class="headerlink" href="#5-zasoby-gry" title="Permanent link">&para;</a></h2>
+<p><code>ensure_assets</code> pobiera najpierw indeks zasobów do
+<code>assets/indexes/&lt;id&gt;.json</code> (po SHA-1 z profilu), czyta z niego mapę obiektów
+i zamienia ją na listę pobrań:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>https://resources.download.minecraft.net/&lt;dwa pierwsze znaki hasha&gt;/&lt;hash&gt;
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  -&gt;  data/mc/assets/objects/&lt;dwa pierwsze znaki hasha&gt;/&lt;hash&gt;
+</code></pre></div>
+<p>Hash jest tu jednocześnie nazwą pliku i oczekiwaną sumą kontrolną. Profil bez
+<code>assetIndex</code> nie jest błędem — funkcja kończy się wtedy od razu, bo taki profil
+odziedziczy indeks z rodzica albo nie potrzebuje żadnego.</p>
+<h2 id="6-synchronizacja-paczki">6. Synchronizacja paczki<a class="headerlink" href="#6-synchronizacja-paczki" title="Permanent link">&para;</a></h2>
+<p>To jedyny etap, który dotyka katalogu gracza:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kd">let</span><span class="w"> </span><span class="n">sciezka_stanu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="s">"state.json"</span><span class="p">);</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">stan</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">state</span><span class="p">::</span><span class="n">State</span><span class="p">::</span><span class="n">load</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sciezka_stanu</span><span class="p">);</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="kd">let</span><span class="w"> </span><span class="n">akcje</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pack_sync</span><span class="p">::</span><span class="n">plan</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stan</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pack_sync</span><span class="p">::</span><span class="n">DiskProbe</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="o">&amp;</span><span class="n">instancja</span><span class="p">));</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="kd">let</span><span class="w"> </span><span class="n">notatki</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pack_sync</span><span class="p">::</span><span class="n">apply</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">instancja</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="n">stan</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">akcje</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dl</span><span class="p">,</span><span class="w"> </span><span class="n">postep</span><span class="p">.</span><span class="n">clone</span><span class="p">()).</span><span class="k">await</span><span class="o">?</span><span class="p">;</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">stan</span><span class="p">.</span><span class="n">save</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sciezka_stanu</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+</code></pre></div>
+<p>Rozdział na <code>plan</code> i <code>apply</code> jest po to, żeby decyzje dały się sprawdzić testem
+bez dotykania dysku: <code>plan</code> widzi świat wyłącznie przez cechę <code>FileProbe</code>.
+Wynikiem jest lista akcji (<code>Download</code>, <code>Delete</code>, <code>Record</code>, <code>SkipModified</code>,
+<code>SkipUnknown</code>), a każdy plik dostaje <code>Expect::Sha512</code> z manifestu. Reguły, które
+o tym decydują, opisuje osobno <a href="../synchronizacja/">Synchronizacja paczki</a>; to,
+skąd biorą się wpisy, opisuje <a href="../manifest/">Manifest</a>.</p>
+<p>Notatki zwrócone przez <code>apply</code> (na przykład „pomijam X — plik został zmieniony
+ręcznie") trafiają do launchera jako <code>Wiadomosc::Notatka</code> i lądują w logu, który
+gracz widzi na ekranie konsoli.</p>
+<p>Stan zapisuje się <strong>po</strong> udanym pobraniu wszystkiego. Gdyby zapisywał się
+wcześniej, przerwana synchronizacja zostawiłaby w <code>state.json</code> wpisy o plikach,
+których na dysku nie ma.</p>
+<h2 id="7-biblioteki-dzwieku">7. Biblioteki dźwięku<a class="headerlink" href="#7-biblioteki-dzwieku" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">if</span><span class="w"> </span><span class="n">ustawienia</span><span class="p">.</span><span class="n">biblioteki_dzwieku</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">m</span><span class="p">.</span><span class="n">narzedzia</span><span class="p">.</span><span class="n">is_empty</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="kd">let</span><span class="w"> </span><span class="nb">Err</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">narzedzia</span><span class="p">::</span><span class="n">zapewnij</span><span class="p">(</span><span class="o">&amp;</span><span class="n">instancja</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">m</span><span class="p">.</span><span class="n">narzedzia</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dl</span><span class="p">,</span><span class="w"> </span><span class="n">postep</span><span class="p">.</span><span class="n">clone</span><span class="p">()).</span><span class="k">await</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">        </span><span class="c1">// …notatka, i lecimy dalej</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="p">}</span>
+</code></pre></div>
+<p>To jedyny etap przygotowania, którego niepowodzenie <strong>nie</strong> przerywa
+uruchamiania. <code>narzedzia::zapewnij</code> pobiera <code>yt-dlp</code> i <code>ffmpeg</code> z tych samych
+oficjalnych źródeł, z których wziąłby je mod Create: Harmonics — launcher robi
+to wcześniej tylko po to, żeby mod nie pytał dziecka o zgodę w trakcie gry.
+Skoro mod poradzi sobie sam, brak tych plików nie jest powodem, żeby nie
+uruchomić gry. Gracz dostaje notatkę i tyle.</p>
+<p>Dwa szczegóły z <code>narzedzia.rs</code>, obydwa wynikające z praktyki:</p>
+<ul>
+<li>obecność pliku <code>.md</code> w katalogu narzędzia nie liczy się jako dowód instalacji
+  (<code>juz_jest</code> szuka czegokolwiek poza <code>.md</code>), bo mod sam zostawia tam plik
+  z instrukcją i launcher nigdy nie pobrałby narzędzia;</li>
+<li>chodzenie po rozpakowanym drzewie używa <code>file_type</code> z <code>read_dir</code>, które <strong>nie</strong>
+  podąża za dowiązaniami. Archiwum z dowiązaniem wskazującym na własnego
+  przodka zapętliłoby przechodzenie drzewa, a gracz stałby na „Rozpakowuję…"
+  bez końca.</li>
+</ul>
+<h2 id="8-komenda-przed-startem">8. Komenda przed startem<a class="headerlink" href="#8-komenda-przed-startem" title="Permanent link">&para;</a></h2>
+<p>Jeśli w Ustawieniach → Zaawansowane jest wpisana komenda przed startem, wykonuje
+się ona tutaj — po skompletowaniu plików, a przed zbudowaniem komendy gry.</p>
+<p>Komenda idzie przez powłokę systemu (<code>/bin/sh -c</code> albo <code>cmd /C</code>), bo ludzie
+wpisują tam <code>cp swiat swiat.bak &amp;&amp; echo gotowe</code>, a nie listę argumentów. Katalog
+roboczy to <code>data/instance</code>. Środowisko dostaje zmienne o nazwach takich samych
+jak w Prism Launcherze, żeby gotowe skrypty przenosiły się bez przeróbek:</p>
+<table>
+<thead>
+<tr>
+<th>Zmienna</th>
+<th>Wartość</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>INST_NAME</code></td>
+<td><code>manifest.pack.name</code></td>
+</tr>
+<tr>
+<td><code>INST_ID</code></td>
+<td>zawsze <code>chmurka</code></td>
+</tr>
+<tr>
+<td><code>INST_DIR</code></td>
+<td><code>data/instance</code></td>
+</tr>
+<tr>
+<td><code>INST_MC_DIR</code></td>
+<td><code>data/mc</code></td>
+</tr>
+<tr>
+<td><code>INST_JAVA</code></td>
+<td>ścieżka do pliku wykonywalnego Javy</td>
+</tr>
+<tr>
+<td><code>INST_JAVA_ARGS</code></td>
+<td><code>-Xms…M -Xmx…M</code> plus dodatkowe parametry gracza</td>
+</tr>
+</tbody>
+</table>
+<p>Na wierzch dokładane są własne zmienne środowiskowe gracza z tej samej zakładki.</p>
+<p>Niepowodzenie tej komendy <strong>przerywa</strong> uruchamianie (<code>?</code> w <code>przygotuj_i_odpal</code>).
+Tak ma być: wpisuje się tu rzeczy w rodzaju „zrób kopię świata", a granie na
+świecie, którego kopia się nie udała, jest dokładnie tym, przed czym ta komenda
+miała chronić. Komenda dostaje limit <code>limity::KOMENDA_GRACZA</code> — dwie minuty.
+Bez niego literówka w skrypcie albo program czekający na wciśnięcie klawisza
+zawieszałby start gry na zawsze, a launcher nie ma jak pokazać takiemu procesowi
+konsoli. Przekroczenie limitu to <code>USTAW-03</code>, zwrócony błąd to <code>USTAW-02</code>.</p>
+<h2 id="9-zbudowanie-komendy-uruchomienia">9. Zbudowanie komendy uruchomienia<a class="headerlink" href="#9-zbudowanie-komendy-uruchomienia" title="Permanent link">&para;</a></h2>
+<p><code>launch::build_command</code> dostaje <code>LaunchParams</code> i zwraca gotowe
+<code>std::process::Command</code>. Kolejność składania jest taka:</p>
+<ol>
+<li><strong>Program.</strong> Gdy gracz podał komendę opakowującą (<code>gamemoderun</code>, <code>prime-run</code>),
+   to ona jest programem, a ścieżka do Javy jej pierwszym argumentem. Opakowanie
+   celowo <strong>nie</strong> idzie przez powłokę: komenda gry ma kilkaset argumentów,
+   w tym cały classpath i ścieżki ze spacjami, a sklejanie ich z powrotem
+   w jeden łańcuch oznaczałoby cytowanie każdego z osobna.</li>
+<li><strong>Zmienne środowiskowe</strong> gracza.</li>
+<li><strong>Sterta.</strong> <code>-Xms&lt;minimum&gt;M</code> i <code>-Xmx&lt;maksimum&gt;M</code>, ale tylko wtedy, gdy wśród
+   dodatkowych parametrów nie ma własnego <code>-Xmx</code>. Dwa <code>-Xmx</code> w jednej komendzie
+   są legalne (wygrywa ostatni), ale mylą przy diagnozowaniu. Minimum przechodzi
+   wcześniej przez <code>minimum_sterty_mb</code>, które przycina je do przedziału
+   od 256 MB do wartości suwaka — <code>-Xms</code> większe od <code>-Xmx</code> to nie ostrzeżenie,
+   tylko odmowa startu JVM.</li>
+<li><strong>Dodatkowe parametry gracza</strong>, nietknięte.</li>
+<li><strong>Argumenty JVM z profilu wersji</strong>, rozwinięte przez <code>rozwin</code>.</li>
+<li><strong>Klasa główna</strong> (<code>mainClass</code>).</li>
+<li><strong>Argumenty gry z profilu wersji.</strong></li>
+<li><strong><code>--fullscreen</code></strong>, jeśli gracz tak ustawił. Ta flaga nie występuje w profilu
+   wersji — jest bezargumentową flagą przyjmowaną przez samą grę, więc dokłada
+   się ją na końcu, gdzie nie rozdzieli żadnej pary argument-wartość.</li>
+<li><strong>Katalog roboczy</strong> ustawiony na <code>data/instance</code>.</li>
+</ol>
+<p>Zmienne w argumentach (<code>${auth_player_name}</code>, <code>${classpath}</code>,
+<code>${natives_directory}</code> i pozostałe) podstawia <code>version::substitute</code>. Nieznana
+zmienna zostaje w tekście nietknięta, zamiast zamienić się w pusty argument —
+lepiej zobaczyć <code>${cos}</code> w logu niż szukać, dlaczego gra dostała pustą wartość.</p>
+<h3 id="reguy-features-czyli-czego-w-komendzie-nie-ma">Reguły <code>features</code>, czyli czego w komendzie nie ma<a class="headerlink" href="#reguy-features-czyli-czego-w-komendzie-nie-ma" title="Permanent link">&para;</a></h3>
+<p>Profil wersji opisuje część argumentów warunkowo: „doklej <code>--width</code> i <code>--height</code>,
+<strong>jeśli</strong> launcher obsługuje własną rozdzielczość". Przez długi czas launcher
+sprawdzał w regułach tylko pole <code>os</code>, więc wszystkie te warunki przechodziły —
+i do komendy trafiały <code>--quickPlaySingleplayer ${quickPlaySingleplayer}</code>
+z nierozwiniętą zmienną. Gracz był witany ekranem
+„Failed to Quick Play — Could not find world".</p>
+<p>Teraz odpowiada za to <code>Mozliwosci</code> w <code>version.rs</code>. Domyślnie wszystko jest
+wyłączone, a jedyna możliwość, którą launcher potrafi włączyć, to
+<code>has_custom_resolution</code> — i tylko wtedy, gdy gracz naprawdę narzucił rozmiar
+okna. Nieznane nazwy są fałszywe celowo: nowa wersja Minecrafta może dołożyć
+możliwość, o której nic nie wiadomo, a zgadywanie „chyba umiemy" kończy się
+argumentem ze zmienną, której nie da się podstawić.</p>
+<h3 id="pamiec-bez-wasnych-nastaw-odsmiecacza-i-metaspace">Pamięć: bez własnych nastaw odśmiecacza i metaspace<a class="headerlink" href="#pamiec-bez-wasnych-nastaw-odsmiecacza-i-metaspace" title="Permanent link">&para;</a></h3>
+<p>W komendzie nie ma <code>-XX:MaxMetaspaceSize</code> ani żadnych nastaw odśmiecacza. To nie
+przeoczenie, tylko wniosek z awarii, i pilnują tego dwa testy w <code>launch.rs</code>:
+<code>nie_ograniczamy_metaspace</code> i <code>nie_narzucamy_wlasnych_nastaw_odsmiecacza</code>.</p>
+<p><code>-XX:MaxMetaspaceSize=512M</code> miało powstrzymać obszar, który przy tylu modach
+rośnie i rośnie. Skutek był taki, że przy 349 plikach modów gra dobijała do
+limitu <strong>w trakcie rozgrywki</strong> — klasy wczytują się leniwie, więc pierwszy nowy
+potwór albo nowa struktura przy generowaniu terenu kończyły się
+<code>OutOfMemoryError: Metaspace</code>. Gra nie padała od razu, tylko wchodziła
+w korkociąg pełnych zbiórek: kolejne ticki serwera trwały 40, 80 i 120 sekund,
+obraz stawał na jednej klatce i zostawało tylko ubicie procesu. Metaspace ma
+rosnąć tyle, ile trzeba — ogranicza go pamięć systemu.</p>
+<p>Cel pauzy odśmiecacza zostaje Javie z tego samego powodu: domyślne ustawienia
+działały tu bez zarzutu, a własne były zgadywaniem pod maszynę, której problem
+leżał zupełnie gdzie indziej.</p>
+<div class="admonition wskazówka">
+<p class="admonition-title">Wskazówka</p>
+<p>Gracz, który wie, co robi, nadal może wpisać swoje parametry w Ustawieniach.
+Trafią do komendy nietknięte — łącznie z <code>-XX:MaxMetaspaceSize</code>, jeśli
+naprawdę tego chce.</p>
+</div>
+<h2 id="10-uruchomienie-i-nadzor-nad-procesem">10. Uruchomienie i nadzór nad procesem<a class="headerlink" href="#10-uruchomienie-i-nadzor-nad-procesem" title="Permanent link">&para;</a></h2>
+<p>Log gry leci prosto do pliku, a nie do pamięci launchera:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kd">let</span><span class="w"> </span><span class="n">plik_logu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">katalog_logow</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="s">"game.log"</span><span class="p">);</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kd">let</span><span class="w"> </span><span class="n">uchwyt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="p">::</span><span class="n">fs</span><span class="p">::</span><span class="n">File</span><span class="p">::</span><span class="n">create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">plik_logu</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="kd">let</span><span class="w"> </span><span class="n">uchwyt2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">uchwyt</span><span class="p">.</span><span class="n">try_clone</span><span class="p">()</span><span class="o">?</span><span class="p">;</span>
+</code></pre></div>
+<p>Dwa uchwyty do tego samego pliku to <code>stdout</code> i <code>stderr</code> gry. Dzięki temu, że
+zapis idzie do pliku, launcher może schować się do zasobnika, a log i tak
+powstaje w całości. Skutkiem ubocznym było to, że gracz nie miał <strong>żadnego</strong>
+sposobu sprawdzić, co się dzieje — dlatego powstał moduł <code>core/src/konsola.rs</code>,
+który czyta ogon pliku i odpowiada jednym zdaniem: log rośnie, log stoi od
+90 sekund, albo pliku jeszcze nie ma.</p>
+<p>Zaraz po <code>spawn</code> dzieje się rzecz najważniejsza dla samonaprawy:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">ruszyla</span><span class="p">.</span><span class="n">store</span><span class="p">(</span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">Ordering</span><span class="p">::</span><span class="n">SeqCst</span><span class="p">);</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kd">let</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Wiadomosc</span><span class="p">::</span><span class="n">GraWystartowala</span><span class="p">);</span>
+</code></pre></div>
+<p>Od tego momentu nie wolno niczego ponawiać ani kasować, bo proces gry działa,
+a drugie okno Minecrafta byłoby gorsze od każdego błędu. <code>GraWystartowala</code>
+przełącza widok na konsolę (między kliknięciem GRAJ a pojawieniem się okna gry
+mijają dwie minuty, w których na ekranie nie ma nic) i chowa okno launchera,
+jeśli gracz tak ustawił.</p>
+<p>Oczekiwanie na koniec gry idzie przez <code>tokio::task::spawn_blocking</code>, bo
+<code>Child::wait</code> blokuje wątek. Po zakończeniu gry:</p>
+<ol>
+<li>wykonuje się komenda po zakończeniu — w przeciwieństwie do tej przed startem
+   jej niepowodzenie <strong>niczego nie przerywa</strong>. Gra już się skończyła, nie ma
+   czego chronić, a okno błędu po udanej rozgrywce tylko by przestraszyło;
+   gracz dostaje notatkę;</li>
+<li>przy kodzie wyjścia oznaczającym sukces leci <code>Wiadomosc::GraZakonczona</code>
+   i funkcja kończy się sukcesem;</li>
+<li>przy niepowodzeniu z pliku logu czytanych jest ostatnie 60 linii i powstaje
+   <code>BladLaunchera::GraPadla</code>.</li>
+</ol>
+<p><code>GraPadla</code> niesie ze sobą więcej niż sam kod wyjścia, bo bez tego nie da się
+odróżnić przyczyn:</p>
+<table>
+<thead>
+<tr>
+<th>Pole</th>
+<th>Po co</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ogon_logu</code></td>
+<td>po nim <code>bledy.rs</code> rozpoznaje <code>OutOfMemoryError</code>, awarię moda i odrzucone parametry Javy</td>
+</tr>
+<tr>
+<td><code>wlasne_argumenty</code></td>
+<td>bez tego nie wolno obwiniać parametrów, których gracz nie wpisał</td>
+</tr>
+<tr>
+<td><code>zabita_przez_system</code></td>
+<td>SIGKILL od jądra albo <code>systemd-oomd</code>; w logu nie ma po tym śladu, bo urywa się w pół zdania</td>
+</tr>
+<tr>
+<td><code>sterta_mb</code></td>
+<td>odróżnia „podnieś suwak" (<code>GRA-02</code>) od „ten komputer dał już wszystko" (<code>GRA-06</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Rozpoznanie zabicia przez system robi <code>zabita_przez_system</code> w <code>app.rs</code>: sygnał
+numer 9 na systemach uniksowych albo kod wyjścia 137, bo powłoki i menedżery
+procesów raportują zabicie sygnałem jako 128 plus numer.</p>
+<h2 id="samonaprawa">Samonaprawa<a class="headerlink" href="#samonaprawa" title="Permanent link">&para;</a></h2>
+<p><code>odpal_z_samonaprawa</code> opakowuje cały powyższy przebieg w pętlę trzech podejść.
+Powód jest w komentarzu przy <code>enum Samonaprawa</code>: rady w katalogu błędów są
+poprawne, ale „wejdź w Ustawienia i kliknij Napraw instalację" jest dla
+dziesięciolatka ścianą tekstu, której nikt nie wykona. Więc launcher wykonuje tę
+radę sam i pokazuje błąd dopiero wtedy, gdy to nie pomogło.</p>
+<p>Lekarstwo dobierane jest <strong>po kodzie błędu</strong>, a nie po typie wyjątku — kod jest
+tym, co widzi gracz i co trafia do administracji, więc reguła i komunikat nie
+rozjadą się przy kolejnej zmianie w środku.</p>
+<table>
+<thead>
+<tr>
+<th>Wariant</th>
+<th>Co launcher robi</th>
+<th>Przy jakich kodach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ponow</code></td>
+<td>czeka 2 sekundy i próbuje jeszcze raz, nic nie kasując</td>
+<td><code>SIE-01</code>, <code>SIE-02</code>, <code>SIE-03</code>, <code>SIE-04</code>, <code>PLIK-03</code></td>
+</tr>
+<tr>
+<td><code>JavaOdNowa</code></td>
+<td>kasuje <code>data/java</code> i pobiera Javę od zera</td>
+<td><code>INST-01</code></td>
+</tr>
+<tr>
+<td><code>GraOdNowa</code></td>
+<td>kasuje <code>data/mc</code> i instaluje grę od zera</td>
+<td><code>INST-02</code>, <code>INST-03</code>, <code>INST-04</code></td>
+</tr>
+<tr>
+<td><code>Nic</code></td>
+<td>nic; błąd idzie prosto na ekran</td>
+<td>wszystkie pozostałe</td>
+</tr>
+</tbody>
+</table>
+<p>Kasowanie <code>data/mc</code> jest bezpieczne właśnie dlatego, że światy, ustawienia gry
+i paczka modów leżą w <code>data/instance</code>.</p>
+<p>Do <code>Nic</code> trafia wszystko, czego launcher sam nie ruszy: pełny dysk (<code>PLIK-01</code>),
+brak uprawnień (<code>PLIK-02</code>), logowanie, padnięta gra (<code>GRA-*</code>), zła paczka
+(<code>PACZKA-*</code>) i wszystko, co gracz wpisał w Ustawieniach (<code>USTAW-*</code>). Przy
+własnej komendzie gracza ponowienie byłoby wręcz szkodliwe — uruchomiłoby ją
+trzy razy pod rząd.</p>
+<p>Pętla przerywa się i pokazuje błąd w trzech przypadkach:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">if</span><span class="w"> </span><span class="n">ruszyla</span><span class="p">.</span><span class="n">load</span><span class="p">(</span><span class="n">Ordering</span><span class="p">::</span><span class="n">SeqCst</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">lek</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">Samonaprawa</span><span class="p">::</span><span class="n">Nic</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">ostatnie</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">Wiadomosc</span><span class="p">::</span><span class="n">BladZKodem</span><span class="p">(</span><span class="nb">Box</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="n">b</span><span class="p">)));</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="k">return</span><span class="p">;</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="p">}</span>
+</code></pre></div>
+<p>Pierwszy warunek jest najważniejszy: <code>ruszyla</code> to <code>AtomicBool</code> zakładany na nowo
+przy każdym podejściu i ustawiany w <code>przygotuj_i_odpal</code> zaraz po <code>spawn</code>. Gdy
+gra wystartowała i dopiero potem padła, żadna samonaprawa się nie uruchomi —
+inaczej launcher odpalałby Minecrafta drugi raz.</p>
+<p>Przed każdą kolejną próbą gracz dostaje notatkę w rodzaju:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Coś się nie udało. Pobieram pliki gry od nowa… (kod INST-03, podejście 2 z 3)
+</code></pre></div>
+<p>To samo zdanie idzie na pasek postępu jako <code>Stage::Loader</code>. Teksty pochodzą
+z <code>opis_samonaprawy</code> i mają uspokajać, a nie tłumaczyć. Pełną listę kodów wraz
+z krokami dla gracza opisuje <a href="../../gracz/kody-bledow/">Kody błędów</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Powrót do góry
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "content.code.copy", "content.action.edit", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Skopiowano do schowka", "clipboard.copy": "Kopiuj do schowka", "search.result.more.one": "1 wi\u0119cej na tej stronie", "search.result.more.other": "# wi\u0119cej na tej stronie", "search.result.none": "Brak wynik\u00f3w wyszukiwania", "search.result.one": "Wyniki wyszukiwania: 1", "search.result.other": "Wyniki wyszukiwania: #", "search.result.placeholder": "Zacznij pisa\u0107, aby szuka\u0107", "search.result.term.missing": "Brak", "select.version": "Wybierz wersj\u0119"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

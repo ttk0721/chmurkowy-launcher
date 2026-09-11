@@ -83,3 +83,37 @@ jobs:
       # którego nikt już nie czyta.
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+
+  dokumentacja:
+    name: dokumentacja
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Narzędzia
+        run: pip install -r wiki-requirements.txt
+
+      # `strict: true` w mkdocs.yml sprawia, że martwy odsyłacz przewraca
+      # budowanie. To pierwsza połowa kontroli.
+      - name: Budowanie dokumentacji
+        run: mkdocs build
+
+      # Druga połowa: czy w repozytorium leży AKTUALNY wynik budowania.
+      #
+      # Serwis idzie na GitHub Pages prosto z katalogu `docs/`, więc do repo
+      # trafia gotowy HTML. Bez tej kontroli wystarczy poprawić `wiki/*.md`
+      # i zapomnieć o przebudowaniu, żeby źródło i opublikowana strona mówiły
+      # co innego — a taki rozjazd nie rzuca się w oczy w recenzji.
+      - name: Czy wynik budowania jest aktualny
+        run: |
+          if ! git diff --exit-code --stat -- docs/wiki; then
+            echo
+            echo "Zbudowana dokumentacja różni się od tej w repozytorium."
+            echo "Uruchom u siebie:  ./.venv-docs/bin/mkdocs build"
+            echo "i dołóż zmiany z docs/wiki do commita."
+            exit 1
+          fi

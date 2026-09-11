@@ -72,8 +72,9 @@ każdy pobrany plik i dociąga wyłącznie to, co się zmieniło.
 ## Jak pracujemy
 
 Na `main` nie wchodzi się wprost — każda zmiana idzie przez pull requesta.
-Przed scaleniem muszą przejść trzy kontrole (`testy (linux)`, `testy (windows)`,
-`clippy`) oraz skanowanie CodeQL, a gałąź musi być aktualna względem `main`.
+Przed scaleniem muszą przejść cztery kontrole (`testy (linux)`, `testy (windows)`,
+`clippy`, `dokumentacja`) oraz skanowanie CodeQL, a gałąź musi być aktualna
+względem `main`.
 
 Scalamy wyłącznie przez **Squash and merge**. Pozostałe sposoby odpadają przez
 same reguły: „Create a merge commit" kłóci się z wymogiem liniowej historii,
