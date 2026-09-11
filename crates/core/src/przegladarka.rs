@@ -44,11 +44,8 @@ const RODZINA_CHROMIUM: &[&str] = &[
 /// Edge jest pierwszy na Windowsie nie z sympatii, tylko dlatego, że jest tam
 /// zawsze — logowanie ma zadziałać także na komputerze, na którym nikt nigdy
 /// niczego nie instalował.
-#[cfg(windows)]
-const KANDYDACI: &[&str] = &["msedge", "chrome", "brave", "vivaldi", "opera"];
-
-#[cfg(not(windows))]
 const KANDYDACI: &[&str] = &[
+    "msedge",
     "microsoft-edge",
     "google-chrome",
     "google-chrome-stable",
@@ -136,8 +133,7 @@ pub fn program_z_exec(wiersz: &str) -> Option<String> {
 /// zobaczy przeglądarkę, której używa, a nie przypadkową inną zainstalowaną
 /// obok. Po drugie lista nazw jest krucha: ta sama Brave to `brave` na jednym
 /// systemie i `brave-browser` na innym.
-#[cfg(not(windows))]
-fn domyslna_przegladarka() -> Option<String> {
+fn z_pliku_desktop() -> Option<String> {
     let wynik = Command::new("xdg-settings")
         .args(["get", "default-web-browser"])
         .output()
@@ -171,12 +167,91 @@ fn domyslna_przegladarka() -> Option<String> {
     None
 }
 
-#[cfg(windows)]
-fn domyslna_przegladarka() -> Option<String> {
-    // Na Windowsie domyślna przeglądarka siedzi w rejestrze pod identyfikatorem
-    // programu, a nie pod ścieżką — odczyt jest na tyle zawiły, że nie opłaca
-    // się go tu powtarzać. Lista niżej zaczyna się od Edge'a, który na tym
-    // systemie jest zawsze.
+/// Wyciąga ścieżkę z wyjścia `reg query ... /ve`.
+///
+/// Wyjście wygląda tak:
+///
+/// ```text
+/// HKEY_LOCAL_MACHINE\SOFTWARE\...\App Paths\msedge.exe
+///     (Default)    REG_SZ    C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+/// ```
+///
+/// Ścieżka bywa ze spacjami, więc nie wolno ciąć jej po białych znakach —
+/// bierzemy wszystko za znacznikiem typu.
+pub fn sciezka_z_reg_query(tekst: &str) -> Option<String> {
+    for wiersz in tekst.lines() {
+        if let Some((_, reszta)) = wiersz.split_once("REG_SZ") {
+            let sciezka = reszta.trim();
+            if !sciezka.is_empty() {
+                return Some(sciezka.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Znajduje przeglądarkę na Windowsie po pełnej ścieżce.
+///
+/// To NIE jest kosmetyka. `Command::new("msedge")` szuka programu w `PATH`,
+/// a `msedge.exe` tam nie jest — Windows trzyma ścieżki przeglądarek w rejestrze,
+/// pod `App Paths`. Bez tego odczytu uruchomienie zawsze zawodziło i gracz
+/// dostawał zwykłą kartę zamiast okienka, czyli funkcja nie działała wcale
+/// na systemie, na którym gra większość graczy.
+///
+/// `HKCU` idzie przed `HKLM`, bo instalacja „tylko dla mnie" jest częstsza
+/// u dzieci, które nie mają praw administratora.
+fn z_rejestru_windows() -> Option<String> {
+    const GALEZIE: &[&str] = &["HKCU", "HKLM"];
+    for exe in KANDYDACI {
+        let plik = format!("{exe}.exe");
+        for galaz in GALEZIE {
+            let klucz =
+                format!("{galaz}\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\{plik}");
+            // Wszystkie argumenty jako `&str` — tablica musi byc jednorodna,
+            // inaczej `&String` obok `&str` nie przejdzie kompilacji.
+            let Ok(wynik) = Command::new("reg")
+                .args(["query", klucz.as_str(), "/ve"])
+                .output()
+            else {
+                continue;
+            };
+            if !wynik.status.success() {
+                continue;
+            }
+            let tekst = String::from_utf8_lossy(&wynik.stdout);
+            if let Some(sciezka) = sciezka_z_reg_query(&tekst) {
+                if std::path::Path::new(&sciezka).exists() {
+                    return Some(sciezka);
+                }
+            }
+        }
+    }
+    // Rejestr bywa niepełny przy instalacjach przenośnych — próbujemy jeszcze
+    // miejsc, w których te przeglądarki siedzą domyślnie.
+    zgadnij_z_katalogow_programow()
+}
+
+/// Zapasowe, dobrze znane miejsca instalacji. Kolejność jak w [`KANDYDACI`].
+fn zgadnij_z_katalogow_programow() -> Option<String> {
+    const KONCOWKI: &[&str] = &[
+        r"Microsoft\Edge\Application\msedge.exe",
+        r"Google\Chrome\Application\chrome.exe",
+        r"BraveSoftware\Brave-Browser\Application\brave.exe",
+        r"Vivaldi\Application\vivaldi.exe",
+    ];
+    let korzenie = [
+        std::env::var_os("ProgramFiles"),
+        std::env::var_os("ProgramFiles(x86)"),
+        std::env::var_os("LOCALAPPDATA"),
+    ];
+    for korzen in korzenie.into_iter().flatten() {
+        for koncowka in KONCOWKI {
+            let pelna = std::path::Path::new(&korzen).join(koncowka);
+            if pelna.exists() {
+                return Some(pelna.display().to_string());
+            }
+        }
+    }
     None
 }
 
@@ -191,12 +266,31 @@ pub fn otworz_w_okienku(adres: &str, profil: Option<&std::path::Path>) -> bool {
         kolejka.push(domyslna);
     }
     kolejka.extend(KANDYDACI.iter().map(|s| s.to_string()));
+    otworz_z_kolejki(&kolejka, adres, profil)
+}
 
+/// Wszystkie sposoby ustalenia przeglądarki, po kolei.
+///
+/// Zaden nie jest ograniczony do jednego systemu przez `cfg`. Na obcym systemie
+/// kazdy po prostu nic nie znajduje: na Windowsie nie ma `xdg-settings`,
+/// na Linuksie nie ma `reg` ani katalogu `Program Files`. Kosztuje to jedno
+/// nieudane uruchomienie procesu przy logowaniu, a w zamian CAŁY ten kod jest
+/// sprawdzany przez kompilator i testy na obu systemach.
+///
+/// Poprzednia wersja miala tu `#[cfg(windows)]` i wlasnie w tej galezi siedzial
+/// blad, ktorego nie dalo sie wykryc na maszynie deweloperskiej.
+fn domyslna_przegladarka() -> Option<String> {
+    z_pliku_desktop()
+        .or_else(z_rejestru_windows)
+        .or_else(zgadnij_z_katalogow_programow)
+}
+
+fn otworz_z_kolejki(kolejka: &[String], adres: &str, profil: Option<&std::path::Path>) -> bool {
     for program in kolejka {
-        if !rodzina_chromium(&program) {
+        if !rodzina_chromium(program) {
             continue;
         }
-        let mut polecenie = Command::new(&program);
+        let mut polecenie = Command::new(program);
         polecenie.args(argumenty_okienka(adres, profil));
         ukryj_konsole(&mut polecenie);
         // Nie czekamy na zakończenie: okno przeglądarki żyje własnym życiem,
@@ -298,6 +392,47 @@ mod tests {
         ] {
             assert!(!rodzina_chromium(zla), "{zla}");
         }
+    }
+
+    /// Na Windowsie sciezka przegladarki idzie z rejestru i prawie zawsze
+    /// zawiera spacje ("C:\\Program Files (x86)\\..."). Ciecie po bialych
+    /// znakach urwaloby ja po "C:\\Program" i uruchomienie by padlo — a to
+    /// jedyna droga do okienka na tym systemie.
+    #[test]
+    fn czyta_sciezke_ze_spacjami_z_rejestru() {
+        let wyjscie = "\r\nHKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\msedge.exe\r\n    (Default)    REG_SZ    C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\r\n\r\n";
+        assert_eq!(
+            sciezka_z_reg_query(wyjscie).as_deref(),
+            Some("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe")
+        );
+    }
+
+    /// Brak klucza w rejestrze nie moze udawac sukcesu — wtedy przechodzimy
+    /// do zapasowych katalogow, a na koncu do zwyklej karty.
+    #[test]
+    fn brak_wpisu_w_rejestrze_daje_none() {
+        assert_eq!(sciezka_z_reg_query(""), None);
+        assert_eq!(
+            sciezka_z_reg_query("BLAD: System nie moze odnalezc okreslonego klucza rejestru."),
+            None
+        );
+        // Wpis bez wartosci tez nie jest sciezka.
+        assert_eq!(sciezka_z_reg_query("    (Default)    REG_SZ    "), None);
+    }
+
+    /// Sciezka z rejestru musi przejsc bramke rodziny Chromium — inaczej
+    /// zapasowa lista nazw nigdy by nie zadzialala na Windowsie.
+    #[test]
+    fn pelna_sciezka_windows_przechodzi_bramke() {
+        assert!(rodzina_chromium(
+            "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
+        ));
+        assert!(rodzina_chromium(
+            "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+        ));
+        assert!(!rodzina_chromium(
+            "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+        ));
     }
 
     #[test]
