@@ -10,56 +10,81 @@
 //! ikon: nie widać ani launchera, ani reakcji. Dlatego drugi egzemplarz
 //! zostawia znacznik, a ten działający pokazuje się na jego widok.
 //!
-//! Celowo bez blokad plikowych systemu operacyjnego. Wymagałyby osobnego kodu
-//! na Windowsa i na Linuksa, a dzisiejszy przegląd pokazał, że to właśnie
-//! w gałęziach `#[cfg]` chowają się błędy niewidoczne na maszynie, na której
-//! się pracuje. `sysinfo` jest już w zależnościach i działa tak samo wszędzie.
+//! # Dlaczego blokada pliku, a nie przeglądanie listy procesów
+//!
+//! Pierwsza wersja szukała innego procesu o tej samej ścieżce pliku
+//! wykonywalnego. Wyglądało to na rozwiązanie bez kodu osobnego na każdy
+//! system, ale okazało się zawodne: `sysinfo` wylicza **wątki** jako osobne
+//! wpisy z tą samą ścieżką. Filtr po `thread_kind()` naprawiał to na jednej
+//! maszynie, a na maszynie budującej już nie — tam wątek testu przeszedł
+//! przez filtr i został uznany za drugi egzemplarz.
+//!
+//! Ta pomyłka jest niesymetryczna i to przesądza sprawę: fałszywe wykrycie
+//! nie powoduje drugiej ikony w zasobniku, tylko launcher, którego **nie da
+//! się w ogóle uruchomić**. Lekarstwo byłoby gorsze od choroby.
+//!
+//! Blokada pliku nie zgaduje. Trzyma ją jądro systemu, znika sama, gdy proces
+//! ginie — także po zabiciu go czy zaniku zasilania — i nie da się jej wziąć
+//! dwa razy. Kosztuje dwie krótkie gałęzie `#[cfg]`, które i tak sprawdza
+//! kompilacja na obu systemach.
 
 use std::path::{Path, PathBuf};
 
 /// Przedrostek nazwy znacznika „pokaż się".
 const ZNACZNIK: &str = "chmurkowy-launcher-pokaz-";
 
-/// Czy inny egzemplarz launchera już chodzi.
+/// Trzymana blokada. Dopóki żyje, ten proces jest jedynym launcherem.
 ///
-/// Porównujemy pełną ścieżkę pliku wykonywalnego, nie samą nazwę. Dwie różne
-/// kopie launchera w dwóch katalogach to dwie osobne instalacje — przenośnego
-/// launchera wolno mieć kilka i nie one są problemem.
-pub fn juz_chodzi() -> bool {
-    let Ok(moj_exe) = std::env::current_exe() else {
-        // Bez pewności co do własnej ścieżki nie blokujemy niczego. Fałszywe
-        // wykrycie zostawiłoby gracza z launcherem, którego nie da się włączyć.
-        return false;
-    };
-    let moj_pid = std::process::id();
-
-    let mut system = sysinfo::System::new();
-    system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
-    system
-        .processes()
-        .iter()
-        .any(|(pid, proces)| jest_innym_egzemplarzem(pid, proces, moj_pid, &moj_exe))
+/// Plik zostaje na dysku, ale to bez znaczenia: liczy się blokada, a tę
+/// system zdejmuje razem z procesem.
+pub struct Blokada {
+    _plik: std::fs::File,
 }
 
-/// Czy ten wpis to naprawdę inny egzemplarz launchera.
+/// Próbuje zająć blokadę. `None` znaczy, że inny egzemplarz już ją trzyma.
 ///
-/// Osobno od przeglądania listy, żeby dało się to sprawdzić testem — i dobrze,
-/// bo test od razu złapał tu błąd, który uniemożliwiłby uruchomienie launchera.
-///
-/// `thread_kind()` jest tu kluczowe: na Linuksie `sysinfo` wylicza **wątki**
-/// jako osobne wpisy z własnymi identyfikatorami i tą samą ścieżką pliku
-/// wykonywalnego. Bez tego warunku launcher wykrywałby własne wątki jako
-/// drugi egzemplarz i odmawiał startu — czyli lekarstwo byłoby gorsze od
-/// choroby, na którą powstało.
-fn jest_innym_egzemplarzem(
-    pid: &sysinfo::Pid,
-    proces: &sysinfo::Process,
-    moj_pid: u32,
-    moj_exe: &Path,
-) -> bool {
-    pid.as_u32() != moj_pid
-        && proces.thread_kind().is_none()
-        && proces.exe().is_some_and(|e| e == moj_exe)
+/// Wynik trzeba przechować do końca działania launchera — porzucenie go
+/// zwalnia blokadę i wpuszcza kolejne egzemplarze.
+#[must_use = "porzucenie blokady wpuszcza kolejne egzemplarze launchera"]
+pub fn zajmij() -> Option<Blokada> {
+    let sciezka = sciezka_blokady()?;
+    let plik = otworz_wylacznie(&sciezka)?;
+    Some(Blokada { _plik: plik })
+}
+
+/// Ścieżka pliku blokady — obok znacznika, liczona tak samo.
+fn sciezka_blokady() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    Some(sciezka_znacznika(&exe).with_extension("blokada"))
+}
+
+/// Otwiera plik z wyłącznością. `None`, gdy trzyma go ktoś inny.
+#[cfg(windows)]
+fn otworz_wylacznie(sciezka: &Path) -> Option<std::fs::File> {
+    use std::os::windows::fs::OpenOptionsExt;
+    // `share_mode(0)` znaczy „nikt inny nie otworzy tego pliku, dopóki go
+    // trzymam". Drugi egzemplarz dostaje tu błąd i tak poznaje, że przegrał.
+    std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(false)
+        .share_mode(0)
+        .open(sciezka)
+        .ok()
+}
+
+#[cfg(unix)]
+fn otworz_wylacznie(sciezka: &Path) -> Option<std::fs::File> {
+    use std::os::unix::io::AsRawFd;
+    let plik = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(false)
+        .open(sciezka)
+        .ok()?;
+    // LOCK_NB: nie czekamy w kolejce, tylko od razu wiemy, czy ktoś trzyma.
+    let wynik = unsafe { libc::flock(plik.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) };
+    (wynik == 0).then_some(plik)
 }
 
 /// Ścieżka znacznika — w katalogu tymczasowym, z nazwą liczoną ze ścieżki
@@ -137,25 +162,36 @@ mod tests {
         );
     }
 
-    /// Ten proces testowy nie jest launcherem, wiec nie wolno go uznac za
-    /// drugi egzemplarz. Gdyby wykrywanie lapalo cokolwiek, launcher nie
-    /// dalby sie w ogole uruchomic.
+    /// Blokada musi byc wylaczna: drugie zajecie tej samej sciezki nie moze
+    /// sie udac, dopoki pierwsze zyje. To jest cala istota tej poprawki.
     #[test]
-    fn wlasny_proces_nie_jest_drugim_egzemplarzem() {
-        let moj_exe = std::env::current_exe().unwrap();
-        let moj_pid = std::process::id();
-        let mut system = sysinfo::System::new();
-        system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
-        let znalezione: Vec<String> = system
-            .processes()
-            .iter()
-            .filter(|(pid, p)| jest_innym_egzemplarzem(pid, p, moj_pid, &moj_exe))
-            .map(|(pid, p)| format!("{pid}:{:?} rodzic={:?}", p.name(), p.parent()))
-            .collect();
+    fn druga_blokada_nie_przechodzi() {
+        let kat = tempfile::tempdir().unwrap();
+        let s = kat.path().join("test.blokada");
+
+        let pierwsza = otworz_wylacznie(&s).expect("pierwsza blokada musi przejsc");
         assert!(
-            znalezione.is_empty(),
-            "moj pid {moj_pid}, exe {moj_exe:?}, znalezione: {znalezione:?}"
+            otworz_wylacznie(&s).is_none(),
+            "druga blokada nie moze przejsc, dopoki pierwsza zyje"
         );
-        assert!(!juz_chodzi(), "test nie moze wykryc sam siebie");
+
+        // Po zwolnieniu plik znowu jest wolny — inaczej launcher nie dalby sie
+        // uruchomic po zwyklym zamknieciu.
+        drop(pierwsza);
+        assert!(
+            otworz_wylacznie(&s).is_some(),
+            "po zwolnieniu blokada musi byc znowu do wziecia"
+        );
+    }
+
+    /// Blokada i znacznik musza lezec obok siebie, ale nie moga byc tym samym
+    /// plikiem — kasowanie znacznika zwalnialoby wtedy blokade.
+    #[test]
+    fn blokada_to_inny_plik_niz_znacznik() {
+        let exe = Path::new("/opt/chmurka/ChmurkowyLauncher");
+        let znacznik = sciezka_znacznika(exe);
+        let blokada = znacznik.with_extension("blokada");
+        assert_ne!(znacznik, blokada);
+        assert_eq!(znacznik.parent(), blokada.parent());
     }
 }

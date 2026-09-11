@@ -56,10 +56,13 @@ fn main() -> Result<()> {
     // Samo ciche zamknięcie byłoby gorsze niż te trzy ikony: kliknięcie skrótu
     // nie robiłoby widocznie nic. Dlatego zostawiamy znacznik, a działający
     // egzemplarz pokazuje się na jego widok.
-    if chmurka_core::jedna_instancja::juz_chodzi() {
+    //
+    // Blokadę trzymamy do końca działania programu — `_blokada` musi żyć aż do
+    // wyjścia z `main`, bo jej porzucenie wpuściłoby kolejne egzemplarze.
+    let Some(_blokada) = chmurka_core::jedna_instancja::zajmij() else {
         chmurka_core::jedna_instancja::popros_o_pokazanie();
         return Ok(());
-    }
+    };
 
     let viewport = egui::ViewportBuilder::default()
         .with_inner_size([900.0, 560.0])
