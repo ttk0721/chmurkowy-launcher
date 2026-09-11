@@ -1695,6 +1695,16 @@ Minecrafta byłoby gorsze od każdego błędu.</p>
 <td>nie</td>
 </tr>
 <tr>
+<td><code>KONTO-09</code></td>
+<td>Logowanie zostało odrzucone</td>
+<td>nie</td>
+</tr>
+<tr>
+<td><code>KONTO-10</code></td>
+<td>Kod stracił ważność</td>
+<td>nie</td>
+</tr>
+<tr>
 <td><code>USTAW-01</code></td>
 <td>Java wskazana w Ustawieniach nie działa</td>
 <td>nie</td>
@@ -2121,12 +2131,38 @@ tego obejść.</p>
 <li>Do testów możesz na razie użyć trybu offline na ekranie logowania.</li>
 </ol>
 </dd>
+<dt><code>KONTO-09</code> — Logowanie zostało odrzucone</dt>
+<dd>
+<p>Na stronie Microsoftu kliknięto „Nie” albo okno zostało zamknięte przed
+potwierdzeniem. Kod był dobry — zabrakło zgody.</p>
+<ol>
+<li>Kliknij „Zaloguj przez Microsoft” jeszcze raz.</li>
+<li>Na stronie Microsoftu potwierdź, że zgadzasz się zalogować — trzeba
+   kliknąć „Tak”.</li>
+<li>Do grania na własnym świecie możesz na razie użyć trybu offline.</li>
+</ol>
+</dd>
+<dt><code>KONTO-10</code> — Kod stracił ważność</dt>
+<dd>
+<p>Kod do wpisania na stronie Microsoftu jest jednorazowy i ważny tylko
+kilkanaście minut. Ten już się przeterminował albo został wcześniej użyty.</p>
+<ol>
+<li>Kliknij „Zaloguj przez Microsoft” jeszcze raz — dostaniesz nowy kod.</li>
+<li>Wpisz go od razu; nie odświeżaj strony z kodem i nie otwieraj jej dwa razy.</li>
+<li>Jeśli logujesz się z telefonu, miej launcher otwarty do końca — on czeka
+   na potwierdzenie.</li>
+</ol>
+</dd>
 </dl>
 <div class="admonition uwaga">
 <p class="admonition-title">Uwaga</p>
 <p><code>KONTO-05</code> jest kodem zbiorczym i dostajesz go wtedy, gdy launcher nie
 rozpoznał powodu odmowy. Jeśli go widzisz, sama treść okna niewiele powie —
 warto wysłać administracji skopiowane szczegóły.</p>
+<p>W szczegółach jest teraz kod błędu <strong>wraz z opisem od Microsoftu</strong>, zwykle
+z numerem <code>AADSTS</code>. Wcześniej launcher pokazywał sam kod, więc gracz widział
+na przykład <code>invalid_grant</code> i nic poza tym — a to właśnie w opisie napisane
+jest, co konkretnie poszło nie tak.</p>
 <p>Kod dobierany jest po rozpoznanym powodzie odmowy, a nie po tym, co jest
 napisane w komunikacie. Dopóki launcher szukał w komunikacie słowa „Xbox”,
 zdanie „Xbox Live odrzucił logowanie, kod 2148916235” trafiało w radę

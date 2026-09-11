@@ -4,7 +4,7 @@
 //! opisujące co się stało bez żargonu, i listę konkretnych kroków do wykonania.
 //! Szczegóły techniczne są osobno — dla administracji, nie dla gracza.
 
-use crate::auth::msa::{AuthError, PowodXbox};
+use crate::auth::msa::{AuthError, PowodOdmowy, PowodXbox};
 use crate::game_install::InstallError;
 use crate::java::JavaError;
 use crate::launch::LaunchError;
@@ -594,18 +594,49 @@ fn z_logowania(e: &AuthError) -> BladUzytkownika {
             };
             BladUzytkownika::nowy(kod, tytul, co, kroki, szczegoly.clone())
         }
-        AuthError::Odmowa(s) => BladUzytkownika::nowy(
-            "KONTO-05",
-            "Logowanie nie powiodło się",
-            "Microsoft przerwał logowanie. Zdarza się, gdy okno logowania zostanie zamknięte \
-             albo kod wpisany źle.",
-            &[
-                "Kliknij „Zaloguj przez Microsoft” jeszcze raz.",
-                "Uważnie przepisz kod — najprościej użyć przycisku „Kopiuj kod i otwórz przeglądarkę”.",
-                "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
-            ],
-            s.clone(),
-        ),
+        AuthError::Odmowa { powod, szczegoly } => match powod {
+            // Gracz kliknął „Nie". Rada o przepisywaniu kodu byłaby tu
+            // myląca — kod przepisał dobrze, tylko nie potwierdził zgody.
+            PowodOdmowy::Odrzucone => BladUzytkownika::nowy(
+                "KONTO-09",
+                "Logowanie zostało odrzucone",
+                "Na stronie Microsoftu kliknięto „Nie” albo okno zostało zamknięte \
+                 przed potwierdzeniem.",
+                &[
+                    "Kliknij „Zaloguj przez Microsoft” jeszcze raz.",
+                    "Na stronie Microsoftu potwierdź, że zgadzasz się zalogować — \
+                     trzeba kliknąć „Tak”.",
+                    "Do grania na własnym świecie możesz na razie użyć trybu offline.",
+                ],
+                szczegoly.clone(),
+            ),
+            // Kod urządzenia jest jednorazowy i ma kilkanaście minut ważności.
+            PowodOdmowy::KodNiewazny => BladUzytkownika::nowy(
+                "KONTO-10",
+                "Kod stracił ważność",
+                "Kod do wpisania na stronie Microsoftu jest jednorazowy i ważny tylko \
+                 kilkanaście minut. Ten już się przeterminował albo został wcześniej użyty.",
+                &[
+                    "Kliknij „Zaloguj przez Microsoft” jeszcze raz — dostaniesz nowy kod.",
+                    "Wpisz go od razu; nie odświeżaj strony z kodem i nie otwieraj jej dwa razy.",
+                    "Jeśli logujesz się z telefonu, miej launcher otwarty do końca — \
+                     on czeka na potwierdzenie.",
+                ],
+                szczegoly.clone(),
+            ),
+            PowodOdmowy::Inny => BladUzytkownika::nowy(
+                "KONTO-05",
+                "Logowanie nie powiodło się",
+                "Microsoft przerwał logowanie. Zdarza się, gdy okno logowania zostanie zamknięte \
+                 albo kod wpisany źle.",
+                &[
+                    "Kliknij „Zaloguj przez Microsoft” jeszcze raz.",
+                    "Uważnie przepisz kod — najprościej użyć przycisku „Kopiuj kod i otwórz przeglądarkę”.",
+                    "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
+                ],
+                szczegoly.clone(),
+            ),
+        },
     }
 }
 
@@ -1039,6 +1070,67 @@ mod tests {
             szczegoly: "szczegóły techniczne".into(),
         })
         .dla_uzytkownika()
+    }
+
+    /// Kazdy powod odmowy ma dostac WLASNA rade. Wczesniej wszystkie trafialy
+    /// pod KONTO-05 z rada „uwaznie przepisz kod", ktora przy odrzuconej
+    /// zgodzie albo przeterminowanym kodzie jest nietrafiona.
+    #[test]
+    fn kazdy_powod_odmowy_ma_wlasny_kod_i_rade() {
+        use crate::auth::msa::PowodOdmowy;
+
+        let zrob = |powod| {
+            BladLaunchera::Logowanie(AuthError::Odmowa {
+                powod,
+                szczegoly: "invalid_grant: AADSTS70008".into(),
+            })
+            .dla_uzytkownika()
+        };
+
+        let odrzucone = zrob(PowodOdmowy::Odrzucone);
+        let niewazny = zrob(PowodOdmowy::KodNiewazny);
+        let inny = zrob(PowodOdmowy::Inny);
+
+        assert_eq!(odrzucone.kod, "KONTO-09");
+        assert_eq!(niewazny.kod, "KONTO-10");
+        assert_eq!(inny.kod, "KONTO-05");
+
+        // Trzy rozne tytuly — inaczej podzial nie ma sensu.
+        assert_ne!(odrzucone.tytul, niewazny.tytul);
+        assert_ne!(niewazny.tytul, inny.tytul);
+
+        // Rada o przepisywaniu kodu nie ma sensu, gdy kod przepisano dobrze,
+        // tylko nie potwierdzono zgody.
+        assert!(
+            !odrzucone.co_zrobic.iter().any(|k| k.contains("przepisz")),
+            "{:?}",
+            odrzucone.co_zrobic
+        );
+
+        // Szczegoly techniczne musza doniesc opis od Microsoftu do administracji.
+        for b in [&odrzucone, &niewazny, &inny] {
+            assert!(b.szczegoly.contains("AADSTS70008"), "{}", b.szczegoly);
+        }
+    }
+
+    /// Zadna z nowych odmow nie moze isc do samonaprawy — ponawianie logowania
+    /// w kolko nie pomoze, a gracz ma do wykonania konkretny ruch.
+    #[test]
+    fn odmowy_logowania_nie_ida_do_samonaprawy() {
+        use crate::auth::msa::PowodOdmowy;
+
+        for powod in [
+            PowodOdmowy::Odrzucone,
+            PowodOdmowy::KodNiewazny,
+            PowodOdmowy::Inny,
+        ] {
+            let b = BladLaunchera::Logowanie(AuthError::Odmowa {
+                powod,
+                szczegoly: "x".into(),
+            })
+            .dla_uzytkownika();
+            assert_eq!(b.samonaprawa(), Samonaprawa::Nic, "{}", b.kod);
+        }
     }
 
     #[test]
