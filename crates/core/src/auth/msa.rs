@@ -9,14 +9,72 @@ const SCOPE: &str = "service::user.auth.xboxlive.com::MBI_SSL";
 pub enum AuthError {
     #[error("błąd połączenia z Microsoft: {0}")]
     Siec(String),
-    #[error("logowanie nie powiodło się: {0}")]
-    Odmowa(String),
+    #[error("logowanie nie powiodło się: {szczegoly}")]
+    Odmowa {
+        powod: PowodOdmowy,
+        szczegoly: String,
+    },
     #[error("kod wygasł — spróbuj zalogować się jeszcze raz")]
     Wygasl,
     #[error("Xbox Live odmówił: {szczegoly}")]
     Xbox { powod: PowodXbox, szczegoly: String },
     #[error("to konto Microsoft nie ma kupionego Minecrafta")]
     BrakGry,
+}
+
+impl AuthError {
+    /// Odmowa, której nie potrafimy zaklasyfikować.
+    ///
+    /// Skrót dla miejsc, w których nie ma kodu błędu od Microsoftu — została
+    /// sama treść odpowiedzi albo błąd odczytu.
+    fn odmowa(szczegoly: impl Into<String>) -> Self {
+        AuthError::Odmowa {
+            powod: PowodOdmowy::Inny,
+            szczegoly: szczegoly.into(),
+        }
+    }
+}
+
+/// Dlaczego Microsoft odmówił zalogowania.
+///
+/// Osobno od treści komunikatu — tak samo jak przy [`PowodXbox`] niżej.
+/// Rozpoznawanie powodu po tekście błędu raz już się w tym projekcie zemściło
+/// i nie ma po co powtarzać tej pomyłki.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PowodOdmowy {
+    /// Gracz kliknął „Nie" albo zamknął okno zgody, nie potwierdzając.
+    Odrzucone,
+    /// Kod urządzenia stracił ważność albo został już raz wymieniony.
+    KodNiewazny,
+    /// Coś, czego nie rozpoznajemy. Szczegóły niosą kod i opis od Microsoftu.
+    Inny,
+}
+
+/// Tłumaczy kod błędu z odpowiedzi Microsoftu na powód, który da się objaśnić.
+pub fn powod_odmowy(kod: &str) -> PowodOdmowy {
+    match kod {
+        "access_denied" => PowodOdmowy::Odrzucone,
+        // Microsoft oddaje `invalid_grant`, gdy kod urządzenia stracił ważność
+        // albo został już wymieniony na token — na przykład gdy ktoś otworzył
+        // stronę z kodem dwa razy. RFC 8628 przewiduje na to osobne
+        // `expired_token`, ale Microsoft bywa tu niekonsekwentny i oddaje
+        // jedno albo drugie.
+        "invalid_grant" => PowodOdmowy::KodNiewazny,
+        _ => PowodOdmowy::Inny,
+    }
+}
+
+/// Szczegóły techniczne odmowy: kod błędu wraz z opisem, o ile Microsoft go dał.
+///
+/// Opis (`error_description`) jest polem stworzonym po to, żeby je czytać —
+/// zwykle niesie numer `AADSTS` i zdanie wyjaśnienia. Wcześniej launcher
+/// wyrzucał go do kosza i pokazywał sam kod, więc gracz widział `invalid_grant`
+/// i nic poza tym, a administracja nie miała czego szukać.
+pub fn opis_odmowy(kod: &str, opis: Option<&str>) -> String {
+    match opis {
+        Some(o) if !o.trim().is_empty() => skrot(&format!("{kod}: {}", o.trim()), 300),
+        _ => kod.to_string(),
+    }
 }
 
 /// Dlaczego Xbox Live odmówił.
@@ -125,7 +183,7 @@ pub async fn begin(client_id: &str) -> Result<DeviceCode, AuthError> {
         .text()
         .await
         .map_err(|e| AuthError::Siec(e.to_string()))?;
-    serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(bezpieczny_opis(&tekst)))
+    serde_json::from_str(&tekst).map_err(|_| AuthError::odmowa(bezpieczny_opis(&tekst)))
 }
 
 /// Zamienia odpowiedź serwera uwierzytelniania na opis, który wolno pokazać.
@@ -174,6 +232,9 @@ pub async fn poll_once(client_id: &str, device_code: &str) -> Result<PollResult,
         access_token: Option<String>,
         refresh_token: Option<String>,
         error: Option<String>,
+        // Bez tego pola opis błędu od Microsoftu ginął, zanim ktokolwiek go
+        // zobaczył — a to w nim jest napisane, co właściwie poszło nie tak.
+        error_description: Option<String>,
     }
 
     let tekst = klient()
@@ -191,7 +252,7 @@ pub async fn poll_once(client_id: &str, device_code: &str) -> Result<PollResult,
         .map_err(|e| AuthError::Siec(e.to_string()))?;
 
     let o: Odp =
-        serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(bezpieczny_opis(&tekst)))?;
+        serde_json::from_str(&tekst).map_err(|_| AuthError::odmowa(bezpieczny_opis(&tekst)))?;
 
     if let (Some(a), Some(r)) = (o.access_token, o.refresh_token) {
         return Ok(PollResult::Gotowe(Tokens {
@@ -203,9 +264,12 @@ pub async fn poll_once(client_id: &str, device_code: &str) -> Result<PollResult,
         Some(kod) => match zinterpretuj_blad(kod) {
             Some(stan) => Ok(stan),
             None if kod == "expired_token" => Err(AuthError::Wygasl),
-            None => Err(AuthError::Odmowa(kod.to_string())),
+            None => Err(AuthError::Odmowa {
+                powod: powod_odmowy(kod),
+                szczegoly: opis_odmowy(kod, o.error_description.as_deref()),
+            }),
         },
-        None => Err(AuthError::Odmowa(bezpieczny_opis(&tekst))),
+        None => Err(AuthError::odmowa(bezpieczny_opis(&tekst))),
     }
 }
 
@@ -230,7 +294,7 @@ pub async fn refresh(client_id: &str, refresh_token: &str) -> Result<Tokens, Aut
         .await
         .map_err(|e| AuthError::Siec(e.to_string()))?;
     let o: Odp =
-        serde_json::from_str(&tekst).map_err(|_| AuthError::Odmowa(bezpieczny_opis(&tekst)))?;
+        serde_json::from_str(&tekst).map_err(|_| AuthError::odmowa(bezpieczny_opis(&tekst)))?;
     Ok(Tokens {
         access_token: o.access_token,
         refresh_token: o.refresh_token,
@@ -404,13 +468,13 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
 
     let (status, tekst) = odczytaj(odp).await?;
     if !status.is_success() {
-        return Err(AuthError::Odmowa(format!(
+        return Err(AuthError::odmowa(format!(
             "logowanie do Minecrafta: HTTP {status}, treść: {}",
             skrot(&tekst, 400)
         )));
     }
     let mc: McOdp = serde_json::from_str(&tekst).map_err(|e| {
-        AuthError::Odmowa(format!(
+        AuthError::odmowa(format!(
             "logowanie do Minecrafta: odpowiedź nie do odczytania ({e}), treść: {}",
             skrot(&tekst, 400)
         ))
@@ -436,7 +500,7 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
     let p: Profil = odp
         .json()
         .await
-        .map_err(|e| AuthError::Odmowa(e.to_string()))?;
+        .map_err(|e| AuthError::odmowa(e.to_string()))?;
 
     // API zwraca UUID bez myslnikow, a gra oczekuje ich w argumencie.
     let u = &p.id;
@@ -464,6 +528,49 @@ pub async fn zaloguj_minecraft(tokens: &Tokens) -> Result<Account, AuthError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Zgloszenie od gracza: w szczegolach bledu widnialo samo `invalid_grant`
+    /// i nic wiecej. Powod: struktura odpowiedzi nie odczytywala w ogole pola
+    /// `error_description`, a sciezka nierozpoznanego kodu przekazywala dalej
+    /// sam kod. Gracz dostawal rade „uwaznie przepisz kod", ktora przy tym
+    /// bledzie jest nietrafiona.
+    #[test]
+    fn opis_bledu_od_microsoftu_dociera_do_szczegolow() {
+        let s = opis_odmowy(
+            "invalid_grant",
+            Some("AADSTS70008: The provided authorization code has expired."),
+        );
+        assert!(s.contains("invalid_grant"), "{s}");
+        assert!(
+            s.contains("AADSTS70008"),
+            "bez tego nie wiadomo, co sie stalo: {s}"
+        );
+        assert!(s.contains("expired"), "{s}");
+    }
+
+    /// Gdy Microsoft nie dal opisu, zostaje sam kod — i to tez jest w porzadku.
+    #[test]
+    fn bez_opisu_zostaje_sam_kod() {
+        assert_eq!(opis_odmowy("invalid_grant", None), "invalid_grant");
+        assert_eq!(opis_odmowy("invalid_grant", Some("   ")), "invalid_grant");
+    }
+
+    /// Powod odmowy rozpoznajemy po KODZIE, a nie po tresci komunikatu.
+    /// Rozpoznawanie po tekscie raz juz sie w tym projekcie zemscilo.
+    #[test]
+    fn rozpoznajemy_powod_odmowy_po_kodzie() {
+        assert_eq!(powod_odmowy("access_denied"), PowodOdmowy::Odrzucone);
+        assert_eq!(powod_odmowy("invalid_grant"), PowodOdmowy::KodNiewazny);
+        assert_eq!(powod_odmowy("cos_zupelnie_nowego"), PowodOdmowy::Inny);
+    }
+
+    /// Dlugi opis od Microsoftu jest przycinany — potrafi miec kilka zdan
+    /// i odsylacz do dokumentacji.
+    #[test]
+    fn dlugi_opis_odmowy_jest_przycinany() {
+        let s = opis_odmowy("invalid_grant", Some(&"x".repeat(2000)));
+        assert!(s.chars().count() <= 301, "{} znakow", s.chars().count());
+    }
 
     /// Odpowiedz z endpointu tokenow, ktora nie ma ksztaltu, jakiego oczekujemy.
     /// Zawiera ZYWY token dostepu — dokladnie to, co wczesniej szlo w calosci
