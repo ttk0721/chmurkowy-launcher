@@ -1,0 +1,87 @@
+name: Kontrola
+
+# Po co osobny workflow, skoro `release.yml` już uruchamia testy?
+#
+# Bo tamten rusza WYŁĄCZNIE z tagu `v*`. Jego zadania nie nadają się na
+# wymagane kontrole gałęzi: na pull requeście nigdy by nie powstały, więc
+# każdy pull request czekałby w nieskończoność na coś, co się nie wydarzy.
+# Ochrona gałęzi wymaga kontroli, które uruchamiają się na pull requeście —
+# i o to chodzi tutaj.
+on:
+  pull_request:
+  push:
+    # Gałąź domyślna. `main` na wyrost — gdyby kiedyś wróciła do tej roli,
+    # kontrole mają działać dalej bez cichego wyłączenia się.
+    branches: [worktree-launcher-mvp, main]
+  workflow_dispatch:
+
+# Nowe wejście na tę samą gałąź przerywa poprzedni bieg. Bez tego poprawka
+# wypchnięta minutę po poprzedniej czeka w kolejce za biegiem, którego wynik
+# i tak nikogo już nie obchodzi.
+concurrency:
+  group: kontrola-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testy:
+    # Nazwa celowo BEZ wersji obrazu systemu.
+    #
+    # To ona trafia do ustawień ochrony gałęzi jako wymagana kontrola.
+    # Gdyby brzmiała „testy (ubuntu-22.04)", podbicie runnera na 24.04
+    # zmieniłoby jej nazwę — a wymagana kontrola o starej nazwie przestałaby
+    # powstawać. GitHub nie zgłasza tego jako błędu: po prostu przepuszcza
+    # scalanie, bo „wymagana kontrola" nie ma jak się nie udać, skoro jej nie ma.
+    name: testy (${{ matrix.etykieta }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ten sam obraz, co przy wydaniu: binarka musi ruszyć na systemach
+          # ze starszą biblioteką systemową, więc i testy niech idą na tym,
+          # na czym powstaje plik dla graczy.
+          - os: ubuntu-22.04
+            etykieta: linux
+          - os: windows-latest
+            etykieta: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # eframe na Linuksie linkuje się z bibliotekami okien i dźwięku.
+      # `cargo test` buduje także launcher, więc bez nich nie ruszy.
+      - name: Zależności systemowe (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libxkbcommon-dev libssl-dev libasound2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Testy
+        run: cargo test --workspace
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zależności systemowe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libxkbcommon-dev libssl-dev libasound2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+
+      # `-D warnings` znaczy: każde ostrzeżenie przewraca kontrolę.
+      # Repozytorium jest dziś pod tym warunkiem czyste i ma takie zostać —
+      # ostrzeżenie, które wolno zignorować, po miesiącu jest ostrzeżeniem,
+      # którego nikt już nie czyta.
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings

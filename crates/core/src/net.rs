@@ -38,6 +38,13 @@ pub struct Downloader {
     limit: Arc<tokio::sync::Semaphore>,
 }
 
+/// Komu i pod jaką nazwą meldować postęp pobierania jednego pliku.
+///
+/// Nazwany typ, a nie krotka wpisana wprost w sygnaturę: trzy składniki,
+/// z czego jeden jest obiektem cechy za wskaźnikiem zliczającym, dawały
+/// linijkę nie do przeczytania bez rozbierania jej na czynniki.
+pub type Obserwator = (Stage, String, Arc<dyn Fn(Progress) + Send + Sync>);
+
 impl Downloader {
     pub fn new(concurrency: usize) -> Self {
         // Bez limitow host, ktory przyjmowal polaczenie i milkl, zatrzymywal
@@ -62,7 +69,7 @@ impl Downloader {
     pub async fn fetch_one_obserwowane(
         &self,
         spec: &DownloadSpec,
-        obserwator: Option<(Stage, String, Arc<dyn Fn(Progress) + Send + Sync>)>,
+        obserwator: Option<Obserwator>,
     ) -> Result<bool, NetError> {
         if pasuje(&spec.dest, &spec.expect) {
             return Ok(false);
