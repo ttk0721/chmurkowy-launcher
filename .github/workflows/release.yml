@@ -97,10 +97,14 @@ jobs:
           }
           Copy-Item target\release\ChmurkowyLauncher.exe packaging\windows\
           # Nazwa tagu przez zmienną środowiskową, a nie przez podstawienie
-          # ${{ }} wprost w skrypcie. Podstawienie wkleja tekst do kodu PRZED
-          # uruchomieniem powłoki, więc tag z cudzysłowem i średnikiem
-          # wykonałby się jako polecenie na maszynie budującej. Pozostałe
-          # miejsca w tym pliku robią to już poprawnie.
+          # wyrażenia GitHub Actions wprost w skrypcie. Podstawienie wkleja
+          # tekst do kodu PRZED uruchomieniem powłoki, więc tag z cudzysłowem
+          # i średnikiem wykonałby się jako polecenie na maszynie budującej.
+          # Pozostałe miejsca w tym pliku robią to już poprawnie.
+          #
+          # W komentarzu celowo nie ma przykładu takiego podstawienia: Actions
+          # przetwarza je także w komentarzach powłoki, więc sam przykład
+          # wywracał cały workflow komunikatem o nieprawidłowym wyrażeniu.
           $wersja = "$env:GITHUB_REF_NAME" -replace '^v', ''
           & $iscc "/DWersja=$wersja" packaging\windows\chmurkowy.iss
           Copy-Item packaging\windows\ChmurkowyLauncher-setup.exe .
