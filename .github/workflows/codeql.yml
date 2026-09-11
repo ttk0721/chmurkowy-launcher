@@ -1,0 +1,52 @@
+name: CodeQL
+
+# Dlaczego wlasny workflow, a nie konfiguracja domyslna z ustawien repozytorium?
+#
+# Bo tamta nie przyjmuje Rusta. Jej API wymienia dopuszczalne jezyki i sa to
+# actions, c-cpp, csharp, go, java-kotlin, javascript-typescript, python, ruby
+# i swift. Wlaczenie jej dalo by zielona bramke skanowania, ktora nie przeczyta
+# ani linijki z 571 kB kodu Rusta — czyli z calego programu. Bramka, ktora nic
+# nie sprawdza, jest gorsza od jej braku, bo usypia.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Kod nie zmienia sie w kazdy poniedzialek, ale baza regul CodeQL owszem.
+  # Bez tego o nowo rozpoznanej klasie bledow dowiedzielibysmy sie dopiero
+  # przy najblizszej zmianie w kodzie.
+  schedule:
+    - cron: "31 4 * * 1"
+  workflow_dispatch:
+
+jobs:
+  analiza:
+    name: codeql (${{ matrix.jezyk }})
+    runs-on: ubuntu-22.04
+    permissions:
+      # Bez tego wyniki nie maja gdzie trafic i bramka skanowania nigdy nie
+      # dostanie odpowiedzi.
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - jezyk: rust
+          - jezyk: actions
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Przygotowanie CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.jezyk }}
+          # Bez budowania: CodeQL czyta zrodla wprost. Budowanie calego
+          # workspace pod analize podwoiloby czas kazdego pull requesta,
+          # a testy i tak kompiluja go obok.
+          build-mode: none
+
+      - name: Analiza
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.jezyk }}"

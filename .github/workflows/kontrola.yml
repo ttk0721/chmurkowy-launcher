@@ -10,9 +10,7 @@ name: Kontrola
 on:
   pull_request:
   push:
-    # Gałąź domyślna. `main` na wyrost — gdyby kiedyś wróciła do tej roli,
-    # kontrole mają działać dalej bez cichego wyłączenia się.
-    branches: [worktree-launcher-mvp, main]
+    branches: [main]
   workflow_dispatch:
 
 # Nowe wejście na tę samą gałąź przerywa poprzedni bieg. Bez tego poprawka
