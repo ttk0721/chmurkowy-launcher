@@ -822,7 +822,7 @@ dependencies = [
 
 [[package]]
 name = "chmurkowy-launcher"
-version = "0.4.24"
+version = "0.4.25"
 dependencies = [
  "anyhow",
  "arboard",
