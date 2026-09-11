@@ -22,15 +22,6 @@
       ]
     },
     {
-      "path": "mods/Annuus-neoforge-1.0.16-fix2.jar",
-      "policy": "mirror",
-      "sha512": "4861971731921b238a4965cca329dfef05334c6a3f0b329da4becf8e28d835594f74641c6c9d379db1b6e178b340113740e203e2180b4dd513a2bbe78e23ed6b",
-      "size": 540701,
-      "urls": [
-        "https://cdn.modrinth.com/data/kIfxYoGs/versions/fz24WWx1/Annuus-neoforge-1.0.16-fix2.jar"
-      ]
-    },
-    {
       "path": "mods/AsyncParticles-21.1.4.2+1.21.1.jar",
       "policy": "mirror",
       "sha512": "bd37ee80cf269795663816b7b804d9a70e7d987c7c051222821144c5426cc8f8c2117d20bd28bd68d328762c967c6e12e3cfa85a28e7bb428b9701a45f012c49",
@@ -6442,7 +6433,7 @@
     },
     "minecraft": "1.21.1",
     "name": "Chmurkowy Serwer",
-    "version": "2026.09.10-21"
+    "version": "2026.09.11-1"
   },
   "schema": 1
 }
