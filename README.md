@@ -68,3 +68,18 @@ cargo run -p chmurkowy-launcher
 Mody pobierane są prosto z Modrinth i CurseForge, na podstawie manifestu
 opisującego każdy plik adresem i skrótem SHA-512. Launcher weryfikuje
 każdy pobrany plik i dociąga wyłącznie to, co się zmieniło.
+
+## Jak pracujemy
+
+Na `main` nie wchodzi się wprost — każda zmiana idzie przez pull requesta.
+Przed scaleniem muszą przejść trzy kontrole (`testy (linux)`, `testy (windows)`,
+`clippy`) oraz skanowanie CodeQL, a gałąź musi być aktualna względem `main`.
+
+Scalamy wyłącznie przez **Squash and merge**. Pozostałe sposoby odpadają przez
+same reguły: „Create a merge commit" kłóci się z wymogiem liniowej historii,
+a „Rebase and merge" z wymogiem podpisów — GitHub nie podpisuje commitów
+odtwarzanych przy rebase.
+
+Commity muszą być podpisane, a adres autora musi występować w kluczu GPG.
+Inaczej GitHub oznacza podpis jako `bad_email`, nie uznaje go za zweryfikowany
+i odmawia przyjęcia zmiany.
