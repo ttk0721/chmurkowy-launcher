@@ -377,6 +377,8 @@ impl App {
     fn pobierz_manifest_w_tle(&mut self) {
         let n = self.nadawca.clone();
         let adres = env!("CHMURKA_MANIFEST_URL").to_string();
+        // Czy to sprawdzenie, o które nikt nie prosił.
+        let cicho = self.pilnowanie_w_toku;
         self.w_tle(async move {
             const PROBY: u32 = 3;
             let mut ostatni = None;
@@ -393,7 +395,18 @@ impl App {
                 }
             }
             if let Some(e) = ostatni {
-                let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
+                if cicho {
+                    // Samodzielne sprawdzenie w tle. Gdy sieć akurat nie
+                    // działa, nie ma o czym mówić: gracz o nic nie prosił,
+                    // a wyrzucenie go na ekran błędu w środku zabawy byłoby
+                    // karą za nasz własny pomysł. Co dziesięć minut, przy
+                    // zerwanym Wi-Fi, byłaby to kara dotkliwa.
+                    let _ = n.send(Wiadomosc::Notatka(format!(
+                        "Nie udało się sprawdzić aktualizacji ({e}). Spróbuję później."
+                    )));
+                } else {
+                    let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
+                }
             }
         });
     }
