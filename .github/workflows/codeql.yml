@@ -9,6 +9,10 @@ name: CodeQL
 # nie sprawdza, jest gorsza od jej braku, bo usypia.
 on:
   pull_request:
+  # Kolejka scalania. Bez tego wyzwalacza kontrole NIE uruchamiaja sie dla
+  # wpisow w kolejce, a kolejka czeka na nie bezterminowo — czyli wlaczenie
+  # kolejki zatrzymaloby scalanie calkowicie zamiast je przyspieszyc.
+  merge_group:
   push:
     branches: [main]
   # Kod nie zmienia sie w kazdy poniedzialek, ale baza regul CodeQL owszem.
