@@ -13,13 +13,28 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 /// Czym jest zapamiętane konto i co trzeba, żeby na nie wrócić.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "rodzaj")]
 pub enum Rodzaj {
     /// Konto Microsoft. Token odświeżania pozwala wrócić bez wpisywania kodu.
     Microsoft { refresh_token: String },
     /// Konto offline — sam nick, do grania na serwerze bez weryfikacji.
     Offline,
+}
+
+/// Token odświeżania zastąpiony znacznikiem — pozwala odtworzyć sesję gracza,
+/// więc jest sekretem na równi z tokenem dostępu. `Debug` zostaje, bo bez
+/// niego nie da się użyć `assert_eq!` w testach.
+impl std::fmt::Debug for Rodzaj {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Rodzaj::Microsoft { .. } => f
+                .debug_struct("Microsoft")
+                .field("refresh_token", &"<ukryty>")
+                .finish(),
+            Rodzaj::Offline => f.write_str("Offline"),
+        }
+    }
 }
 
 impl Rodzaj {
@@ -158,14 +173,37 @@ pub fn zapisz(path: &Path, k: &Konta) -> std::io::Result<()> {
     if let Some(rodzic) = path.parent() {
         std::fs::create_dir_all(rodzic)?;
     }
-    std::fs::write(path, serde_json::to_vec_pretty(k)?)?;
-    // Plik zawiera tokeny odswiezania, wiec na Linuksie zawezamy uprawnienia.
-    // Na Windowsie polegamy na uprawnieniach katalogu uzytkownika.
+    let tresc = serde_json::to_vec_pretty(k)?;
+
+    // Plik zawiera tokeny odświeżania, więc na Linuksie zawężamy uprawnienia.
+    // Na Windowsie polegamy na uprawnieniach katalogu użytkownika.
+    //
+    // Prawa ustawiamy PRZY TWORZENIU, a nie po zapisaniu. Wcześniej plik
+    // powstawał z prawami 0644 i dopiero potem był zawężany — między jednym
+    // a drugim istniało okno, w którym token odświeżania mógł przeczytać
+    // każdy użytkownik maszyny. Okno krótkie, ale otwierane przy każdym
+    // logowaniu i przy każdym „Wyloguj wszystkie konta".
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
+        use std::io::Write;
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+
+        let mut plik = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(path)?;
+        plik.write_all(&tresc)?;
+
+        // `mode` działa tylko przy tworzeniu pliku. Gdy plik już istniał —
+        // choćby zapisany przez starszą wersję launchera — trzeba go zawęzić
+        // osobno, inaczej zostałby przy swoich dawnych prawach.
         std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))?;
     }
+    #[cfg(not(unix))]
+    std::fs::write(path, &tresc)?;
+
     Ok(())
 }
 
@@ -275,11 +313,7 @@ mod tests {
     fn stary_plik_z_jednym_kontem_wczytuje_sie_dalej() {
         let kat = tempfile::tempdir().unwrap();
         let p = kat.path().join("auth.json");
-        std::fs::write(
-            &p,
-            r#"{"refresh_token":"stary-token","nick":"Zosia"}"#,
-        )
-        .unwrap();
+        std::fs::write(&p, r#"{"refresh_token":"stary-token","nick":"Zosia"}"#).unwrap();
 
         let k = wczytaj(&p);
         assert_eq!(k.konta.len(), 1);
@@ -324,7 +358,10 @@ mod tests {
     fn konto_offline_odtwarza_ten_sam_uuid() {
         let zapisane = ZapisaneKonto::offline("Test1");
         let konto = na_konto_offline(&zapisane);
-        assert_eq!(konto.uuid, super::super::offline::offline_account("Test1").uuid);
+        assert_eq!(
+            konto.uuid,
+            super::super::offline::offline_account("Test1").uuid
+        );
         assert_eq!(konto.kind, AccountKind::Offline);
     }
 }

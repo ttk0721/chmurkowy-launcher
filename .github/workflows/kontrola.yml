@@ -20,6 +20,13 @@ concurrency:
   group: kontrola-${{ github.ref }}
   cancel-in-progress: true
 
+# Bez tego bloku zadania dostają domyślne uprawnienia żetonu, a te bywają
+# szersze, niż trzeba — w repozytorium z ustawieniem „read and write" żeton
+# z prawem zapisu trafiałby do każdego przebiegu `cargo test` na kodzie
+# z pull requesta. Tutaj wszystkie zadania tylko czytają kod.
+permissions:
+  contents: read
+
 jobs:
   testy:
     # Nazwa celowo BEZ wersji obrazu systemu.
