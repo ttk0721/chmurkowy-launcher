@@ -94,6 +94,8 @@ Minecrafta byłoby gorsze od każdego błędu.
 | `KONTO-06` | Xbox Live nie działa w kraju ustawionym na tym koncie | nie |
 | `KONTO-07` | Microsoft chce potwierdzenia na stronie konta | nie |
 | `KONTO-08` | To konto jest zablokowane przez Microsoft | nie |
+| `KONTO-09` | Logowanie zostało odrzucone | nie |
+| `KONTO-10` | Kod stracił ważność | nie |
 | `USTAW-01` | Java wskazana w Ustawieniach nie działa | nie |
 | `USTAW-02` | Twoja komenda nie wykonała się poprawnie / Komenda po zakończeniu gry nie wykonała się poprawnie | nie |
 | `USTAW-03` | Twoja komenda się zawiesiła | nie |
@@ -452,11 +454,36 @@ logowania.
     2. Zaloguj się innym kontem, jeśli masz do niego dostęp.
     3. Do testów możesz na razie użyć trybu offline na ekranie logowania.
 
+`KONTO-09` — Logowanie zostało odrzucone
+
+:   Na stronie Microsoftu kliknięto „Nie” albo okno zostało zamknięte przed
+    potwierdzeniem. Kod był dobry — zabrakło zgody.
+
+    1. Kliknij „Zaloguj przez Microsoft” jeszcze raz.
+    2. Na stronie Microsoftu potwierdź, że zgadzasz się zalogować — trzeba
+       kliknąć „Tak”.
+    3. Do grania na własnym świecie możesz na razie użyć trybu offline.
+
+`KONTO-10` — Kod stracił ważność
+
+:   Kod do wpisania na stronie Microsoftu jest jednorazowy i ważny tylko
+    kilkanaście minut. Ten już się przeterminował albo został wcześniej użyty.
+
+    1. Kliknij „Zaloguj przez Microsoft” jeszcze raz — dostaniesz nowy kod.
+    2. Wpisz go od razu; nie odświeżaj strony z kodem i nie otwieraj jej dwa razy.
+    3. Jeśli logujesz się z telefonu, miej launcher otwarty do końca — on czeka
+       na potwierdzenie.
+
 !!! uwaga
 
     `KONTO-05` jest kodem zbiorczym i dostajesz go wtedy, gdy launcher nie
     rozpoznał powodu odmowy. Jeśli go widzisz, sama treść okna niewiele powie —
     warto wysłać administracji skopiowane szczegóły.
+
+    W szczegółach jest teraz kod błędu **wraz z opisem od Microsoftu**, zwykle
+    z numerem `AADSTS`. Wcześniej launcher pokazywał sam kod, więc gracz widział
+    na przykład `invalid_grant` i nic poza tym — a to właśnie w opisie napisane
+    jest, co konkretnie poszło nie tak.
 
     Kod dobierany jest po rozpoznanym powodzie odmowy, a nie po tym, co jest
     napisane w komunikacie. Dopóki launcher szukał w komunikacie słowa „Xbox”,
