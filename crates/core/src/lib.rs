@@ -19,6 +19,7 @@ pub mod paczki;
 pub mod pamiec;
 pub mod paths;
 pub mod progress;
+pub mod przegladarka;
 pub mod skrot;
 pub mod state;
 pub mod ustawienia;

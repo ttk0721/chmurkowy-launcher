@@ -31,8 +31,14 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                 match &app.kod {
                     Some(kod) => {
                         let kod_tekst = kod.user_code.clone();
+                        // Adres z kodem w środku — przycisk niżej otwiera gracza
+                        // od razu przy wyborze konta. Goły adres pokazujemy
+                        // osobno, bo przepisuje się go na telefon.
+                        let adres_kliku = kod.adres_do_otwarcia();
                         let adres = kod.verification_uri.clone();
-                        ui.label(theme::drobny("Wpisz ten kod na stronie Microsoftu:"));
+                        ui.label(theme::drobny(
+                            "Kliknij przycisk niżej — otworzy stronę Microsoftu z tym kodem:",
+                        ));
                         ui.add_space(theme::S2);
                         egui::Frame::NONE
                             .fill(theme::PANEL)
@@ -55,14 +61,19 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                             });
                         ui.add_space(theme::S2);
                         if ui
-                            .add(theme::przycisk_zwykly("Kopiuj kod i otwórz przeglądarkę"))
+                            .add(theme::przycisk_zwykly("Otwórz stronę logowania"))
                             .clicked()
                         {
                             app.komunikat = Some(crate::schowek::komunikat(
                                 crate::schowek::kopiuj(&kod_tekst),
                                 "Przepisz kod ręcznie — jest widoczny powyżej.",
                             ));
-                            let _ = open::that_detached(&adres);
+                            // Najpierw osobne okienko tylko ze stroną
+                            // Microsoftu. Gdy nie ma czym go otworzyć —
+                            // zwykła karta, bo logowanie musi zadziałać zawsze.
+                            if !chmurka_core::przegladarka::otworz_w_okienku(&adres_kliku) {
+                                let _ = open::that_detached(&adres_kliku);
+                            }
                         }
                         if let Some(k) = &app.komunikat {
                             ui.add_space(theme::S1);
@@ -84,7 +95,10 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                     }
                     None => {
                         if ui
-                            .add_enabled(!app.zajety, theme::przycisk_glowny("Zaloguj przez Microsoft"))
+                            .add_enabled(
+                                !app.zajety,
+                                theme::przycisk_glowny("Zaloguj przez Microsoft"),
+                            )
                             .clicked()
                         {
                             crate::app::zaloguj_microsoft(app);
@@ -139,4 +153,3 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
             });
         });
 }
-

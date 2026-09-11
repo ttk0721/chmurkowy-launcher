@@ -668,7 +668,7 @@ fn z_logowania(e: &AuthError) -> BladUzytkownika {
                  albo kod wpisany źle.",
                 &[
                     "Kliknij „Zaloguj przez Microsoft” jeszcze raz.",
-                    "Uważnie przepisz kod — najprościej użyć przycisku „Kopiuj kod i otwórz przeglądarkę”.",
+                    "Użyj przycisku „Otwórz stronę logowania” — otworzy okno z już wpisanym kodem.",
                     "Do testów możesz na razie użyć trybu offline na ekranie logowania.",
                 ],
                 szczegoly.clone(),

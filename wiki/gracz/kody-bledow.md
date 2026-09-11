@@ -424,8 +424,8 @@ logowania.
     zamknięte albo kod wpisany źle.
 
     1. Kliknij „Zaloguj przez Microsoft” jeszcze raz.
-    2. Uważnie przepisz kod — najprościej użyć przycisku „Kopiuj kod i otwórz
-       przeglądarkę”.
+    2. Użyj przycisku „Otwórz stronę logowania” — otworzy okno z już wpisanym
+       kodem.
     3. Do testów możesz na razie użyć trybu offline na ekranie logowania.
 
 `KONTO-06` — Xbox Live nie działa w kraju ustawionym na tym koncie

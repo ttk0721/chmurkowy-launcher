@@ -39,21 +39,35 @@ Krok po kroku:
 2. Launcher pokaże duży kod, na przykład `V3REVW36`, a pod nim adres strony,
    na którą trzeba go wpisać. W odpowiedziach, na których był sprawdzany, jest
    to `https://www.microsoft.com/link`.
-3. Kliknij **Kopiuj kod i otwórz przeglądarkę**. Launcher skopiuje kod do
-   schowka i otworzy stronę.
-4. W przeglądarce wpisz kod, zaloguj się na konto Microsoft, na którym
-   kupiliście Minecrafta, i potwierdź.
+3. Kliknij **Otwórz stronę logowania**. Launcher otworzy osobne, małe okno
+   przeglądarki — bez pasków kart i adresu, wyłącznie ze stroną Microsoftu.
+   Okno wychodzi na pierwszy plan, więc nie da się go przeoczyć wśród innych
+   kart. Kod jest już w adresie, więc nie trzeba go nigdzie wpisywać.
+4. W tym oknie wybierz konto Microsoft, na którym kupiliście Minecrafta,
+   zaloguj się i potwierdź.
 5. Wróć do launchera. Pod kodem kręci się kółko i napis „Czekam na
    potwierdzenie…". Gdy Microsoft potwierdzi, launcher sam przejdzie na główny
    ekran, a konto trafi na listę.
 
 !!! wskazówka
 
-    Kod da się zaznaczyć myszą i przepisać ręcznie. Jest tak zrobiony celowo:
-    schowek systemowy potrafi odmówić (na Windowsie zdarza się to najczęściej)
-    i wtedy zaznaczenie kodu jest jedyną drogą do skopiowania go. Gdy
-    kopiowanie się nie uda, launcher napisze pod kodem, żeby przepisać go
-    ręcznie.
+    Kod nadal jest widoczny i nadal da się go zaznaczyć myszą — przydaje się,
+    gdy ktoś loguje się z telefonu, wchodząc na `microsoft.com/link` ręcznie.
+    Jest tak zrobiony celowo: schowek systemowy potrafi odmówić (na Windowsie
+    zdarza się to najczęściej) i wtedy zaznaczenie kodu jest jedyną drogą do
+    skopiowania go.
+
+!!! uwaga "Gdy zamiast okienka otworzy się zwykła karta"
+
+    Osobne okno potrafią otworzyć przeglądarki z rodziny Chromium: Chrome,
+    Edge, Brave, Vivaldi, Opera. Launcher bierze do tego **domyślną
+    przeglądarkę z systemu**, a gdy tej nie da się ustalić — pierwszą
+    znalezioną z tej rodziny.
+
+    Gdy domyślną przeglądarką jest Firefox, osobnego okna nie będzie: Firefox
+    nie ma takiego trybu. Wtedy strona otworzy się jako zwykła karta i trzeba
+    jej poszukać wśród pozostałych. Logowanie działa tak samo, tylko mniej
+    wygodnie.
 
 ### Ile czasu jest na wpisanie kodu
 

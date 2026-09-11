@@ -165,10 +165,46 @@ pub struct DeviceCode {
     pub user_code: String,
     pub device_code: String,
     pub verification_uri: String,
+    /// Adres z kodem już wpisanym — RFC 8628 nazywa to `verification_uri_complete`.
+    ///
+    /// Nie każdy serwer go oddaje, stąd `Option`. Gdy jest, otwarcie go stawia
+    /// gracza od razu przy wyborze konta, z pominięciem strony do przepisywania
+    /// kodu.
+    pub verification_uri_complete: Option<String>,
     #[serde(rename = "interval")]
     pub interval_s: u64,
     #[serde(rename = "expires_in")]
     pub expires_in_s: u64,
+}
+
+impl DeviceCode {
+    /// Adres do otwarcia w przeglądarce — z kodem już wpisanym, jeśli się da.
+    ///
+    /// Przepisywanie kodu jest najwęższym gardłem całego logowania i źródłem
+    /// całej rodziny błędów: kod przeterminowany, kod wpisany z literówką,
+    /// strona otwarta dwa razy. Gracz, który dostaje adres z kodem w środku,
+    /// żadnego z nich nie napotka — pierwsze, co zobaczy, to wybór konta.
+    ///
+    /// Gdy serwer nie oddał gotowego adresu, doklejamy kod sami. Microsoft
+    /// przyjmuje go w parametrze `otc` (one-time code) na stronie
+    /// `microsoft.com/link`. Gdyby kiedyś przestał, strona po prostu poprosi
+    /// o kod jak dotąd — a kod nadal jest widoczny w oknie launchera.
+    pub fn adres_do_otwarcia(&self) -> String {
+        if let Some(gotowy) = &self.verification_uri_complete {
+            if !gotowy.trim().is_empty() {
+                return gotowy.clone();
+            }
+        }
+        let rozdzielnik = if self.verification_uri.contains('?') {
+            '&'
+        } else {
+            '?'
+        };
+        format!(
+            "{}{}otc={}",
+            self.verification_uri, rozdzielnik, self.user_code
+        )
+    }
 }
 
 /// `device_code` jest sekretem — kto go ma, ten odbierze token zamiast gracza.
@@ -798,6 +834,7 @@ mod tests {
             user_code: "V3REVW36".into(),
             device_code: "TAJNY-KOD-URZADZENIA".into(),
             verification_uri: "https://microsoft.com/link".into(),
+            verification_uri_complete: None,
             interval_s: 5,
             expires_in_s: 900,
         };
@@ -817,6 +854,55 @@ mod tests {
         assert_eq!(d.verification_uri, "https://www.microsoft.com/link");
         assert_eq!(d.interval_s, 5);
         assert_eq!(d.expires_in_s, 900);
+        // Brak `verification_uri_complete` w odpowiedzi nie moze niczego zepsuc.
+        assert!(d.verification_uri_complete.is_none());
+    }
+
+    fn kod_probny(uri: &str, gotowy: Option<&str>) -> DeviceCode {
+        DeviceCode {
+            user_code: "V3REVW36".into(),
+            device_code: "tajny".into(),
+            verification_uri: uri.into(),
+            verification_uri_complete: gotowy.map(str::to_string),
+            interval_s: 5,
+            expires_in_s: 900,
+        }
+    }
+
+    /// Przepisywanie kodu jest najwezszym gardlem logowania. Adres otwierany
+    /// z launchera ma nosic kod w srodku, zeby gracz od razu trafial na wybor
+    /// konta, a nie na strone z polem do wpisania.
+    #[test]
+    fn adres_do_otwarcia_niesie_kod() {
+        assert_eq!(
+            kod_probny("https://www.microsoft.com/link", None).adres_do_otwarcia(),
+            "https://www.microsoft.com/link?otc=V3REVW36"
+        );
+        // Gdy adres ma juz parametry, doklejamy przez „&", nie przez drugie „?".
+        assert_eq!(
+            kod_probny("https://example.test/link?lang=pl", None).adres_do_otwarcia(),
+            "https://example.test/link?lang=pl&otc=V3REVW36"
+        );
+    }
+
+    /// Gdy Microsoft sam odda gotowy adres, uzywamy jego — nie sklejamy wlasnego.
+    #[test]
+    fn gotowy_adres_ma_pierwszenstwo() {
+        let d = kod_probny(
+            "https://www.microsoft.com/link",
+            Some("https://www.microsoft.com/link?otc=INNY"),
+        );
+        assert_eq!(
+            d.adres_do_otwarcia(),
+            "https://www.microsoft.com/link?otc=INNY"
+        );
+
+        // Pusty napis to nie jest gotowy adres — wtedy skladamy sami.
+        let pusty = kod_probny("https://www.microsoft.com/link", Some("   "));
+        assert_eq!(
+            pusty.adres_do_otwarcia(),
+            "https://www.microsoft.com/link?otc=V3REVW36"
+        );
     }
 
     #[test]
