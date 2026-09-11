@@ -1019,6 +1019,11 @@ impl eframe::App for App {
         }
 
         self.przypilnuj_aktualizacji(ctx);
+        // Ktoś kliknął skrót, gdy launcher siedział już w zasobniku. Zamiast
+        // drugiego egzemplarza pokazujemy ten, który działa.
+        if chmurka_core::jedna_instancja::ktos_prosi_o_pokazanie() {
+            self.przywroc_okno = true;
+        }
 
         match self.widok {
             Widok::Glowny => crate::views::main::rysuj(self, ctx),

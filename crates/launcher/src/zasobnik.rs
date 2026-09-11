@@ -97,7 +97,8 @@ pub async fn utworz(nadawca: Sender<ZdarzenieZasobnika>) -> Option<Zasobnik> {
         .ok()?;
     menu.append(&zakoncz).ok()?;
 
-    let ikona = Icon::from_rgba(ikona_rgba(), 32, 32).ok()?;
+    let (piksele, szer, wys) = ikona_rgba()?;
+    let ikona = Icon::from_rgba(piksele, szer, wys).ok()?;
     let tray = TrayIconBuilder::new()
         .with_tooltip("Chmurkowy Launcher")
         .with_menu(Box::new(menu))
@@ -128,28 +129,23 @@ pub async fn utworz(nadawca: Sender<ZdarzenieZasobnika>) -> Option<Zasobnik> {
     })
 }
 
-/// Prosta ikona rysowana w kodzie — zaokrąglony kwadrat w kolorze akcentu.
-/// Lepsze niż dołączanie pliku .ico, którego i tak nie da się tu podejrzeć.
+/// Ikona zasobnika: prawdziwa chmurka z `assets/ikona.png`.
+///
+/// Wcześniej był tu zaokrąglony niebieski kwadrat rysowany w kodzie, z
+/// komentarzem, że to „lepsze niż dołączanie pliku .ico". Gracz na Windowsie
+/// zgłosił to jako „nie renderuje się chmurka, tylko niebieski kwadrat" — i
+/// miał rację co do objawu. Nic się nie psuło; tam po prostu nigdy nie było
+/// chmurki.
+///
+/// Plik i tak siedzi w binarce (rejestruje się nim skrót w menu), więc jedyne,
+/// czego brakowało, to rozpakowanie go do pikseli. 256 dzieli się przez 8 bez
+/// reszty, więc zejście do 32×32 jest zwykłym uśrednieniem bloków.
 #[cfg(target_os = "windows")]
-fn ikona_rgba() -> Vec<u8> {
-    const BOK: i32 = 32;
-    const PROMIEN: f32 = 7.0;
-    let mut piksele = Vec::with_capacity((BOK * BOK * 4) as usize);
-    for y in 0..BOK {
-        for x in 0..BOK {
-            let fx = x as f32 + 0.5;
-            let fy = y as f32 + 0.5;
-            let dx = (PROMIEN - fx).max(fx - (BOK as f32 - PROMIEN)).max(0.0);
-            let dy = (PROMIEN - fy).max(fy - (BOK as f32 - PROMIEN)).max(0.0);
-            let w_srodku = dx * dx + dy * dy <= PROMIEN * PROMIEN;
-            if w_srodku {
-                piksele.extend_from_slice(&[37, 99, 235, 255]);
-            } else {
-                piksele.extend_from_slice(&[0, 0, 0, 0]);
-            }
-        }
-    }
-    piksele
+fn ikona_rgba() -> Option<(Vec<u8>, u32, u32)> {
+    const IKONA: &[u8] = include_bytes!("../assets/ikona.png");
+    let duza = crate::ikona::dekoduj(IKONA)?;
+    let mala = crate::ikona::zmniejsz(&duza, 8).unwrap_or(duza);
+    Some((mala.piksele, mala.szerokosc, mala.wysokosc))
 }
 
 // ------------------------------------------------- pozostałe systemy

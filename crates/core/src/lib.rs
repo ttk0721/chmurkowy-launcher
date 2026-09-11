@@ -5,6 +5,7 @@ pub mod game_install;
 pub mod hash;
 pub mod java;
 pub mod javy;
+pub mod jedna_instancja;
 pub mod komendy;
 pub mod konsola;
 pub mod launch;

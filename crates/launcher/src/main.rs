@@ -3,6 +3,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+mod ikona;
 mod schowek;
 mod theme;
 mod views;
@@ -48,12 +49,36 @@ fn main() -> Result<()> {
         }
     }
 
+    // Launcher chowa się do zasobnika, więc rodzic, który go tam nie zauważy,
+    // klika skrót jeszcze raz — i do teraz dostawał drugi egzemplarz.
+    // Zgłoszenie od gracza mówiło o trzech ikonach naraz.
+    //
+    // Samo ciche zamknięcie byłoby gorsze niż te trzy ikony: kliknięcie skrótu
+    // nie robiłoby widocznie nic. Dlatego zostawiamy znacznik, a działający
+    // egzemplarz pokazuje się na jego widok.
+    if chmurka_core::jedna_instancja::juz_chodzi() {
+        chmurka_core::jedna_instancja::popros_o_pokazanie();
+        return Ok(());
+    }
+
+    let viewport = egui::ViewportBuilder::default()
+        .with_inner_size([900.0, 560.0])
+        .with_min_inner_size([720.0, 480.0])
+        .with_decorations(false)
+        .with_title("Chmurkowy Launcher");
+    // Bez tego okno i pasek zadan pokazuja zastepcza grafike systemu.
+    // Ikona jest ozdoba: gdy sie nie rozpakuje, launcher startuje bez niej.
+    let viewport = match ikona::dekoduj(IKONA) {
+        Some(o) => viewport.with_icon(egui::IconData {
+            rgba: o.piksele,
+            width: o.szerokosc,
+            height: o.wysokosc,
+        }),
+        None => viewport,
+    };
+
     let opcje = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([900.0, 560.0])
-            .with_min_inner_size([720.0, 480.0])
-            .with_decorations(false)
-            .with_title("Chmurkowy Launcher"),
+        viewport,
         ..Default::default()
     };
 

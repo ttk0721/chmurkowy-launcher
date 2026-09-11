@@ -190,6 +190,54 @@ pub fn sciezka_z_reg_query(tekst: &str) -> Option<String> {
     None
 }
 
+/// Wyciąga ścieżkę programu z wiersza polecenia zapisanego w rejestrze.
+///
+/// `HKCR\<ProgId>\shell\open\command` trzyma coś w rodzaju
+/// `"C:\Program Files\...\msedge.exe" --single-argument %1`. Ścieżka jest
+/// w cudzysłowie właśnie dlatego, że zawiera spacje — bez ich uszanowania
+/// urwałaby się na „C:\Program".
+pub fn program_z_polecenia(polecenie: &str) -> Option<String> {
+    let p = polecenie.trim();
+    if let Some(reszta) = p.strip_prefix('"') {
+        let (sciezka, _) = reszta.split_once('"')?;
+        return (!sciezka.is_empty()).then(|| sciezka.to_string());
+    }
+    // Bez cudzysłowu bierzemy do pierwszej spacji — tak zapisują to tylko
+    // ścieżki bez spacji, więc to bezpieczne.
+    p.split_whitespace().next().map(str::to_string)
+}
+
+/// Domyślna przeglądarka Windowsa, wybrana przez gracza w ustawieniach systemu.
+///
+/// Windows trzyma ten wybór jako „ProgId" skojarzenia dla `https`, a dopiero
+/// pod nim leży wiersz polecenia. Dwa odczyty zamiast jednego, ale w zamian
+/// gracz dostaje przeglądarkę, ktorej naprawdę używa — razem ze swoimi
+/// zapamiętanymi hasłami.
+fn domyslna_z_windows() -> Option<String> {
+    let wybor = odczytaj_rejestr(
+        "HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",
+        Some("ProgId"),
+    )?;
+    let polecenie = odczytaj_rejestr(&format!("HKCR\\{wybor}\\shell\\open\\command"), None)?;
+    let sciezka = program_z_polecenia(&polecenie)?;
+    rodzina_chromium(&sciezka).then_some(sciezka)
+}
+
+/// Jeden odczyt z rejestru. `wartosc = None` oznacza wartość domyślną (`/ve`).
+fn odczytaj_rejestr(klucz: &str, wartosc: Option<&str>) -> Option<String> {
+    let mut polecenie = Command::new("reg");
+    polecenie.arg("query").arg(klucz);
+    match wartosc {
+        Some(v) => polecenie.arg("/v").arg(v),
+        None => polecenie.arg("/ve"),
+    };
+    let wynik = polecenie.output().ok()?;
+    if !wynik.status.success() {
+        return None;
+    }
+    sciezka_z_reg_query(&String::from_utf8_lossy(&wynik.stdout))
+}
+
 /// Znajduje przeglądarkę na Windowsie po pełnej ścieżce.
 ///
 /// To NIE jest kosmetyka. `Command::new("msedge")` szuka programu w `PATH`,
@@ -265,7 +313,24 @@ pub fn otworz_w_okienku(adres: &str, profil: Option<&std::path::Path>) -> bool {
     if let Some(domyslna) = domyslna_przegladarka() {
         kolejka.push(domyslna);
     }
-    kolejka.extend(KANDYDACI.iter().map(|s| s.to_string()));
+
+    // Bez własnego profilu logujemy się do przeglądarki gracza — z jej sesją
+    // i zapamiętanymi hasłami. Gdy jego domyślna nie zna trybu aplikacji
+    // (Firefox), NIE podstawiamy mu po cichu innej przeglądarki: otwarcie
+    // logowania w Chromie, którego nie używa i w którym nie ma jego haseł,
+    // jest gorsze niż zwykła karta w jego własnym Firefoksie. Zwracamy
+    // `false`, a wywołujący zejdzie do przeglądarki domyślnej.
+    //
+    // Przy własnym profilu jest odwrotnie: i tak startujemy od zera, bez sesji
+    // i bez haseł, więc dowolna przeglądarka z rodziny Chromium jest tak samo
+    // dobra — a okienko i pytanie o konto są tam ważniejsze.
+    if profil.is_some() {
+        if let Some(jakas) = jakakolwiek_chromium() {
+            kolejka.push(jakas);
+        }
+        kolejka.extend(KANDYDACI.iter().map(|s| s.to_string()));
+    }
+
     otworz_z_kolejki(&kolejka, adres, profil)
 }
 
@@ -280,9 +345,14 @@ pub fn otworz_w_okienku(adres: &str, profil: Option<&std::path::Path>) -> bool {
 /// Poprzednia wersja miala tu `#[cfg(windows)]` i wlasnie w tej galezi siedzial
 /// blad, ktorego nie dalo sie wykryc na maszynie deweloperskiej.
 fn domyslna_przegladarka() -> Option<String> {
-    z_pliku_desktop()
-        .or_else(z_rejestru_windows)
-        .or_else(zgadnij_z_katalogow_programow)
+    z_pliku_desktop().or_else(domyslna_z_windows)
+}
+
+/// Cokolwiek z rodziny Chromium, gdy domyślnej nie da się ustalić albo nie
+/// jest z tej rodziny. Używane **tylko** przy „Zaloguj na inne konto", gdzie
+/// i tak startujemy z czystym profilem, więc nie ma czego zgubić.
+fn jakakolwiek_chromium() -> Option<String> {
+    z_rejestru_windows().or_else(zgadnij_z_katalogow_programow)
 }
 
 fn otworz_z_kolejki(kolejka: &[String], adres: &str, profil: Option<&std::path::Path>) -> bool {
@@ -433,6 +503,27 @@ mod tests {
         assert!(!rodzina_chromium(
             "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
         ));
+    }
+
+    /// Rejestr Windowsa trzyma wiersz polecenia, nie sama sciezke. Sciezka
+    /// jest w cudzyslowie wlasnie dlatego, ze zawiera spacje.
+    #[test]
+    fn czyta_program_z_wiersza_polecenia() {
+        assert_eq!(
+            program_z_polecenia(
+                "\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --single-argument %1"
+            )
+            .as_deref(),
+            Some("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe")
+        );
+        // Bez cudzyslowu i bez spacji w sciezce.
+        assert_eq!(
+            program_z_polecenia("C:\\brave\\brave.exe -- \"%1\"").as_deref(),
+            Some("C:\\brave\\brave.exe")
+        );
+        assert_eq!(program_z_polecenia("   "), None);
+        // Niedomkniety cudzyslow to nie jest sciezka.
+        assert_eq!(program_z_polecenia("\"C:\\bez\\konca.exe"), None);
     }
 
     #[test]

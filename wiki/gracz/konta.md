@@ -75,14 +75,19 @@ Krok po kroku:
 !!! uwaga "Gdy zamiast okienka otworzy się zwykła karta"
 
     Osobne okno potrafią otworzyć przeglądarki z rodziny Chromium: Chrome,
-    Edge, Brave, Vivaldi, Opera. Launcher bierze do tego **domyślną
-    przeglądarkę z systemu**, a gdy tej nie da się ustalić — pierwszą
-    znalezioną z tej rodziny.
+    Edge, Brave, Vivaldi, Opera. Przycisk **Otwórz stronę logowania** używa
+    wyłącznie **Twojej domyślnej przeglądarki** — na Linuksie odczytanej
+    z ustawień pulpitu, na Windowsie z rejestru systemu.
 
     Gdy domyślną przeglądarką jest Firefox, osobnego okna nie będzie: Firefox
-    nie ma takiego trybu. Wtedy strona otworzy się jako zwykła karta i trzeba
-    jej poszukać wśród pozostałych. Logowanie działa tak samo, tylko mniej
-    wygodnie.
+    nie ma takiego trybu. Strona otworzy się wtedy jako zwykła karta —
+    **w Twoim Firefoksie**, a nie w przypadkowej innej przeglądarce, którą
+    ktoś ma obok zainstalowaną. To celowe: logowanie ma się odbywać tam, gdzie
+    masz swoje zapamiętane hasła.
+
+    Przycisk **Zaloguj na inne konto** ma inne zadanie i zachowuje się inaczej:
+    startuje z czystego profilu, w którym i tak nie ma żadnych haseł ani sesji,
+    więc bierze dowolną dostępną przeglądarkę z rodziny Chromium.
 
 ### Ile czasu jest na wpisanie kodu
 
