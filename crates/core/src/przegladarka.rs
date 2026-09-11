@@ -78,15 +78,36 @@ pub fn rodzina_chromium(sciezka: &str) -> bool {
 /// Osobno od uruchamiania, żeby dało się je sprawdzić testem — pomyłka w tych
 /// napisach kończy się oknem, które albo się nie otwiera, albo pokazuje pustą
 /// stronę startową zamiast logowania.
-pub fn argumenty_okienka(adres: &str) -> Vec<String> {
-    vec![
+///
+/// `profil` wskazuje własny katalog danych przeglądarki. Ma dwa skutki naraz
+/// i oba są tu potrzebne:
+///
+/// 1. Wymusza osobną instancję przeglądarki. Bez tego żądanie trafia do już
+///    działającej i `--window-size` jest **ignorowany** — okno dziedziczy
+///    geometrię po niej i wychodzi na całą wysokość ekranu. Sprawdzone
+///    empirycznie: z własnym profilem rozmiar jest respektowany, bez niego nie.
+/// 2. Świeży profil nie ma żadnych ciasteczek, więc Microsoft nie rozpoznaje
+///    nikogo i zawsze pyta, na które konto się logujemy. Tego właśnie brakowało
+///    przy wchodzeniu na zapamiętaną sesję.
+pub fn argumenty_okienka(adres: &str, profil: Option<&std::path::Path>) -> Vec<String> {
+    let mut a = vec![
         format!("--app={adres}"),
         format!("--window-size={SZEROKOSC},{WYSOKOSC}"),
-        // Bez tego kolejne uruchomienie dokleja się do już otwartej
-        // przeglądarki jako zwykła karta — czyli dokładnie to, czego
-        // chcemy uniknąć.
-        "--new-window".to_string(),
-    ]
+    ];
+    match profil {
+        Some(katalog) => {
+            a.push(format!("--user-data-dir={}", katalog.display()));
+            // Świeży profil inaczej wita kreatorem powitalnym i pytaniem
+            // o przeglądarkę domyślną, zasłaniając stronę logowania.
+            a.push("--no-first-run".to_string());
+            a.push("--no-default-browser-check".to_string());
+        }
+        // Bez własnego profilu kolejne uruchomienie dokleja się do już otwartej
+        // przeglądarki jako zwykła karta — czyli dokładnie to, czego chcemy
+        // uniknąć.
+        None => a.push("--new-window".to_string()),
+    }
+    a
 }
 
 /// Wyciąga nazwę programu z wiersza `Exec=` pliku `.desktop`.
@@ -161,7 +182,10 @@ fn domyslna_przegladarka() -> Option<String> {
 
 /// Próbuje otworzyć adres w osobnym okienku. Zwraca `false`, gdy się nie udało
 /// i trzeba wrócić do zwykłej karty.
-pub fn otworz_w_okienku(adres: &str) -> bool {
+///
+/// `profil` — patrz [`argumenty_okienka`]. `None` używa przeglądarki gracza
+/// wraz z jej zapamiętanymi hasłami i zalogowaną sesją.
+pub fn otworz_w_okienku(adres: &str, profil: Option<&std::path::Path>) -> bool {
     let mut kolejka: Vec<String> = Vec::new();
     if let Some(domyslna) = domyslna_przegladarka() {
         kolejka.push(domyslna);
@@ -173,7 +197,7 @@ pub fn otworz_w_okienku(adres: &str) -> bool {
             continue;
         }
         let mut polecenie = Command::new(&program);
-        polecenie.args(argumenty_okienka(adres));
+        polecenie.args(argumenty_okienka(adres, profil));
         ukryj_konsole(&mut polecenie);
         // Nie czekamy na zakończenie: okno przeglądarki żyje własnym życiem,
         // a launcher ma w tym czasie odpytywać Microsoft o token.
@@ -182,6 +206,19 @@ pub fn otworz_w_okienku(adres: &str) -> bool {
         }
     }
     false
+}
+
+/// Kasuje katalog profilu, żeby następne okno nikogo nie pamiętało.
+///
+/// Wołane przed „Zaloguj na inne konto". Samo `--incognito` nie wystarcza,
+/// bo bez własnego profilu żądanie i tak trafia do działającej przeglądarki
+/// i przejmuje jej rozmiar okna.
+///
+/// Błąd kasowania jest tu nieszkodliwy: w najgorszym razie okno pokaże konto
+/// z poprzedniego logowania, a gracz kliknie „użyj innego konta" na stronie
+/// Microsoftu. Przerywanie logowania z tego powodu byłoby gorsze.
+pub fn wyczysc_profil(katalog: &std::path::Path) {
+    let _ = std::fs::remove_dir_all(katalog);
 }
 
 /// Na Windowsie uruchomienie procesu potrafi mrugnąć czarnym oknem konsoli.
@@ -204,9 +241,27 @@ mod tests {
     /// strone startowa zamiast logowania.
     #[test]
     fn adres_siedzi_w_app_bez_spacji() {
-        let a = argumenty_okienka("https://www.microsoft.com/link?otc=V3REVW36");
+        let a = argumenty_okienka("https://www.microsoft.com/link?otc=V3REVW36", None);
         assert_eq!(a[0], "--app=https://www.microsoft.com/link?otc=V3REVW36");
         assert!(a.iter().any(|x| x == "--new-window"));
+        assert_eq!(a[1], "--window-size=520,720");
+    }
+
+    /// Wlasny profil to jedyny sposob, w jaki `--window-size` jest w ogole
+    /// respektowany przy juz dzialajacej przegladarce — bez niego zadanie
+    /// trafia do istniejacej instancji, ktora narzuca swoja geometrie.
+    /// Sprawdzone empirycznie: bez profilu okno wychodzilo na cala wysokosc
+    /// ekranu, z profilem ma zadany rozmiar.
+    #[test]
+    fn wlasny_profil_zamiast_nowego_okna() {
+        let a = argumenty_okienka("https://example.test", Some(std::path::Path::new("/tmp/p")));
+        assert!(a.iter().any(|x| x == "--user-data-dir=/tmp/p"), "{a:?}");
+        assert!(a.iter().any(|x| x == "--no-first-run"));
+        assert!(a.iter().any(|x| x == "--no-default-browser-check"));
+        // `--new-window` przy wlasnym profilu jest zbedne i myli: instancja
+        // i tak jest osobna.
+        assert!(!a.iter().any(|x| x == "--new-window"), "{a:?}");
+        // Rozmiar musi zostac — to dla niego caly ten profil.
         assert_eq!(a[1], "--window-size=520,720");
     }
 

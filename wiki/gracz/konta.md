@@ -45,6 +45,21 @@ Krok po kroku:
    kart. Kod jest już w adresie, więc nie trzeba go nigdzie wpisywać.
 4. W tym oknie wybierz konto Microsoft, na którym kupiliście Minecrafta,
    zaloguj się i potwierdź.
+
+!!! wskazówka "Gdy Microsoft wchodzi na złe konto"
+
+    Jeśli w przeglądarce jest już zalogowane jakieś konto Microsoft, strona
+    logowania wejdzie na nie **bez pytania** — nie pokaże listy do wyboru.
+    Na taki wypadek jest drugi przycisk: **Zaloguj na inne konto**.
+
+    Otwiera on okno z czystym, osobnym profilem przeglądarki. Nie ma tam
+    żadnej zapamiętanej sesji, więc Microsoft zawsze zapyta, na które konto
+    się logujesz. Trzeba wtedy wpisać hasło — zapamiętane hasła z Twojej
+    zwykłej przeglądarki tam nie sięgają.
+
+    Przy okazji tylko to okno trzyma się zadanego rozmiaru. Zwykłe przejmuje
+    geometrię po już otwartej przeglądarce i potrafi wyjść na całą wysokość
+    ekranu — to ograniczenie samych przeglądarek, nie launchera.
 5. Wróć do launchera. Pod kodem kręci się kółko i napis „Czekam na
    potwierdzenie…". Gdy Microsoft potwierdzi, launcher sam przejdzie na główny
    ekran, a konto trafi na listę.

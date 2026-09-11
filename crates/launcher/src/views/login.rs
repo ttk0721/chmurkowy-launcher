@@ -60,20 +60,46 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
                                 );
                             });
                         ui.add_space(theme::S2);
-                        if ui
-                            .add(theme::przycisk_zwykly("Otwórz stronę logowania"))
-                            .clicked()
-                        {
+                        // Dwa wejścia zamiast jednego, bo to dwie różne sytuacje.
+                        // Zwykłe logowanie ma iść przez przeglądarkę gracza —
+                        // z jej zapamiętanymi hasłami i zalogowaną sesją.
+                        // „Inne konto" musi zaczynać od zera, bo przy istniejącej
+                        // sesji Microsoft w ogóle nie pyta, kim jesteś, tylko
+                        // wchodzi na konto, które akurat zastał.
+                        let profil = app.data().join("przegladarka");
+                        let otworz = |wlasny_profil: bool, app: &mut App| {
                             app.komunikat = Some(crate::schowek::komunikat(
                                 crate::schowek::kopiuj(&kod_tekst),
                                 "Przepisz kod ręcznie — jest widoczny powyżej.",
                             ));
-                            // Najpierw osobne okienko tylko ze stroną
-                            // Microsoftu. Gdy nie ma czym go otworzyć —
-                            // zwykła karta, bo logowanie musi zadziałać zawsze.
-                            if !chmurka_core::przegladarka::otworz_w_okienku(&adres_kliku) {
+                            if wlasny_profil {
+                                chmurka_core::przegladarka::wyczysc_profil(&profil);
+                            }
+                            let gdzie = wlasny_profil.then_some(profil.as_path());
+                            // Osobne okienko tylko ze stroną Microsoftu. Gdy nie
+                            // ma czym go otworzyć — zwykła karta, bo logowanie
+                            // musi zadziałać zawsze.
+                            if !chmurka_core::przegladarka::otworz_w_okienku(&adres_kliku, gdzie) {
                                 let _ = open::that_detached(&adres_kliku);
                             }
+                        };
+
+                        if ui
+                            .add(theme::przycisk_glowny("Otwórz stronę logowania"))
+                            .clicked()
+                        {
+                            otworz(false, app);
+                        }
+                        ui.add_space(theme::S1);
+                        if ui
+                            .add(theme::przycisk_zwykly("Zaloguj na inne konto"))
+                            .on_hover_text(
+                                "Otwiera czyste okno — Microsoft zapyta, na które konto \
+                                 się logujesz, zamiast wejść na zapamiętane.",
+                            )
+                            .clicked()
+                        {
+                            otworz(true, app);
                         }
                         if let Some(k) = &app.komunikat {
                             ui.add_space(theme::S1);
