@@ -2,3 +2,4 @@ target/
 dist/
 UTRZYMANIE.md
 docs/superpowers/
+.venv-docs/

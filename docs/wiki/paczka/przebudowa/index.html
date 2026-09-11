@@ -1,0 +1,1733 @@
+
+<!doctype html>
+<html lang="pl" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Dokumentacja launchera paczki modów Chmurkowego Serwera">
+      
+      
+      
+        <link rel="canonical" href="https://ttk0721.github.io/chmurkowy-launcher/wiki/paczka/przebudowa/">
+      
+      
+        <link rel="prev" href="../zmiana-modow/">
+      
+      
+        <link rel="next" href="../hostowane/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Przebudowa manifestu - Chmurkowy Launcher</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#przebudowa-manifestu" class="md-skip">
+          Przejdź do treści
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Nagłówek">
+    <a href="../.." title="Chmurkowy Launcher" class="md-header__button md-logo" aria-label="Chmurkowy Launcher" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Chmurkowy Launcher
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Przebudowa manifestu
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Przełącz na jasny"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Przełącz na jasny" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Przełącz na ciemny"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Przełącz na ciemny" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Przełącz na automatyczny"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Przełącz na automatyczny" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Szukaj" placeholder="Szukaj" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Szukaj">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Wyczyść" aria-label="Wyczyść" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicjowanie wyszukiwania
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ttk0721/chmurkowy-launcher" title="Przejdź do repozytorium" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ttk0721/chmurkowy-launcher
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Nawigacja" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Chmurkowy Launcher" class="md-nav__button md-logo" aria-label="Chmurkowy Launcher" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Chmurkowy Launcher
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ttk0721/chmurkowy-launcher" title="Przejdź do repozytorium" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ttk0721/chmurkowy-launcher
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../gracz/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dla gracza
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dla gracza
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/instalacja/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instalacja
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/pierwsze-uruchomienie/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pierwsze uruchomienie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/konta/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Konta
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/ustawienia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ustawienia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/problemy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gdy gra nie startuje
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gracz/kody-bledow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kody błędów
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../budowa/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jak to działa
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jak to działa
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../budowa/architektura/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architektura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../budowa/przebieg-uruchomienia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Od kliknięcia GRAJ do gry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../budowa/manifest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manifest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../budowa/synchronizacja/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synchronizacja paczki
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../budowa/samoaktualizacja/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Samoaktualizacja
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../budowa/dane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gdzie leżą dane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paczka modów
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Paczka modów
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../zmiana-modow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dodanie i usunięcie moda
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Przebudowa manifestu
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Przebudowa manifestu
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Spis treści">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Spis treści
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#polecenia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polecenia
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pack-build-argumenty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pack-build — argumenty
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-robi-pack-build-krok-po-kroku" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co robi pack-build, krok po kroku
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-trafia-do-manifestu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co trafia do manifestu
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wersja-paczki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wersja paczki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wersja-launchera" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wersja launchera
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-nie-trafia-do-paczki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co nie trafia do paczki
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hostowane/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mody hostowane u nas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../projekt/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Praca nad projektem
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Praca nad projektem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projekt/wydanie/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wydanie nowej wersji
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projekt/kontrole/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kontrole i ochrona gałęzi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../projekt/podpisy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Podpisywanie commitów
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Spis treści">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Spis treści
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#polecenia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polecenia
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pack-build-argumenty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pack-build — argumenty
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-robi-pack-build-krok-po-kroku" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co robi pack-build, krok po kroku
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-trafia-do-manifestu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co trafia do manifestu
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wersja-paczki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wersja paczki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wersja-launchera" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wersja launchera
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co-nie-trafia-do-paczki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Co nie trafia do paczki
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/ttk0721/chmurkowy-launcher/edit/main/wiki/paczka/przebudowa.md" title="Edytuj tę stronę" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="przebudowa-manifestu">Przebudowa manifestu<a class="headerlink" href="#przebudowa-manifestu" title="Permanent link">&para;</a></h1>
+<p>Manifest buduje narzędzie wiersza polecenia <code>chmurka</code> z crate'a
+<code>crates/cli</code>. Binarka nazywa się <code>chmurka</code> (<code>[[bin]]</code> w
+<code>crates/cli/Cargo.toml</code>), a w drzewie źródeł uruchamia się ją przez cargo:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>chmurka-cli<span class="w"> </span>--<span class="w"> </span>pack-build<span class="w"> </span>--help
+</code></pre></div>
+<p>Nazwy poleceń pochodzą z wariantów <code>enum Polecenie</code> i clap zapisuje je
+z myślnikiem, więc polecenie nazywa się <code>pack-build</code>, nie <code>pack build</code>.</p>
+<h2 id="polecenia">Polecenia<a class="headerlink" href="#polecenia" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Polecenie</th>
+<th>Do czego służy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pack-build</code></td>
+<td>buduje <code>manifest.json</code> i katalog plików do wypchnięcia na GitHub Pages</td>
+</tr>
+<tr>
+<td><code>install</code></td>
+<td>pobiera manifest i doprowadza wskazany katalog danych do stanu gotowego</td>
+</tr>
+<tr>
+<td><code>run</code></td>
+<td>to co <code>install</code>, a potem uruchamia grę na koncie offline</td>
+</tr>
+<tr>
+<td><code>login</code></td>
+<td>sprawdza logowanie kontem Microsoft i wypisuje nick oraz UUID</td>
+</tr>
+</tbody>
+</table>
+<p><code>install</code> i <code>run</code> służą do sprawdzenia paczki bez uruchamiania launchera.
+<code>run</code> celowo nie czyta ustawień gracza — uruchamia grę tak, jak wyglądałoby
+to bez żadnej konfiguracji, z pamięcią 512–4096 MB podaną wprost w kodzie.</p>
+<h2 id="pack-build-argumenty"><code>pack-build</code> — argumenty<a class="headerlink" href="#pack-build-argumenty" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Wymagany</th>
+<th>Domyślnie</th>
+<th>Znaczenie</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--instance &lt;ŚCIEŻKA&gt;</code></td>
+<td>tak</td>
+<td>—</td>
+<td>katalog <code>minecraft</code> instancji PrismLaunchera</td>
+</tr>
+<tr>
+<td><code>--out &lt;ŚCIEŻKA&gt;</code></td>
+<td>nie</td>
+<td><code>dist</code></td>
+<td>katalog wynikowy: powstaje w nim <code>manifest.json</code> i <code>files/</code></td>
+</tr>
+<tr>
+<td><code>--base-url &lt;ADRES&gt;</code></td>
+<td>tak</td>
+<td>—</td>
+<td>bazowy adres, pod którym będą leżeć nasze pliki</td>
+</tr>
+<tr>
+<td><code>--version &lt;TEKST&gt;</code></td>
+<td>tak</td>
+<td>—</td>
+<td>wersja paczki, trafia do <code>pack.version</code></td>
+</tr>
+<tr>
+<td><code>--launcher-version &lt;TEKST&gt;</code></td>
+<td>nie</td>
+<td><code>0.4.20</code></td>
+<td>wersja ogłaszana graczom jako najnowszy launcher</td>
+</tr>
+</tbody>
+</table>
+<p>Przebudowa, która od razu ląduje tam, skąd czytają gracze:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>chmurka-cli<span class="w"> </span>--<span class="w"> </span>pack-build<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>--instance<span class="w"> </span>/ścieżka/do/instancji/minecraft<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>--out<span class="w"> </span>docs<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>--base-url<span class="w"> </span>https://ttk0721.github.io/chmurkowy-launcher<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span>--version<span class="w"> </span><span class="m">2026</span>.09.10-21<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>--launcher-version<span class="w"> </span><span class="m">0</span>.4.24
+</code></pre></div>
+<p><code>docs/</code> jest korzeniem GitHub Pages — leżą tam <code>manifest.json</code> i pliki paczki,
+a gotowa dokumentacja idzie do podkatalogu <code>docs/wiki/</code> właśnie po to, żeby
+ich nie zadeptać (komentarz na górze <code>mkdocs.yml</code>). Domyślne <code>dist</code> jest
+w <code>.gitignore</code>, więc budowanie bez <code>--out</code> nie zostawia niczego, co dałoby się
+przez przypadek zatwierdzić — i niczego, co zobaczy gracz.</p>
+<div class="admonition uwaga">
+<p class="admonition-title">Uwaga</p>
+<p><code>--base-url</code> musi wskazywać na to samo miejsce, w którym naprawdę wyląduje
+katalog <code>files/</code>. Z tego adresu składane są wpisy dla wszystkich plików
+hostowanych u nas, a walidacja manifestu przepuszcza wyłącznie adresy
+<code>https://</code>. Zły adres nie przerwie budowania — zobaczą go dopiero gracze,
+jako nieudane pobieranie.</p>
+</div>
+<h2 id="co-robi-pack-build-krok-po-kroku">Co robi <code>pack-build</code>, krok po kroku<a class="headerlink" href="#co-robi-pack-build-krok-po-kroku" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Sprawdza, czy istnieje <code>mods/.index</code>. Gdy go nie ma, przerywa:
+   <code>brak … — czy to na pewno instancja PrismLaunchera?</code>.</li>
+<li>Czyta wszystkie pliki <code>*.toml</code> z <code>mods/.index</code> i wyciąga z nich nazwę
+   pliku, adres, hasz i identyfikatory CurseForge.</li>
+<li>Wypisuje pliki <code>*.jar</code> z <code>mods/</code> i sortuje je alfabetycznie, żeby lista
+   modów w manifeście nie zależała od kolejności, w jakiej system zwrócił
+   zawartość katalogu.</li>
+<li>Jeśli któryś jar nie ma metadanych, przerywa budowanie — nie ma skąd
+   go pobrać.</li>
+<li>Dla każdego moda liczy SHA-512 z pliku na dysku. To jedyne źródło prawdy
+   o tym, co gramy; hasz z metadanych bywa SHA-1 (CurseForge) i służy tylko
+   do porównania ze źródłem.</li>
+<li>Porównuje plik z tym, co leży pod adresem źródłowym. Zgodny — do manifestu
+   idzie adres Modrinth albo CurseForge. Niezgodny — plik ląduje w naszym
+   magazynie. Opisuje to <a href="../hostowane/">Mody hostowane u nas</a>.</li>
+<li>Zbiera pliki z <code>config/</code> (rekurencyjnie) i <code>options.txt</code>, kopiuje je
+   do magazynu i wystawia na nasz adres.</li>
+<li>Skleja manifest, sprawdza własny wynik funkcją
+   <code>chmurka_core::manifest::parse</code> i dopiero wtedy zapisuje
+   <code>&lt;out&gt;/manifest.json</code>. Gdy walidacja nie przejdzie, kończy się błędem
+   <code>wygenerowany manifest nie przechodzi walidacji</code> i nie zapisuje nic.</li>
+<li>Wypisuje <code>Zapisano N wpisów do &lt;out&gt;</code>.</li>
+</ol>
+<p>Krok ósmy jest tam dlatego, że manifest jest danymi pobieranymi z sieci i
+launcher odrzuca go w całości, gdy coś się nie zgadza: obca wersja schematu,
+ścieżka wychodząca poza katalog instancji, adres inny niż <code>https://</code> albo wpis
+bez ani jednego adresu. Lepiej, żeby taki plik nie powstał, niż żeby trafił
+na serwer i zatrzymał wszystkich graczy naraz.</p>
+<h2 id="co-trafia-do-manifestu">Co trafia do manifestu<a class="headerlink" href="#co-trafia-do-manifestu" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Co</th>
+<th>Polityka</th>
+<th>Adres</th>
+<th>Znaczenie polityki</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mods/*.jar</code></td>
+<td><code>mirror</code></td>
+<td>źródłowy albo nasz</td>
+<td>plik musi zgadzać się co do hasza, inaczej jest pobierany od nowa</td>
+</tr>
+<tr>
+<td><code>config/**</code></td>
+<td><code>smart</code></td>
+<td>zawsze nasz</td>
+<td>nadpisujemy tylko wtedy, gdy gracz pliku nie ruszał</td>
+</tr>
+<tr>
+<td><code>options.txt</code></td>
+<td><code>seed</code></td>
+<td>zawsze nasz</td>
+<td>wgrywamy raz i nigdy więcej nie dotykamy</td>
+</tr>
+</tbody>
+</table>
+<p>Pliki hostowane u nas lądują w magazynie adresowanym treścią:
+<code>files/&lt;dwa pierwsze znaki hasza&gt;/&lt;pełny hasz&gt;</code>. Ten sam plik w kolejnych
+wersjach paczki zajmuje miejsce tylko raz, bo kopiowanie jest pomijane, gdy
+plik o takiej nazwie już tam leży.</p>
+<p>Reszta manifestu jest wpisana w <code>crates/cli/src/main.rs</code> na sztywno i nie da
+się jej zmienić argumentem: nazwa paczki, edycja, wersja Minecrafta i
+NeoForge, Java 21 Temurin, pamięć 512–4096 MB, identyfikator aplikacji
+Microsoft, <code>mirror_dirs</code> oraz lista narzędzi zewnętrznych (<code>yt-dlp</code>
+i <code>ffmpeg</code> dla moda Create: Harmonics, pobierane z ich własnych adresów).</p>
+<h2 id="wersja-paczki">Wersja paczki<a class="headerlink" href="#wersja-paczki" title="Permanent link">&para;</a></h2>
+<p><code>--version</code> trafia do manifestu wprost, jako <code>pack.version</code>. Kod nie sprawdza
+kształtu tego tekstu — dzisiejszy <code>2026.09.10-21</code> to umowa „data i numer
+w ciągu dnia", nie wymóg.</p>
+<div class="admonition uwaga">
+<p class="admonition-title">Uwaga</p>
+<p>Podbicie wersji paczki samo w sobie niczego u graczy nie uruchamia.
+Launcher porównuje pliki wpis po wpisie, po SHA-512, i nie patrzy na
+<code>pack.version</code> — w oknie launchera widać nazwę paczki i edycję, a samą
+wersję wypisuje tylko <code>chmurka install</code> i <code>chmurka run</code>, w linii
+<code>Paczka Chmurkowy Serwer wersja …</code>. Numer służy więc do rozmowy
+i do zgłoszeń, a nie do sterowania aktualizacją.</p>
+</div>
+<h2 id="wersja-launchera">Wersja launchera<a class="headerlink" href="#wersja-launchera" title="Permanent link">&para;</a></h2>
+<p><code>--launcher-version</code> trafia w dwa miejsca naraz: do <code>launcher.latest_version</code>
+i do dwóch adresów plików wydania, składanych jako</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>https://github.com/ttk0721/chmurkowy-launcher/releases/download/v&lt;wersja&gt;/ChmurkowyLauncher-linux-x64
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>https://github.com/ttk0721/chmurkowy-launcher/releases/download/v&lt;wersja&gt;/ChmurkowyLauncher-windows-x64.exe
+</code></pre></div>
+<p>Adresy celowo wskazują konkretne wydanie, a nie <code>latest</code>. Launcher podmienia
+się sam, więc musi dostać dokładnie tę wersję, którą manifest ogłasza. Przy
+<code>latest</code> klient sięgający po plik, zanim budowanie wydania się skończy,
+pobrałby po cichu poprzednią binarkę i uznał, że aktualizacja nie wskoczyła.
+Pilnuje tego test <code>adres_wskazuje_konkretne_wydanie</code>.</p>
+<div class="admonition uwaga">
+<p class="admonition-title">Uwaga</p>
+<p>Domyślna wartość <code>--launcher-version</code> to <code>0.4.20</code> i nie podąża za wersją
+crate'a — <code>crates/launcher/Cargo.toml</code> jest dziś na <code>0.4.24</code>. Budowanie
+bez tego argumentu ogłasza więc starą wersję. Launcher gracza porównuje
+numery liczbowo, człon po członie, więc ktoś z <code>0.4.24</code> nie zrobi nic,
+ale ktoś z <code>0.4.18</code> zostanie ściągnięty do <code>0.4.20</code> zamiast do najnowszej.
+Podawaj tę wartość zawsze i sprawdź, czy zgadza się z <code>Cargo.toml</code>.</p>
+</div>
+<p>Wersję wolno ogłosić dopiero wtedy, gdy wydanie o tagu <code>v&lt;wersja&gt;</code> ma już
+wgrane pliki. Ogłoszona wcześniej kończy się nieudanym pobraniem u graczy;
+launcher zapamiętuje nieudaną próbę w pliku <code>aktualizacja.txt</code> w katalogu
+danych, żeby nie podmieniać się w kółko zamiast wpuścić gracza do gry.
+Szczegóły: <a href="../../budowa/samoaktualizacja/">Samoaktualizacja</a> i
+<a href="../../projekt/wydanie/">Wydanie nowej wersji</a>.</p>
+<h2 id="co-nie-trafia-do-paczki">Co nie trafia do paczki<a class="headerlink" href="#co-nie-trafia-do-paczki" title="Permanent link">&para;</a></h2>
+<p>Ograniczenie dla modów jest jedno: do manifestu wchodzą wyłącznie pliki
+o nazwie kończącej się na <code>.jar</code>. Wyłączony mod (<code>*.jar.disabled</code>) i kopia
+(<code>*.jar.bak</code>) wypadają z paczki bez słowa.</p>
+<p>Filtry z funkcji <code>smiec_roboczy</code>, <code>katalog_smieci</code> i <code>katalog_na_swiat</code>
+dotyczą wyłącznie zawartości <code>config/</code>. Wszystkie powstały po tym, jak
+wymienione pliki naprawdę pojechały do testerów — i mają testy, które
+pilnują, żeby pojechać nie mogły ponownie.</p>
+<table>
+<thead>
+<tr>
+<th>Odpada</th>
+<th>Co to jest</th>
+<th>Dlaczego</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nazwa zaczyna się od kropki</td>
+<td>pliki ukryte</td>
+<td>to nie jest konfiguracja paczki</td>
+</tr>
+<tr>
+<td><code>*.bak</code>, <code>*.part</code>, <code>*~</code></td>
+<td>pliki robocze</td>
+<td>powstały u utrzymującego i nie mają czego szukać u graczy</td>
+</tr>
+<tr>
+<td>nazwa zawiera <code>.toml_backup</code></td>
+<td>kopie configów zostawiane przez NeoForge</td>
+<td>zajmowały miejsce w manifeście, a dwie kopie o wspólnym trzonie nazwy wywracały pobieranie u testerów</td>
+</tr>
+<tr>
+<td>nazwa zawiera <code>.json_backup</code></td>
+<td>to samo dla plików JSON</td>
+<td>jak wyżej</td>
+</tr>
+<tr>
+<td><code>*.log</code></td>
+<td>dziennik moda z komputera utrzymującego</td>
+<td>graczom niepotrzebny, a rośnie z każdą rozgrywką</td>
+</tr>
+<tr>
+<td><code>sodium-fingerprint.json</code></td>
+<td>odcisk karty graficznej tego komputera</td>
+<td>u każdego gracza jest inny i tak zostanie nadpisany przy pierwszym uruchomieniu, a po drodze mówi wszystkim, jaką kartę ma utrzymujący paczkę</td>
+</tr>
+<tr>
+<td><code>early_window_reference.properties</code></td>
+<td>rozmiar i położenie okna wczesnego ładowania</td>
+<td>sprawa jednego ekranu, nie paczki</td>
+</tr>
+<tr>
+<td>katalog <code>log</code> albo <code>logs</code>, dowolną wielkością liter</td>
+<td>katalog, który mod zakłada na własne potrzeby</td>
+<td>u gracza powstanie sam, a u nas zbiera zapiski z rozgrywek</td>
+</tr>
+<tr>
+<td>podkatalogi <code>config/inventoryprofilesnext/</code> poza <code>integrationHints</code></td>
+<td>zakładki handlu z wieśniakami, trzymane osobno dla każdego świata</td>
+<td>katalogi nazywają się jak światy gracza; u utrzymującego siedzą tam światy testowe („Test 2", „Test3", „Świat do testów chmurki") i jechały do wszystkich graczy razem ze swoimi nazwami</td>
+</tr>
+</tbody>
+</table>
+<p>Ostatnia reguła dotyczy tylko tego jednego moda: <code>integrationHints</code> to jego
+jedyny podkatalog wspólny dla wszystkich, a inne mody mają swoje podkatalogi
+spisywane normalnie. Pilnują tego testy <code>regula_nie_wykracza_poza_ten_mod</code>
+i <code>wspolne_ustawienia_tego_moda_zostaja</code>.</p>
+<div class="admonition wskazówka">
+<p class="admonition-title">Wskazówka</p>
+<p>Gdy któryś mod zacznie zostawiać w <code>config/</code> kolejny plik roboczy, dopisz
+warunek do <code>smiec_roboczy</code> w <code>crates/cli/src/main.rs</code> razem z testem
+i komentarzem mówiącym, co to za plik. Sam warunek po pół roku nikomu
+nic nie powie, a od tego zależy, czy następna osoba go nie skasuje.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Powrót do góry
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "content.code.copy", "content.action.edit", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Skopiowano do schowka", "clipboard.copy": "Kopiuj do schowka", "search.result.more.one": "1 wi\u0119cej na tej stronie", "search.result.more.other": "# wi\u0119cej na tej stronie", "search.result.none": "Brak wynik\u00f3w wyszukiwania", "search.result.one": "Wyniki wyszukiwania: 1", "search.result.other": "Wyniki wyszukiwania: #", "search.result.placeholder": "Zacznij pisa\u0107, aby szuka\u0107", "search.result.term.missing": "Brak", "select.version": "Wybierz wersj\u0119"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

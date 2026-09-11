@@ -1,0 +1,23 @@
+# Narzedzia budujace serwis z dokumentacja (katalog wiki/ -> docs/wiki/).
+#
+# Wersje sa PRZYPIETE co do numeru, i to nie z ostroznosci, tylko z koniecznosci.
+# Kontrola w CI buduje dokumentacje od nowa i porownuje wynik z tym, co lezy
+# w repozytorium — przy innej wersji generatora HTML wyszedlby inny, kontrola
+# zglosilaby roznice i zablokowala pull requesta, ktory niczego nie zepsul.
+#
+# Instalacja lokalnie (Python bywa zablokowany przez PEP 668, wiec do srodowiska
+# wirtualnego, a nie do systemu):
+#
+#   python3 -m venv .venv-docs
+#   ./.venv-docs/bin/pip install -r wiki-requirements.txt
+#
+# Budowanie:  ./.venv-docs/bin/mkdocs build
+# Podglad:    ./.venv-docs/bin/mkdocs serve
+
+mkdocs==1.6.1
+mkdocs-material==9.7.7
+mkdocs-material-extensions==1.3.1
+Markdown==3.10.3
+pymdown-extensions==11.0.2
+Pygments==2.21.0
+Jinja2==3.1.6

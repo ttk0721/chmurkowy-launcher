@@ -1,0 +1,117 @@
+# Serwis z dokumentacją Chmurkowego Launchera.
+#
+# Uwaga na dwa katalogi, bo nazwy myla:
+#
+#   wiki/       — ZRODLA, zwykle pliki .md. To sie edytuje.
+#   docs/wiki/  — WYNIK budowania, gotowy HTML. Tego sie nie edytuje recznie.
+#
+# `docs/` nie jest tu katalogiem dokumentacji, tylko korzeniem GitHub Pages:
+# obok gotowej dokumentacji leza tam `manifest.json` i 70 MB plikow paczki,
+# z ktorych korzysta kazdy uruchomiony launcher. Dlatego wynik budowania idzie
+# do PODKATALOGU `docs/wiki/`, a nie do `docs/` — inaczej zadeptalby manifest
+# i popsul aktualizacje wszystkim graczom naraz.
+#
+# Budowanie:  ./.venv-docs/bin/mkdocs build
+# Podglad:    ./.venv-docs/bin/mkdocs serve
+
+site_name: Chmurkowy Launcher
+site_description: Dokumentacja launchera paczki modów Chmurkowego Serwera
+site_url: https://ttk0721.github.io/chmurkowy-launcher/wiki/
+repo_url: https://github.com/ttk0721/chmurkowy-launcher
+repo_name: ttk0721/chmurkowy-launcher
+edit_uri: edit/main/wiki/
+
+docs_dir: wiki
+site_dir: docs/wiki
+
+theme:
+  name: material
+  language: pl
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  palette:
+    # Motyw idzie za ustawieniem systemu, tak samo jak sam launcher.
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Przełącz na jasny
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Przełącz na ciemny
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Przełącz na automatyczny
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  # Bez `lang: pl` — wyszukiwarka Material nie ma polskiego rdzeniowania
+  # i przy tym ustawieniu i tak cofa sie do angielskiego, meldujac to przy
+  # kazdym budowaniu. Szukanie po calych slowach dziala.
+  - search
+
+# Ostrzezenia traktujemy jak bledy: martwy odsylacz w dokumentacji, ktora ma
+# sluzyc komus przejmujacemu projekt, jest gorszy od jego braku.
+strict: true
+
+nav:
+  - Start: index.md
+  - Dla gracza:
+      - gracz/index.md
+      - Instalacja: gracz/instalacja.md
+      - Pierwsze uruchomienie: gracz/pierwsze-uruchomienie.md
+      - Konta: gracz/konta.md
+      - Ustawienia: gracz/ustawienia.md
+      - Gdy gra nie startuje: gracz/problemy.md
+      - Kody błędów: gracz/kody-bledow.md
+  - Jak to działa:
+      - budowa/index.md
+      - Architektura: budowa/architektura.md
+      - Od kliknięcia GRAJ do gry: budowa/przebieg-uruchomienia.md
+      - Manifest: budowa/manifest.md
+      - Synchronizacja paczki: budowa/synchronizacja.md
+      - Samoaktualizacja: budowa/samoaktualizacja.md
+      - Gdzie leżą dane: budowa/dane.md
+  - Paczka modów:
+      - paczka/index.md
+      - Dodanie i usunięcie moda: paczka/zmiana-modow.md
+      - Przebudowa manifestu: paczka/przebudowa.md
+      - Mody hostowane u nas: paczka/hostowane.md
+  - Praca nad projektem:
+      - projekt/index.md
+      - Wydanie nowej wersji: projekt/wydanie.md
+      - Kontrole i ochrona gałęzi: projekt/kontrole.md
+      - Podpisywanie commitów: projekt/podpisy.md
