@@ -29,7 +29,10 @@ pub enum BladAktualizacji {
 pub enum Decyzja {
     /// Nie ma czego pobierać.
     Aktualna,
-    Nowsza { wersja: String, url: String },
+    Nowsza {
+        wersja: String,
+        url: String,
+    },
     /// Manifest nie podaje pliku dla tego systemu — nie ma jak się zaktualizować.
     BrakAdresu,
     /// Ta wersja już raz nie wskoczyła. Druga próba skończyłaby się tak samo,
@@ -87,6 +90,52 @@ pub fn warto_sprawdzic(od_ostatniego: Option<std::time::Duration>) -> bool {
         None => true,
         Some(ile) => ile >= ODSTEP_SPRAWDZANIA,
     }
+}
+
+/// Jak często launcher sam z siebie sprawdza, czy wyszła nowsza wersja.
+///
+/// Dotąd sprawdzał tylko przy starcie. Kto zostawia launcher otwarty na całe
+/// popołudnie, dowiadywał się o poprawce dopiero następnego dnia — a poprawki
+/// wychodzą tu zwykle po to, żeby coś przestało być zepsute.
+///
+/// Dziesięć minut to kilka kilobajtów manifestu na godzinę. Krócej nie ma po
+/// co, bo wydanie i tak buduje się dłużej.
+pub const ODSTEP_PILNOWANIA: std::time::Duration = std::time::Duration::from_secs(10 * 60);
+
+/// Ile jeszcze zostało do kolejnego samodzielnego sprawdzenia.
+///
+/// `None` znaczy „już czas". Wartość służy też do zamówienia przebudzenia
+/// okna: bez tego bezczynny launcher przestaje się przerysowywać i nie ma
+/// kto zauważyć, że dziesięć minut minęło.
+pub fn do_nastepnego_pilnowania(
+    od_ostatniego: Option<std::time::Duration>,
+) -> Option<std::time::Duration> {
+    match od_ostatniego {
+        None => None,
+        Some(ile) => ODSTEP_PILNOWANIA.checked_sub(ile).filter(|z| !z.is_zero()),
+    }
+}
+
+/// Czy zaproponować graczowi aktualizację po samodzielnym sprawdzeniu.
+///
+/// Osobno od [`zdecyduj`], bo to jest inne pytanie. `zdecyduj` odpowiada
+/// „czy launcher ma się teraz podmienić", więc pilnuje też znacznika
+/// nieudanych prób. Tu chodzi o to, czy jest o czym **mówić** — a o wersji,
+/// która raz nie wskoczyła, warto powiedzieć: gracz może spróbować ręcznie
+/// i zobaczyć, co się dzieje.
+///
+/// - `jest_plik` — czy manifest podaje plik dla tego systemu. Okienko
+///   z przyciskiem, który nic nie zrobi, jest gorsze niż cisza.
+/// - `odlozona` — wersja, którą gracz odłożył przyciskiem „Nie teraz".
+///   Obowiązuje do końca sesji, ale tylko dla tego numeru: kolejna, nowsza
+///   wersja to inne pytanie i wolno je zadać.
+pub fn warto_zaproponowac(
+    biezaca: &str,
+    najnowsza: &str,
+    jest_plik: bool,
+    odlozona: Option<&str>,
+) -> bool {
+    jest_plik && nowsza(biezaca, najnowsza) && odlozona != Some(najnowsza)
 }
 
 fn plik_znacznika(data: &Path) -> PathBuf {
@@ -312,6 +361,68 @@ mod tests {
         assert!(!warto_sprawdzic(Some(std::time::Duration::from_secs(0))));
         assert!(!warto_sprawdzic(Some(std::time::Duration::from_secs(5))));
         assert!(!warto_sprawdzic(Some(std::time::Duration::from_secs(29))));
+    }
+
+    /// Bez sprawdzenia „jeszcze nie pora" launcher pytalby serwer o manifest
+    /// przy kazdej klatce — czyli kilkadziesiat razy na sekunde.
+    #[test]
+    fn proponujemy_tylko_nowsza_wersje() {
+        assert!(warto_zaproponowac("0.4.22", "0.4.23", true, None));
+        assert!(
+            !warto_zaproponowac("0.4.22", "0.4.22", true, None),
+            "ta sama wersja to nie jest zadna nowina"
+        );
+        assert!(
+            !warto_zaproponowac("0.4.22", "0.4.14", true, None),
+            "manifest ogloszony chwilowo wstecz nie moze proponowac cofniecia"
+        );
+    }
+
+    /// Okienko z przyciskiem, ktory nic nie zrobi, jest gorsze niz cisza.
+    #[test]
+    fn bez_pliku_dla_tego_systemu_nie_proponujemy() {
+        assert!(!warto_zaproponowac("0.4.22", "0.4.23", false, None));
+    }
+
+    /// „Nie teraz" obowiazuje do konca sesji — ale tylko dla tej wersji.
+    #[test]
+    fn odlozona_wersja_nie_wraca_a_kolejna_owszem() {
+        assert!(!warto_zaproponowac(
+            "0.4.22",
+            "0.4.23",
+            true,
+            Some("0.4.23")
+        ));
+        assert!(
+            warto_zaproponowac("0.4.22", "0.4.24", true, Some("0.4.23")),
+            "nowsza wersja to inne pytanie i wolno je zadac"
+        );
+    }
+
+    #[test]
+    fn pilnowanie_czeka_swoje_dziesiec_minut() {
+        use std::time::Duration;
+
+        // Nigdy nie sprawdzano — czas najwyzszy.
+        assert_eq!(do_nastepnego_pilnowania(None), None);
+
+        // Zaraz po sprawdzeniu zostaje caly odstep.
+        assert_eq!(
+            do_nastepnego_pilnowania(Some(Duration::ZERO)),
+            Some(ODSTEP_PILNOWANIA)
+        );
+        assert_eq!(
+            do_nastepnego_pilnowania(Some(Duration::from_secs(60))),
+            Some(Duration::from_secs(9 * 60))
+        );
+
+        // Dokladnie na granicy i po niej — czas sprawdzic.
+        assert_eq!(do_nastepnego_pilnowania(Some(ODSTEP_PILNOWANIA)), None);
+        assert_eq!(
+            do_nastepnego_pilnowania(Some(Duration::from_secs(3600))),
+            None,
+            "po godzinie gry tez ma sprawdzic, a nie policzyc ujemny czas"
+        );
     }
 
     #[test]

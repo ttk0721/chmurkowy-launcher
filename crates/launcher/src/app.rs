@@ -82,6 +82,22 @@ pub struct App {
     /// Kiedy ostatnio udało się pobrać manifest. Przycisk „Sprawdź ponownie"
     /// odpowiada z pamięci, dopóki ten czas jest świeży.
     pub ostatnie_sprawdzenie: Option<std::time::Instant>,
+    /// Kiedy launcher ostatni raz sam z siebie zajrzał po manifest.
+    ///
+    /// Liczone od PRÓBY, a nie od powodzenia. Gdyby liczyć od powodzenia,
+    /// komputer bez sieci pytałby przy każdej klatce — czyli kilkadziesiąt
+    /// razy na sekundę.
+    ostatnie_pilnowanie: Option<std::time::Instant>,
+    /// Czy manifest, na który czekamy, zamówiło pilnowanie.
+    ///
+    /// Od tego zależy, co się stanie po jego odebraniu: przy starcie launcher
+    /// podmienia się sam, a w trakcie pracy pyta, bo ktoś może być w połowie
+    /// logowania albo wpisywania nicku.
+    pilnowanie_w_toku: bool,
+    /// Wersja zaproponowana graczowi w okienku.
+    pub proponowana_wersja: Option<String>,
+    /// Wersja odłożona przyciskiem „Nie teraz". Do końca tej sesji cisza.
+    pub odlozona_wersja: Option<String>,
     pub ustawienia: Ustawienia,
     /// Stan paczek czytany z plików gry przy każdym wejściu na ekran —
     /// gracz mógł je pozmieniać w samej grze.
@@ -196,6 +212,13 @@ impl App {
             wynik_javy: None,
             kandydaci_javy: None,
             ostatnie_sprawdzenie: None,
+            // Manifest i tak pobiera się przy starcie, więc odliczanie rusza
+            // od teraz — inaczej pierwsza klatka zamówiłaby drugie, zbędne
+            // zapytanie o ten sam plik.
+            ostatnie_pilnowanie: Some(std::time::Instant::now()),
+            pilnowanie_w_toku: false,
+            proponowana_wersja: None,
+            odlozona_wersja: None,
             ustawienia,
             zasoby: StanZasobow::default(),
             shadery: StanShaderow::default(),
@@ -214,6 +237,13 @@ impl App {
             _zasobnik: zasobnik,
             runtime: Some(runtime),
         };
+        // Furtka do pracy nad wyglądem: CHMURKA_PROPOZYCJA=0.9.9 pokazuje
+        // okienko z propozycją aktualizacji. Inaczej dałoby się je obejrzeć
+        // tylko czekając dziesięć minut na prawdziwe wydanie.
+        if let Ok(w) = std::env::var("CHMURKA_PROPOZYCJA") {
+            app.proponowana_wersja = Some(w);
+        }
+
         // Furtka do pracy nad wyglądem: CHMURKA_ZAKLADKA=gra|java|zaawansowane.
         // Idzie tą samą drogą co kliknięcie w pasek zakładek, więc przy świeżych
         // ustawieniach pokaże też okno ostrzeżenia — inaczej nie dałoby się go
@@ -338,6 +368,13 @@ impl App {
     /// nie może kończyć się ekranem błędu, skoro wystarczy poczekać sekundę.
     /// Dopiero gdy wszystkie padną, gracz cokolwiek widzi.
     pub fn wczytaj_manifest(&mut self) {
+        // Sprawdzenie na życzenie — przy starcie albo z przycisku. Po nim
+        // launcher zachowuje się jak dotąd, czyli podmienia się sam.
+        self.pilnowanie_w_toku = false;
+        self.pobierz_manifest_w_tle();
+    }
+
+    fn pobierz_manifest_w_tle(&mut self) {
         let n = self.nadawca.clone();
         let adres = env!("CHMURKA_MANIFEST_URL").to_string();
         self.w_tle(async move {
@@ -359,6 +396,74 @@ impl App {
                 let _ = n.send(Wiadomosc::BladZKodem(Box::new(e.dla_uzytkownika())));
             }
         });
+    }
+
+    /// Sprawdza raz na jakiś czas, czy nie wyszła nowsza wersja launchera.
+    ///
+    /// Dotąd launcher patrzył na to tylko przy starcie. Kto zostawia go
+    /// otwartym na całe popołudnie, dowiadywał się o poprawce następnego dnia.
+    ///
+    /// W trakcie gry nie zaczepiamy ani serwera, ani gracza: launcher siedzi
+    /// wtedy schowany w zasobniku, więc okienko nie miałoby się gdzie pokazać,
+    /// a podmiana pliku spod działającej gry to ostatnia rzecz, jakiej trzeba.
+    /// Po jej zakończeniu odstęp jest już dawno przekroczony i sprawdzenie
+    /// dzieje się samo.
+    fn przypilnuj_aktualizacji(&mut self, ctx: &egui::Context) {
+        if self.gra_dziala || self.zajety {
+            return;
+        }
+        let minelo = self.ostatnie_pilnowanie.map(|t| t.elapsed());
+        match chmurka_core::aktualizacja::do_nastepnego_pilnowania(minelo) {
+            None => {
+                self.ostatnie_pilnowanie = Some(std::time::Instant::now());
+                self.pilnowanie_w_toku = true;
+                self.pobierz_manifest_w_tle();
+            }
+            // Bezczynne okno przestaje się przerysowywać, więc bez zamówionego
+            // przebudzenia nie byłoby komu zauważyć, że dziesięć minut minęło.
+            Some(za) => ctx.request_repaint_after(za),
+        }
+    }
+
+    /// Czy jest o czym mówić graczowi po samodzielnym sprawdzeniu.
+    fn rozwaz_propozycje(&mut self) {
+        use chmurka_core::aktualizacja;
+
+        let Some(m) = &self.manifest else { return };
+        let najnowsza = m.launcher.latest_version.clone();
+        let jest_plik = m.launcher.urls.contains_key(aktualizacja::klucz_systemu());
+
+        if aktualizacja::warto_zaproponowac(
+            env!("CARGO_PKG_VERSION"),
+            &najnowsza,
+            jest_plik,
+            self.odlozona_wersja.as_deref(),
+        ) {
+            self.proponowana_wersja = Some(najnowsza);
+        }
+    }
+
+    /// Gracz zgodził się na aktualizację zaproponowaną w okienku.
+    pub fn przyjmij_propozycje(&mut self) {
+        self.proponowana_wersja = None;
+        self.zaktualizuj_recznie();
+    }
+
+    /// Gracz kliknął „Nie teraz" albo zamknął okienko krzyżykiem.
+    pub fn odloz_propozycje(&mut self) {
+        self.odlozona_wersja = self.proponowana_wersja.take();
+    }
+
+    /// Czy okienko z propozycją ma się teraz pokazać.
+    ///
+    /// Nie w trakcie gry, nie w trakcie roboty i nie na ekranach, na których
+    /// i tak dzieje się coś ważniejszego — na ekranie błędu gracz czyta, co
+    /// się stało, a na ekranie aktualizacji jest już w trakcie aktualizowania.
+    pub fn pora_na_propozycje(&self) -> bool {
+        self.proponowana_wersja.is_some()
+            && !self.gra_dziala
+            && !self.zajety
+            && !matches!(self.widok, Widok::Aktualizacja | Widok::Blad)
     }
 
     /// Zbija przydział pamięci, jeśli zapisane ustawienie nie mieści się
@@ -721,7 +826,13 @@ impl App {
                 Wiadomosc::Manifest(m) => {
                     self.manifest = Some(*m);
                     self.ostatnie_sprawdzenie = Some(std::time::Instant::now());
-                    self.zaktualizuj_sie();
+                    if std::mem::take(&mut self.pilnowanie_w_toku) {
+                        // Launcher już chodzi i ktoś może być w połowie czegoś.
+                        // Pytamy, zamiast podmieniać się pod rękami.
+                        self.rozwaz_propozycje();
+                    } else {
+                        self.zaktualizuj_sie();
+                    }
                 }
                 Wiadomosc::Postep(p) => {
                     if p.stage == Stage::Ready {
@@ -894,6 +1005,8 @@ impl eframe::App for App {
             ctx.request_repaint_after(std::time::Duration::from_millis(120));
         }
 
+        self.przypilnuj_aktualizacji(ctx);
+
         match self.widok {
             Widok::Glowny => crate::views::main::rysuj(self, ctx),
             Widok::Logowanie => crate::views::login::rysuj(self, ctx),
@@ -903,6 +1016,12 @@ impl eframe::App for App {
             Widok::Blad => crate::views::error::rysuj(self, ctx),
             Widok::Konsola => crate::views::console::rysuj(self, ctx),
             Widok::Aktualizacja => crate::views::update::rysuj(self, ctx),
+        }
+
+        // Na wierzchu, po narysowaniu ekranu — inaczej okienko schowałoby się
+        // pod panelami widoku.
+        if self.pora_na_propozycje() {
+            crate::views::update::okno_propozycji(self, ctx);
         }
     }
 }
@@ -1265,6 +1384,15 @@ fn zrob_zrzut(app: &mut App, ctx: &egui::Context) {
     };
     app.klatki += 1;
     ctx.request_repaint();
+
+    // Okienka rozjaśniają się płynnie przez ułamek sekundy i zrzut z tego
+    // czasu pokazuje je półprzezroczyste. Nie da się na to poczekać —
+    // przysłonięte okno przestaje dostawać przerysowania, więc nie ma komu
+    // odliczyć upływu czasu. Wyłączamy więc animacje i pierwszy narysowany
+    // stan jest od razu docelowym.
+    if app.klatki == 1 {
+        ctx.style_mut(|s| s.animation_time = 0.0);
+    }
 
     // Kilka klatek na ustabilizowanie układu: pierwsza jest rysowana, zanim
     // panele poznają swoje rozmiary, więc zrzut z niej pokazuje coś innego
