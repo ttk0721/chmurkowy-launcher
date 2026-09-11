@@ -6390,10 +6390,10 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.4.30",
+    "latest_version": "0.4.31",
     "urls": {
-      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.30/ChmurkowyLauncher-linux-x64",
-      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.30/ChmurkowyLauncher-windows-x64.exe"
+      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.31/ChmurkowyLauncher-linux-x64",
+      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.31/ChmurkowyLauncher-windows-x64.exe"
     }
   },
   "memory": {
