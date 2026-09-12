@@ -211,6 +211,33 @@
       ]
     },
     {
+      "path": "mods/ExtraLib-3.1.1-1.21.1-NeoForge.jar",
+      "policy": "mirror",
+      "sha512": "ec58b80f9271b1d1a51e11801dcbadb3f9127c9e7475a11b7d76083945b3cde85ad57f496596cce24ca4d80af8d01bd5ccc3f3b8219cd3744a3baa308cbd13e4",
+      "size": 7989128,
+      "urls": [
+        "https://cdn.modrinth.com/data/2GNqVOLH/versions/eei9Kl0h/ExtraLib-3.1.1-1.21.1-NeoForge.jar"
+      ]
+    },
+    {
+      "path": "mods/ExtraQuests-1.7.0-1.21.1-NeoForge.jar",
+      "policy": "mirror",
+      "sha512": "94103946cf8d81889434cc2274f26c19321cb6677cb6b60020b98a29a0d93bf9fdba00e2852a765d1b4034db4fdfcdbcc80acb87776b3e7c13e9663dbea97cd8",
+      "size": 37332,
+      "urls": [
+        "https://cdn.modrinth.com/data/rMvP0ujv/versions/mz2cvsx6/ExtraQuests-1.7.0-1.21.1-NeoForge.jar"
+      ]
+    },
+    {
+      "path": "mods/FTBQuestsOptimizer-neoforge-3.2.0-1.21.1.jar",
+      "policy": "mirror",
+      "sha512": "06f26506641451d733bbe6ae3db3abe026b6483738fcff67e39d762740ceeb1feafc11c45720246bcf8a5cd91a3cbba1bf50110bf1e89e1f3fcc10202ed29891",
+      "size": 18059,
+      "urls": [
+        "https://cdn.modrinth.com/data/oPwMsrcf/versions/T0bGa7Hg/FTBQuestsOptimizer-neoforge-3.2.0-1.21.1.jar"
+      ]
+    },
+    {
       "path": "mods/FarmersDelight-1.21.1-1.3.4.jar",
       "policy": "mirror",
       "sha512": "1f6f8796469f747cff36f477b4f589a3d69613882399f9ee7f86db36c7bca9aa4828731f43db15dc6c7f5a4c1bbe3d4092a232e8cef010b09cec0581848fda90",
@@ -307,6 +334,15 @@
       "size": 26968,
       "urls": [
         "https://cdn.modrinth.com/data/2ecVyZ49/versions/kL32PN9Q/Ksyxis-1.4.3.jar"
+      ]
+    },
+    {
+      "path": "mods/LuckPerms-NeoForge-5.4.140.jar",
+      "policy": "mirror",
+      "sha512": "50d94c5a9d2635a445a2bd4f2f16c22172678b93315e3d91fa0829349ccd2b02944354af7baa3e6ae0c7bfe19f497b09af461f84aacc93900b59b75a07cd0290",
+      "size": 1434674,
+      "urls": [
+        "https://mediafilez.forgecdn.net/files/5654/231/LuckPerms-NeoForge-5.4.140.jar"
       ]
     },
     {
@@ -1480,6 +1516,60 @@
       ]
     },
     {
+      "path": "mods/ftb-chunks-neoforge-2101.1.22.jar",
+      "policy": "mirror",
+      "sha512": "6589c6f9efb86b0f50963143a9c3c5647aeded698825189494455013441bae7973c1b83f95fce35d3f0b5239a8afd153c8b55ce4a3a6b21fd5d44ae47cecb2d8",
+      "size": 655807,
+      "urls": [
+        "https://mediafilez.forgecdn.net/files/8791/113/ftb-chunks-neoforge-2101.1.22.jar"
+      ]
+    },
+    {
+      "path": "mods/ftb-essentials-neoforge-2101.1.10.jar",
+      "policy": "mirror",
+      "sha512": "430dfff9d26840d3b08c07dc819deab5c93f3619b83d03b98d448213b4fc9ea87b44680522d55b954fbe5e29d5d05306e6fc0be77bfcdbbef96c4322115ad3dd",
+      "size": 217288,
+      "urls": [
+        "https://mediafilez.forgecdn.net/files/8442/866/ftb-essentials-neoforge-2101.1.10.jar"
+      ]
+    },
+    {
+      "path": "mods/ftb-library-neoforge-2101.1.36.jar",
+      "policy": "mirror",
+      "sha512": "69b0644bd88714d8c4ad82dd5ac7a06ab850b211c4e8ee8dc779205ba3f214f83d7e4899d00f44af1ab66b263904cb5abb5073350e9783e7ed11faa1652a1944",
+      "size": 1439427,
+      "urls": [
+        "https://mediafilez.forgecdn.net/files/8858/846/ftb-library-neoforge-2101.1.36.jar"
+      ]
+    },
+    {
+      "path": "mods/ftb-quests-neoforge-2101.1.35.jar",
+      "policy": "mirror",
+      "sha512": "f4e81de66ff91887d3955356a2b0489a6acf9577a3f1779cdf3cac5f0a95b1ec2f1015b00bb245b53b047de974a8a285e5590eb1ed7ac6f72c6c1197e98986b9",
+      "size": 1609276,
+      "urls": [
+        "https://mediafilez.forgecdn.net/files/8842/729/ftb-quests-neoforge-2101.1.35.jar"
+      ]
+    },
+    {
+      "path": "mods/ftb-teams-neoforge-2101.1.11.jar",
+      "policy": "mirror",
+      "sha512": "21c9350c6c7ec54ee54b74f2bdc0a44f91005bedda3caf27d673b2f2bcad1dbef5aec970201ec8e959db2a1743ceb2e24ae99a9e36744dce740a0ab1dad01c52",
+      "size": 308236,
+      "urls": [
+        "https://mediafilez.forgecdn.net/files/8724/782/ftb-teams-neoforge-2101.1.11.jar"
+      ]
+    },
+    {
+      "path": "mods/ftbchecker-neoforge-1.21.1-1.3.0.jar",
+      "policy": "mirror",
+      "sha512": "93010b3d8e8d666a2dafe4ec1063f4fff06790136b2ffa4104e5fd40e922718c9ddb885609212383ab94dce4574c1a93078c3cb520be4086f5784554daf9980f",
+      "size": 1136629,
+      "urls": [
+        "https://cdn.modrinth.com/data/ocEZ7tc1/versions/LGU6sxeX/ftbchecker-neoforge-1.21.1-1.3.0.jar"
+      ]
+    },
+    {
       "path": "mods/fuck-sable-1.7.25.jar",
       "policy": "mirror",
       "sha512": "0e8c5ddb6aa5db5331f5d1560cc589beba1a74db54b2a18ed723fdccd801fef258d6bd24ffb152b4e1d9feeae460dc2a39538c6be284f15ada70abc34daa044c",
@@ -2251,6 +2341,15 @@
       "size": 214343,
       "urls": [
         "https://cdn.modrinth.com/data/WROfLLvn/versions/K3nIvcWT/trading_floor-3.0.16.jar"
+      ]
+    },
+    {
+      "path": "mods/travelersbackpack-neoforge-1.21.1-10.1.39.jar",
+      "policy": "mirror",
+      "sha512": "bd539a448f13a9173247397e2f257bfca9f5cf6d157a33d2fc2a2891a9cdb5c451dfbd2a35de88994b80ba2dbe009cd6885a920b7066156b7aa0fafd5fbf129a",
+      "size": 1425397,
+      "urls": [
+        "https://cdn.modrinth.com/data/rlloIFEV/versions/LcOq0PxG/travelersbackpack-neoforge-1.21.1-10.1.39.jar"
       ]
     },
     {
@@ -5964,10 +6063,28 @@
     {
       "path": "config/fancymenu/customization/title_screen_layout.txt",
       "policy": "smart",
-      "sha512": "fdf10c7c35d0a17ea2eef0cf85c6ac1d7fc76cef7b9153e820ef5cfc158e2bbd8e0dd5850dbc4937000d0bc954c234cc5d2624380c25e6b560127b9ee04e9d1c",
-      "size": 101648,
+      "sha512": "ee50366903da101254b5f9cae30405449777b40d064fe4e4e9d29fc21c023a90a42e77c4fe41fc344e50361193e082ebde814890d2f17031e54d70457c5c1e6c",
+      "size": 101416,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/fd/fdf10c7c35d0a17ea2eef0cf85c6ac1d7fc76cef7b9153e820ef5cfc158e2bbd8e0dd5850dbc4937000d0bc954c234cc5d2624380c25e6b560127b9ee04e9d1c"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/ee/ee50366903da101254b5f9cae30405449777b40d064fe4e4e9d29fc21c023a90a42e77c4fe41fc344e50361193e082ebde814890d2f17031e54d70457c5c1e6c"
+      ]
+    },
+    {
+      "path": "config/fancymenu/customization/connect_screen_layout.txt",
+      "policy": "smart",
+      "sha512": "b0d6e4c24dddf9d5329006a6e7baa3b4dd9462eb7fffc3dfd21184ca6f4aa3ca996c00e2e6d9a85ced4932a2e062daf1f9f6a42203ada47325118eac0a7bd2f0",
+      "size": 15960,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/b0/b0d6e4c24dddf9d5329006a6e7baa3b4dd9462eb7fffc3dfd21184ca6f4aa3ca996c00e2e6d9a85ced4932a2e062daf1f9f6a42203ada47325118eac0a7bd2f0"
+      ]
+    },
+    {
+      "path": "config/fancymenu/customization/options.txt",
+      "policy": "smart",
+      "sha512": "9f7d43e9144c4b6ba84e18e92b45033c1f1de2788662fc0908b3536104f9842a93a967a458ee08d09f86cdff8991f79ab9ca88ea2a4d6f7b9d5e39b772b75673",
+      "size": 4419,
+      "urls": [
+        "https://ttk0721.github.io/chmurkowy-launcher/files/9f/9f7d43e9144c4b6ba84e18e92b45033c1f1de2788662fc0908b3536104f9842a93a967a458ee08d09f86cdff8991f79ab9ca88ea2a4d6f7b9d5e39b772b75673"
       ]
     },
     {
@@ -6378,10 +6495,10 @@
     {
       "path": "options.txt",
       "policy": "seed",
-      "sha512": "973e3db2a0e0037186e03551c0e9b37f057eff7ec260147fc80804cb6acca403f92b33adb2cab8c0dbf8859b1a24f2084e17d90056ad447948698c7253400585",
-      "size": 13141,
+      "sha512": "a1d3c4f17e7dff70652583f549a9c96d9855c7b4077566e2d395e38a0493babf6bce9d2c2ffc68310eec9496333f0baa6b86464197cc65d08460c1f441c4bfff",
+      "size": 13118,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/97/973e3db2a0e0037186e03551c0e9b37f057eff7ec260147fc80804cb6acca403f92b33adb2cab8c0dbf8859b1a24f2084e17d90056ad447948698c7253400585"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/a1/a1d3c4f17e7dff70652583f549a9c96d9855c7b4077566e2d395e38a0493babf6bce9d2c2ffc68310eec9496333f0baa6b86464197cc65d08460c1f441c4bfff"
       ]
     }
   ],
@@ -6390,10 +6507,10 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.4.31",
+    "latest_version": "0.4.33",
     "urls": {
-      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.31/ChmurkowyLauncher-linux-x64",
-      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.31/ChmurkowyLauncher-windows-x64.exe"
+      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.33/ChmurkowyLauncher-linux-x64",
+      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.33/ChmurkowyLauncher-windows-x64.exe"
     }
   },
   "memory": {
@@ -6425,6 +6542,228 @@
       }
     }
   ],
+  "opcje_gry": {
+    "odcisk": "557aef113b3ed1bc",
+    "wymuszone": {
+      "key_accessories.key.open_accessories_screen": "key.keyboard.h",
+      "key_chloride.zoom": "key.keyboard.c",
+      "key_create.keyinfo.alt_modifier": "key.keyboard.left.alt",
+      "key_create.keyinfo.ctrl_modifier": "key.keyboard.left.control",
+      "key_create.keyinfo.rotate_menu": "key.keyboard.unknown",
+      "key_create.keyinfo.shift_modifier": "key.keyboard.left.shift",
+      "key_create.keyinfo.toolbelt": "key.keyboard.left.alt",
+      "key_create.keyinfo.toolmenu": "key.keyboard.left.alt",
+      "key_dndesires.keyinfo.drill_active": "key.keyboard.left.alt",
+      "key_dndesires.keyinfo.saw_active": "key.keyboard.left.alt",
+      "key_gnetum.config.keyMapping": "key.keyboard.end",
+      "key_gui.xaero_alternative_list_players": "key.keyboard.unknown",
+      "key_gui.xaero_display_all_sets": "key.keyboard.unknown",
+      "key_gui.xaero_enlarge_map": "key.keyboard.z",
+      "key_gui.xaero_instant_waypoint": "key.keyboard.keypad.add",
+      "key_gui.xaero_map_zoom_in": "key.keyboard.unknown",
+      "key_gui.xaero_map_zoom_out": "key.keyboard.unknown",
+      "key_gui.xaero_minimap_server_profiles": "key.keyboard.unknown",
+      "key_gui.xaero_minimap_settings": "key.keyboard.y",
+      "key_gui.xaero_new_waypoint": "key.keyboard.b",
+      "key_gui.xaero_open_map": "key.keyboard.m",
+      "key_gui.xaero_open_settings": "key.keyboard.right.bracket",
+      "key_gui.xaero_quick_confirm": "key.keyboard.right.shift",
+      "key_gui.xaero_reverse_entity_radar": "key.keyboard.unknown",
+      "key_gui.xaero_switch_waypoint_set": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_dimension": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_entity_radar": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_grid": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_light_overlay": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_manual_cave_mode": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_map": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_map_waypoints": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_pac_chunk_claims": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_slime": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_tracked_players_in_world": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_tracked_players_on_map": "key.keyboard.unknown",
+      "key_gui.xaero_toggle_waypoints": "key.keyboard.unknown",
+      "key_gui.xaero_waypoints_key": "key.keyboard.u",
+      "key_gui.xaero_world_map_server_settings": "key.keyboard.unknown",
+      "key_gui.xaero_zoom_in": "key.keyboard.unknown",
+      "key_gui.xaero_zoom_out": "key.keyboard.unknown",
+      "key_iris.keybind.reload": "key.keyboard.r",
+      "key_iris.keybind.shaderPackSelection": "key.keyboard.o",
+      "key_iris.keybind.toggleShaders": "key.keyboard.k",
+      "key_iris.keybind.wireframe": "key.keyboard.unknown",
+      "key_key.advancements": "key.keyboard.l",
+      "key_key.aether.gravitite_jump_ability.desc": "key.keyboard.space",
+      "key_key.aether.invisibility_toggle.desc": "key.keyboard.v",
+      "key_key.aether.open_accessories.desc": "key.keyboard.i",
+      "key_key.attack": "key.mouse.left",
+      "key_key.back": "key.keyboard.s",
+      "key_key.chat": "key.keyboard.t",
+      "key_key.command": "key.keyboard.slash",
+      "key_key.createbigcannons.fire_controlled_cannon": "key.mouse.left",
+      "key_key.createbigcannons.pitch_mode": "key.keyboard.c",
+      "key_key.curios.open.desc": "key.keyboard.g",
+      "key_key.deep_aether.slider_eye_ability": "key.keyboard.left.alt",
+      "key_key.deep_aether.stratus_dash_ability.desc": "key.keyboard.r",
+      "key_key.deep_aether.toggle_skyjade_transparency": "key.keyboard.v",
+      "key_key.deeperdarker.boost": "key.keyboard.b",
+      "key_key.deeperdarker.transmit": "key.keyboard.v",
+      "key_key.disable_voice_chat": "key.keyboard.n",
+      "key_key.drop": "key.keyboard.q",
+      "key_key.dynamic_fps.toggle_disabled": "key.keyboard.unknown",
+      "key_key.dynamic_fps.toggle_forced": "key.keyboard.unknown",
+      "key_key.ebe.open_config": "key.keyboard.unknown",
+      "key_key.entityculling.toggle": "key.keyboard.unknown",
+      "key_key.forward": "key.keyboard.w",
+      "key_key.fullscreen": "key.keyboard.f11",
+      "key_key.hide_icons": "key.keyboard.h",
+      "key_key.hotbar.1": "key.keyboard.1",
+      "key_key.hotbar.2": "key.keyboard.2",
+      "key_key.hotbar.3": "key.keyboard.3",
+      "key_key.hotbar.4": "key.keyboard.4",
+      "key_key.hotbar.5": "key.keyboard.5",
+      "key_key.hotbar.6": "key.keyboard.6",
+      "key_key.hotbar.7": "key.keyboard.7",
+      "key_key.hotbar.8": "key.keyboard.8",
+      "key_key.hotbar.9": "key.keyboard.9",
+      "key_key.inventory": "key.keyboard.e",
+      "key_key.inventoryhud.openconfig": "key.keyboard.o",
+      "key_key.inventoryhud.toggle": "key.keyboard.i",
+      "key_key.inventoryhud.toggleall": "key.keyboard.unknown",
+      "key_key.inventoryhud.togglearm": "key.keyboard.unknown",
+      "key_key.inventoryhud.togglepot": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_bar_modifier": "key.keyboard.left.alt",
+      "key_key.irons_spellbooks.spell_quick_cast_1": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_10": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_11": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_12": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_13": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_14": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_15": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_2": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_3": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_4": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_5": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_6": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_7": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_8": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_quick_cast_9": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spell_wheel": "key.keyboard.r",
+      "key_key.irons_spellbooks.spell_wheel_toggle": "key.keyboard.unknown",
+      "key_key.irons_spellbooks.spellbook_cast": "key.keyboard.v",
+      "key_key.jei.bookmark": "key.keyboard.a",
+      "key_key.jei.cheatItemStack": "key.mouse.left:SHIFT",
+      "key_key.jei.cheatItemStack2": "key.mouse.middle",
+      "key_key.jei.cheatOneItem": "key.mouse.left",
+      "key_key.jei.cheatOneItem2": "key.mouse.right",
+      "key_key.jei.clearSearchBar": "key.mouse.right",
+      "key_key.jei.closeRecipeGui": "key.keyboard.escape",
+      "key_key.jei.copy.recipe.id": "key.keyboard.unknown",
+      "key_key.jei.focusSearch": "key.keyboard.f:CONTROL",
+      "key_key.jei.maxTransferRecipeBookmark": "key.mouse.left:CONTROL",
+      "key_key.jei.nextCategory": "key.keyboard.page.down:SHIFT",
+      "key_key.jei.nextPage": "key.keyboard.unknown",
+      "key_key.jei.nextRecipePage": "key.keyboard.page.down",
+      "key_key.jei.nextSearch": "key.keyboard.down",
+      "key_key.jei.pauseRecipeCycling": "key.keyboard.left.shift",
+      "key_key.jei.previousCategory": "key.keyboard.page.up:SHIFT",
+      "key_key.jei.previousPage": "key.keyboard.unknown",
+      "key_key.jei.previousRecipePage": "key.keyboard.page.up",
+      "key_key.jei.previousSearch": "key.keyboard.up",
+      "key_key.jei.quickMove": "key.mouse.left:SHIFT",
+      "key_key.jei.recipeBack": "key.keyboard.backspace",
+      "key_key.jei.shareToChat": "key.keyboard.unknown",
+      "key_key.jei.showBookmarkTooltipFeatures": "key.keyboard.left.control",
+      "key_key.jei.showRecipe": "key.keyboard.r",
+      "key_key.jei.showRecipe2": "key.mouse.left",
+      "key_key.jei.showUses": "key.keyboard.u",
+      "key_key.jei.showUses2": "key.mouse.right",
+      "key_key.jei.toggleBookmarkOverlay": "key.keyboard.unknown",
+      "key_key.jei.toggleCheatMode": "key.keyboard.unknown",
+      "key_key.jei.toggleCheatModeConfigButton": "key.mouse.left:CONTROL",
+      "key_key.jei.toggleEditMode": "key.keyboard.unknown",
+      "key_key.jei.toggleHideIngredient": "key.mouse.left:CONTROL",
+      "key_key.jei.toggleOverlay": "key.keyboard.o:CONTROL",
+      "key_key.jei.toggleWildcardHideIngredient": "key.mouse.right:CONTROL",
+      "key_key.jei.transferRecipeBookmark": "key.mouse.left:SHIFT",
+      "key_key.jump": "key.keyboard.space",
+      "key_key.left": "key.keyboard.a",
+      "key_key.loadToolbarActivator": "key.keyboard.x",
+      "key_key.modernfix.config": "key.keyboard.unknown",
+      "key_key.mute_microphone": "key.keyboard.m",
+      "key_key.pickItem": "key.mouse.middle",
+      "key_key.playerlist": "key.keyboard.tab",
+      "key_key.ponder.ponder": "key.keyboard.w",
+      "key_key.push_to_talk": "key.keyboard.unknown",
+      "key_key.right": "key.keyboard.d",
+      "key_key.saveToolbarActivator": "key.keyboard.c",
+      "key_key.screenshot": "key.keyboard.f2",
+      "key_key.smoothCamera": "key.keyboard.unknown",
+      "key_key.sneak": "key.keyboard.left.shift",
+      "key_key.socialInteractions": "key.keyboard.p",
+      "key_key.spectatorOutlines": "key.keyboard.unknown",
+      "key_key.sprint": "key.keyboard.left.control",
+      "key_key.swapOffhand": "key.keyboard.f",
+      "key_key.threateningly_mobs.lindworm_attack_control": "key.keyboard.c",
+      "key_key.togglePerspective": "key.keyboard.f5",
+      "key_key.use": "key.mouse.right",
+      "key_key.voice_chat": "key.keyboard.v",
+      "key_key.voice_chat_adjust_volumes": "key.keyboard.unknown",
+      "key_key.voice_chat_group": "key.keyboard.g",
+      "key_key.voice_chat_settings": "key.keyboard.unknown",
+      "key_key.voice_chat_toggle_recording": "key.keyboard.unknown",
+      "key_key.whisper": "key.keyboard.unknown",
+      "key_keybind.name.CHAT_PEEK": "key.keyboard.z",
+      "key_keybind.name.COSMETICS_VISIBILITY_TOGGLE": "key.keyboard.unknown",
+      "key_keybind.name.COSMETIC_STUDIO": "key.keyboard.b",
+      "key_keybind.name.EMOTE_SLOT_1": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_SLOT_2": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_SLOT_3": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_SLOT_4": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_SLOT_5": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_SLOT_6": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_SLOT_7": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_SLOT_8": "key.keyboard.unknown",
+      "key_keybind.name.EMOTE_WHEEL": "key.keyboard.r",
+      "key_keybind.name.ESSENTIAL_FRIENDS": "key.keyboard.h",
+      "key_keybind.name.INVITE_FRIENDS": "key.keyboard.unknown",
+      "key_keybind.name.MENU_ACCESS": "key.keyboard.g",
+      "key_keybind.name.SCREENSHOT_MANAGER": "key.keyboard.i",
+      "key_keybind.name.ZOOM": "key.keyboard.c",
+      "key_keyinfo.copycats.fill_copycat": "key.keyboard.left.alt",
+      "key_missions.keyinfo.missions_menu": "key.keyboard.h",
+      "key_placebo.toggleTrails": "key.keyboard.keypad.9",
+      "key_placebo.toggleWings": "key.keyboard.keypad.8",
+      "key_simulated.keyinfo.rotate_mode": "key.keyboard.tab",
+      "key_simulated.keyinfo.scroll_down": "key.keyboard.unknown",
+      "key_simulated.keyinfo.scroll_up": "key.keyboard.unknown",
+      "key_xaeroplus.gui.world_map.start_drawing": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.switch_to_end": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.switch_to_nether": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.switch_to_overworld": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.switch_waypoints_to_end": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.switch_waypoints_to_nether": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.switch_waypoints_to_overworld": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.world_map_baritone_elytra_here": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.world_map_baritone_goal_here": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.world_map_baritone_path_here": "key.keyboard.unknown",
+      "key_xaeroplus.keybind.world_map_rotate_here": "key.keyboard.unknown",
+      "key_xaeroplus.setting.2b2t_highways_enabled": "key.keyboard.unknown",
+      "key_xaeroplus.setting.beacons_overlay": "key.keyboard.unknown",
+      "key_xaeroplus.setting.lava_columns": "key.keyboard.unknown",
+      "key_xaeroplus.setting.map_art_grid": "key.keyboard.unknown",
+      "key_xaeroplus.setting.new_chunks_highlighting": "key.keyboard.unknown",
+      "key_xaeroplus.setting.old_biomes_enabled": "key.keyboard.unknown",
+      "key_xaeroplus.setting.old_chunks_highlighting": "key.keyboard.unknown",
+      "key_xaeroplus.setting.palette_new_chunks_highlighting": "key.keyboard.unknown",
+      "key_xaeroplus.setting.player_spawn_chunks": "key.keyboard.unknown",
+      "key_xaeroplus.setting.portal_skip_detection": "key.keyboard.unknown",
+      "key_xaeroplus.setting.portals": "key.keyboard.unknown",
+      "key_xaeroplus.setting.region_grid": "key.keyboard.unknown",
+      "key_xaeroplus.setting.show_render_distance": "key.keyboard.unknown",
+      "key_xaeroplus.setting.spawn_chunks": "key.keyboard.unknown",
+      "key_xaeroplus.setting.world_tools": "key.keyboard.unknown",
+      "lang": "pl_pl"
+    }
+  },
   "pack": {
     "edition": "edycja 2026/2027",
     "loader": {
@@ -6433,7 +6772,7 @@
     },
     "minecraft": "1.21.1",
     "name": "Chmurkowy Serwer",
-    "version": "2026.09.11-1"
+    "version": "2026.09.12-1"
   },
   "schema": 1
 }

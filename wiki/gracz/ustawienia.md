@@ -397,5 +397,29 @@ Linux:    ~/.local/share/chmurkowy-launcher/data/settings.json
 Uszkodzony plik nie blokuje launchera — wczytują się wtedy ustawienia domyślne.
 Aktualizacja launchera nie kasuje żadnej ustawionej wartości.
 
+## Klawisze ustawiane przez paczkę
+
+Ustawienia **w samej grze** — głośność, czułość myszy, zasięg widzenia, grafika
+— są tylko Twoje. Launcher ich nie dotyka.
+
+Wyjątkiem są **przypisania klawiszy i język**. Te administracja może ustawić dla
+wszystkich, żeby paczka działała tak samo u każdego. Ma to znaczenie praktyczne:
+część modów przypisuje sobie domyślnie klawisze numeryczne albo piąty przycisk
+myszy, których na wielu klawiaturach po prostu nie ma.
+
+Działa to tak:
+
+* administracja zmienia jakiś klawisz i publikuje nową paczkę,
+* przy najbliższym uruchomieniu launcher podmienia **tylko te wpisy, które się
+  zmieniły**, i pisze o tym w komunikacie,
+* jeśli potem przestawisz sobie ten klawisz po swojemu, **zostanie tak, jak
+  ustawiłeś** — aż do momentu, gdy administracja zmieni akurat ten klawisz.
+
+!!! wskazówka
+
+    Zmiana jednego klawisza przez administrację nie kasuje pozostałych Twoich
+    przestawień. Jeśli przestawiłeś sobie skok, a administracja zmieniła atak,
+    Twój skok zostaje.
+
 Gdy gra mimo wszystko nie startuje, po kolejne kroki zajrzyj na stronę
 [Gdy gra nie startuje](problemy.md).

@@ -110,8 +110,13 @@ jobs:
 
       # `strict: true` w mkdocs.yml sprawia, że martwy odsyłacz przewraca
       # budowanie. To pierwsza połowa kontroli.
+      #
+      # Przez skrypt, a nie wprost przez `mkdocs build`, bo to on ustala datę
+      # budowania. Bez niej mkdocs wpisuje do `sitemap.xml` dzień dzisiejszy
+      # i kontrola niżej zapalała się przy każdym commicie zrobionym innego
+      # dnia niż ostatnie przebudowanie — nawet gdy nikt nie tknął dokumentacji.
       - name: Budowanie dokumentacji
-        run: mkdocs build
+        run: ./buduj-dokumentacje.sh
 
       # Druga połowa: czy w repozytorium leży AKTUALNY wynik budowania.
       #
@@ -124,7 +129,10 @@ jobs:
           if ! git diff --exit-code --stat -- docs/wiki; then
             echo
             echo "Zbudowana dokumentacja różni się od tej w repozytorium."
-            echo "Uruchom u siebie:  ./.venv-docs/bin/mkdocs build"
+            echo "Uruchom u siebie:  ./buduj-dokumentacje.sh"
             echo "i dołóż zmiany z docs/wiki do commita."
+            echo
+            echo "Buduj TYM skryptem, nie wprost przez mkdocs — to on ustala"
+            echo "datę budowania, bez której wynik różni się z dnia na dzień."
             exit 1
           fi
