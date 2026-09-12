@@ -18,17 +18,17 @@
 //! Zostaje scalanie: paczka niesie **wyłącznie te wpisy, na których jej
 //! zależy**, a launcher podmienia tylko je i zostawia resztę pliku nietkniętą.
 //!
-//! # Dlaczego z odciskiem zestawu
+//! # Dlaczego wpis po wpisie
 //!
 //! Gdyby paczka narzucała swoje klawisze przy każdym uruchomieniu, gracz, który
 //! przestawił sobie klawisz, dostawałby go z powrotem po każdym starcie i nie
-//! miałby jak tego obejść. Dlatego wpisy są stosowane tylko wtedy, gdy
-//! utrzymujący **zmieni** zestaw. Między zmianami wybór gracza zostaje.
+//! miałby jak tego obejść. Stosujemy więc tylko te wpisy, które **zmieniły się
+//! od ostatniego razu**.
 //!
-//! Rozpoznajemy to po odcisku liczonym z samych wpisów, a nie po numerze do
-//! ręcznego podbijania. Numer, o którym trzeba pamiętać, prędzej czy później
-//! zostanie zapomniany i zmiana klawiszy po cichu nie dojdzie do graczy —
-//! czyli dokładnie ta usterka, którą ten moduł naprawia.
+//! Porównujemy każdy wpis osobno, a nie odcisk całego zestawu. Paczka niesie
+//! komplet ponad dwustu przypisań, więc przy odcisku całości zmiana jednego
+//! klawisza przez administrację kasowałaby graczowi wszystkie jego własne
+//! przestawienia — a zmienić miał się tylko ten jeden.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -36,8 +36,8 @@ use std::collections::BTreeMap;
 /// Ustawienia gry, które paczka narzuca.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct OpcjeGry {
-    /// Odcisk zestawu, liczony przez `pack-build` z samych wpisów.
-    /// Inny odcisk niż zapamiętany oznacza „zastosuj u wszystkich".
+    /// Odcisk całego zestawu. Do wglądu przy diagnozowaniu — decyzję,
+    /// co zastosować, podejmujemy porównując wpisy pojedynczo.
     #[serde(default)]
     pub odcisk: String,
     /// Klucz z `options.txt` (bez dwukropka) i wartość, np.
@@ -101,11 +101,12 @@ pub fn scal(tresc: &str, wymuszone: &BTreeMap<String, String>) -> Option<String>
     Some(wynik)
 }
 
-/// Odcisk zestawu wymuszonych ustawień.
+/// Odcisk całego zestawu — do wglądu, nie do podejmowania decyzji.
 ///
-/// Launcher stosuje zestaw dopiero wtedy, gdy odcisk różni się od zapamiętanego,
-/// więc musi zależeć **wyłącznie od treści wpisów** — nie od wersji paczki ani
-/// daty budowania. Inaczej każde wydanie kasowałoby graczom ich własne klawisze.
+/// Launcher porównuje wpisy pojedynczo, więc odcisk niczego nie steruje. Jest
+/// w manifeście po to, żeby dało się jednym spojrzeniem stwierdzić, czy dwie
+/// paczki niosą ten sam zestaw klawiszy — przy dwustu wpisach porównywanie
+/// ich wzrokiem odpada.
 pub fn odcisk(wymuszone: &BTreeMap<String, String>) -> String {
     use sha2::{Digest, Sha256};
     let mut h = Sha256::new();
@@ -131,38 +132,49 @@ pub fn odcisk(wymuszone: &BTreeMap<String, String>) -> String {
 /// launcher przestawił klawisze, trzeba pokazać — inaczej gracz zobaczy, że
 /// jego klawisz „sam się zmienił", i uzna to za usterkę.
 ///
-/// Zapisujemy dopiero po udanym scaleniu, więc przerwane zapisanie nie zostawia
-/// obciętego `options.txt`. Numer wersji zapamiętujemy tylko wtedy, gdy zapis
-/// się powiódł — inaczej po błędzie dysku launcher uznałby zestaw za wgrany.
+/// Stan zapamiętujemy dopiero po udanym zapisie pliku. Po błędzie dysku
+/// launcher spróbuje ponownie przy następnym uruchomieniu, zamiast uznać
+/// zestaw za wgrany i zostawić gracza ze starymi klawiszami.
 pub fn zastosuj(
     instancja: &std::path::Path,
     opcje: &OpcjeGry,
     stan: &mut crate::state::State,
 ) -> std::io::Result<Option<String>> {
-    if opcje.pusty() || stan.opcje_odcisk == opcje.odcisk {
+    // Tylko to, co administracja zmieniła od ostatniego razu. Wpis, który
+    // gracz przestawił sobie sam, a którego paczka nie ruszała, zostaje jego.
+    let swieze: BTreeMap<String, String> = opcje
+        .wymuszone
+        .iter()
+        .filter(|(k, v)| stan.opcje_zastosowane.get(*k) != Some(*v))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
+    if swieze.is_empty() {
         return Ok(None);
     }
+
     let plik = instancja.join("options.txt");
     // Brak pliku nie jest błędem: gra jeszcze nie wystartowała ani razu,
     // a `options.txt` z paczki i tak wejdzie zaraz jako plik zasiewany.
     let Ok(tresc) = std::fs::read_to_string(&plik) else {
-        stan.opcje_odcisk = opcje.odcisk.clone();
+        stan.opcje_zastosowane = opcje.wymuszone.clone();
         return Ok(None);
     };
 
-    let Some(nowa) = scal(&tresc, &opcje.wymuszone) else {
-        // Wartości już były właściwe — zestaw uznajemy za wgrany.
-        stan.opcje_odcisk = opcje.odcisk.clone();
-        return Ok(None);
-    };
+    let zmieniono = scal(&tresc, &swieze);
+    if let Some(nowa) = &zmieniono {
+        std::fs::write(&plik, nowa)?;
+    }
+    // Zapamiętujemy cały zestaw, nie tylko świeże wpisy: reszta jest już
+    // u gracza właściwa, a bez tego liczylibyśmy ją jako zmianę co uruchomienie.
+    stan.opcje_zastosowane = opcje.wymuszone.clone();
 
-    std::fs::write(&plik, nowa)?;
-    stan.opcje_odcisk = opcje.odcisk.clone();
-    Ok(Some(format!(
-        "Paczka ustawiła {} ustawień gry (m.in. klawisze). Możesz je zmienić w grze — \
-         launcher nie ruszy ich ponownie, dopóki administracja nie zmieni zestawu.",
-        opcje.wymuszone.len()
-    )))
+    Ok(zmieniono.map(|_| {
+        format!(
+            "Paczka ustawiła {} ustawień gry (m.in. klawisze). Możesz je zmienić w grze — \
+             launcher nie ruszy ich ponownie, dopóki administracja ich nie zmieni.",
+            swieze.len()
+        )
+    }))
 }
 
 #[cfg(test)]
@@ -257,7 +269,6 @@ mod tests {
         assert!(std::fs::read_to_string(&plik)
             .unwrap()
             .contains("key_key.jump:key.keyboard.j"));
-        assert_eq!(stan.opcje_odcisk, "aaa");
 
         // Gracz przestawia klawisz po swojemu...
         std::fs::write(&plik, "key_key.jump:key.keyboard.z\nfov:0.7\n").unwrap();
@@ -267,13 +278,56 @@ mod tests {
             .unwrap()
             .contains("key_key.jump:key.keyboard.z"));
 
-        // Dopiero NOWY zestaw od administracji wygrywa.
+        // Dopiero ZMIANA tego wpisu przez administracje wygrywa.
         let o2 = opcje("bbb", &[("key_key.jump", "key.keyboard.k")]);
         assert!(zastosuj(kat.path(), &o2, &mut stan).unwrap().is_some());
         assert!(std::fs::read_to_string(&plik)
             .unwrap()
             .contains("key_key.jump:key.keyboard.k"));
-        assert_eq!(stan.opcje_odcisk, "bbb");
+    }
+
+    /// Najwazniejsza wlasnosc calego mechanizmu. Paczka niesie komplet ponad
+    /// dwustu przypisan. Gdy administracja zmieni JEDEN klawisz, gracz ma
+    /// stracic tylko ten jeden — a nie wszystkie swoje przestawienia.
+    #[test]
+    fn zmiana_jednego_klawisza_nie_kasuje_pozostalych_przestawien() {
+        let kat = tempfile::tempdir().unwrap();
+        let plik = kat.path().join("options.txt");
+        std::fs::write(
+            &plik,
+            "key_key.jump:key.keyboard.space\nkey_key.attack:key.mouse.left\n",
+        )
+        .unwrap();
+        let mut stan = crate::state::State::new();
+
+        let zestaw = &[
+            ("key_key.jump", "key.keyboard.space"),
+            ("key_key.attack", "key.mouse.left"),
+        ];
+        zastosuj(kat.path(), &opcje("aaa", zestaw), &mut stan).unwrap();
+
+        // Gracz przestawia sobie skok na „z".
+        std::fs::write(
+            &plik,
+            "key_key.jump:key.keyboard.z\nkey_key.attack:key.mouse.left\n",
+        )
+        .unwrap();
+
+        // Administracja zmienia CO INNEGO — atak.
+        let nowy = &[
+            ("key_key.jump", "key.keyboard.space"),
+            ("key_key.attack", "key.mouse.right"),
+        ];
+        assert!(zastosuj(kat.path(), &opcje("bbb", nowy), &mut stan)
+            .unwrap()
+            .is_some());
+
+        let po = std::fs::read_to_string(&plik).unwrap();
+        assert!(po.contains("key_key.attack:key.mouse.right"), "{po}");
+        assert!(
+            po.contains("key_key.jump:key.keyboard.z"),
+            "skok gracza mial zostac nietkniety: {po}"
+        );
     }
 
     /// Brak `options.txt` (gra nie ruszyla ani razu) nie moze byc bledem —
@@ -284,7 +338,11 @@ mod tests {
         let mut stan = crate::state::State::new();
         let wynik = zastosuj(kat.path(), &opcje("aaa", &[("a", "b")]), &mut stan);
         assert!(wynik.unwrap().is_none());
-        assert_eq!(stan.opcje_odcisk, "aaa", "zestaw uznany za wgrany");
+        assert_eq!(
+            stan.opcje_zastosowane.get("a").map(String::as_str),
+            Some("b"),
+            "zestaw uznany za wgrany"
+        );
     }
 
     /// Odcisk musi zalezec od TRESCI, i to jednoznacznie. Gdyby dwa rozne
@@ -308,7 +366,7 @@ mod tests {
         );
     }
 
-    /// Pusty zestaw nie moze niczego dotykac ani podbijac wersji.
+    /// Pusty zestaw nie moze niczego dotykac.
     #[test]
     fn pusty_zestaw_nic_nie_robi() {
         let kat = tempfile::tempdir().unwrap();
@@ -317,6 +375,6 @@ mod tests {
         assert!(zastosuj(kat.path(), &opcje("ccc", &[]), &mut stan)
             .unwrap()
             .is_none());
-        assert!(stan.opcje_odcisk.is_empty());
+        assert!(stan.opcje_zastosowane.is_empty());
     }
 }
