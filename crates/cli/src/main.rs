@@ -277,7 +277,12 @@ fn pack_build(
     std::fs::create_dir_all(&magazyn)?;
 
     let mut files = Vec::new();
-    let mut wlasne_mody: Vec<String> = Vec::new();
+    // Dwie rozne sytuacje, celowo rozdzielone. Mod BEZ zrodla to nasz wlasny
+    // build (np. poprawiony fork) i hostowanie go u siebie jest zamierzone.
+    // Mod, ktory ma zrodlo, ale sie od niego ROZNI, to sygnal ostrzegawczy:
+    // albo ktos go recznie zalatal, albo pobranie sie uszkodzilo.
+    let mut wlasne_bez_zrodla: Vec<String> = Vec::new();
+    let mut rozne_od_zrodla: Vec<String> = Vec::new();
 
     for nazwa in &jary {
         let meta = &wpisy_meta[nazwa];
@@ -306,7 +311,12 @@ fn pack_build(
                 ),
             }
         } else {
-            wlasne_mody.push(nazwa.clone());
+            let ma_zrodlo = meta.url.is_some() || meta.cf_file.is_some();
+            if ma_zrodlo {
+                rozne_od_zrodla.push(nazwa.clone());
+            } else {
+                wlasne_bez_zrodla.push(nazwa.clone());
+            }
             do_magazynu(&magazyn, &sciezka, &sha512)?;
             adres_wlasny(base_url, &sha512)
         };
@@ -320,13 +330,24 @@ fn pack_build(
         }));
     }
 
-    if !wlasne_mody.is_empty() {
+    if !wlasne_bez_zrodla.is_empty() {
         eprintln!(
-            "\nUWAGA: {} mod(ów) różni się od pliku pod adresem źródłowym — hostuję je u siebie,",
-            wlasne_mody.len()
+            "\n{} mod(ów) nie ma źródła w metadanych — hostuję je u siebie:",
+            wlasne_bez_zrodla.len()
         );
-        eprintln!("żeby testerzy dostali dokładnie to, co masz w instancji:");
-        for m in &wlasne_mody {
+        for m in &wlasne_bez_zrodla {
+            eprintln!("  - {m}");
+        }
+        eprintln!("To zwykle własny build, np. poprawiony fork. Nic do zrobienia.\n");
+    }
+
+    if !rozne_od_zrodla.is_empty() {
+        eprintln!(
+            "\nUWAGA: {} mod(ów) RÓŻNI SIĘ od pliku pod swoim adresem źródłowym —",
+            rozne_od_zrodla.len()
+        );
+        eprintln!("hostuję je u siebie, żeby testerzy dostali dokładnie to, co masz w instancji:");
+        for m in &rozne_od_zrodla {
             eprintln!("  - {m}");
         }
         eprintln!("Jeśli to niezamierzone, pobierz te mody na nowo w PrismLauncherze.\n");
