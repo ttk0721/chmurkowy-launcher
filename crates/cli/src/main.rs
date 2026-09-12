@@ -206,7 +206,12 @@ async fn przygotuj(
     let sciezka_stanu = data.join("state.json");
     let mut stan = state::State::load(&sciezka_stanu);
     let akcje = pack_sync::plan(&m, &stan, &pack_sync::DiskProbe::new(&instancja));
-    let notatki = pack_sync::apply(&m, &instancja, &mut stan, &akcje, &dl, postep.clone()).await?;
+    let mut notatki =
+        pack_sync::apply(&m, &instancja, &mut stan, &akcje, &dl, postep.clone()).await?;
+    // Po synchronizacji plików, bo `options.txt` mógł właśnie zostać zasiany.
+    if let Some(x) = chmurka_core::opcje_gry::zastosuj(&instancja, &m.opcje_gry, &mut stan)? {
+        notatki.push(x);
+    }
     stan.save(&sciezka_stanu)?;
     for n in notatki {
         println!("  {n}");
@@ -331,7 +336,12 @@ fn pack_build(
     let mut nasze: Vec<(String, PathBuf, &'static str)> = Vec::new();
     zbierz_configi(&instance.join("config"), "config", &mut nasze);
     let opcje = instance.join("options.txt");
+    let mut wymuszone: BTreeMap<String, String> = BTreeMap::new();
     if opcje.is_file() {
+        // Zasada `seed` dotyczy tylko pierwszej instalacji: caly plik trafia do
+        // gracza raz i wiecej go nie ruszamy, bo reszta w nim to JEGO ustawienia
+        // — glosnosc, czulosc myszy, zasieg widzenia.
+        wymuszone = klawisze_z_opcji(&std::fs::read_to_string(&opcje)?);
         nasze.push(("options.txt".to_string(), opcje, "seed"));
     }
 
@@ -372,6 +382,13 @@ fn pack_build(
             }
         },
         "mirror_dirs": ["mods"],
+        // Wpisy z `options.txt`, ktore paczka narzuca takze graczom, ktorzy maja
+        // juz zainstalowana gre. Sam plik idzie z zasada `seed`, wiec bez tego
+        // zmiana klawiszy docieralaby WYLACZNIE do nowych instalacji.
+        "opcje_gry": {
+            "odcisk": chmurka_core::opcje_gry::odcisk(&wymuszone),
+            "wymuszone": wymuszone,
+        },
         // Zewnetrzne programy wymagane przez Create: Harmonics. Adresy sa te same,
         // z ktorych korzysta sam mod — niczego nie hostujemy u siebie.
         "narzedzia": [
@@ -420,6 +437,21 @@ fn do_magazynu(magazyn: &Path, zrodlo: &Path, sha512: &str) -> Result<()> {
         std::fs::copy(zrodlo, &cel)?;
     }
     Ok(())
+}
+
+/// Wyciąga z `options.txt` te wpisy, które paczka ma narzucać graczom.
+///
+/// Bierzemy wyłącznie przypisania klawiszy (`key_*`) oraz język. Reszta pliku —
+/// głośność, czułość myszy, zasięg widzenia, ostatni serwer — należy do gracza
+/// i paczce nic do niej. `lastServer` byłby wręcz szkodliwy: rozesłałby
+/// wszystkim adres serwera, na którym akurat testował utrzymujący.
+fn klawisze_z_opcji(tresc: &str) -> BTreeMap<String, String> {
+    tresc
+        .lines()
+        .filter_map(|w| w.split_once(':'))
+        .filter(|(k, _)| k.starts_with("key_") || *k == "lang")
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect()
 }
 
 fn adres_wlasny(base_url: &str, sha512: &str) -> String {

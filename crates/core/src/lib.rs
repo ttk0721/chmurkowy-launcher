@@ -15,6 +15,7 @@ pub mod miejsca;
 pub mod narzedzia;
 pub mod net;
 pub mod odinstaluj;
+pub mod opcje_gry;
 pub mod pack_sync;
 pub mod paczki;
 pub mod pamiec;

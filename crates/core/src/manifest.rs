@@ -31,6 +31,12 @@ pub struct Manifest {
     /// Zewnętrzne programy wymagane przez mody, pobierane z ich własnych źródeł.
     #[serde(default)]
     pub narzedzia: Vec<crate::narzedzia::Narzedzie>,
+    /// Ustawienia gry, które paczka narzuca — w praktyce przypisania klawiszy.
+    ///
+    /// Osobno od `files`, bo `options.txt` jest wspólny: paczka ma prawo do
+    /// kilku wpisów, a cała reszta pliku należy do gracza.
+    #[serde(default)]
+    pub opcje_gry: crate::opcje_gry::OpcjeGry,
     pub files: Vec<FileEntry>,
 }
 

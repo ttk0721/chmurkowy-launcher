@@ -1255,7 +1255,13 @@ async fn przygotuj_i_odpal(
     let sciezka_stanu = data.join("state.json");
     let mut stan = state::State::load(&sciezka_stanu);
     let akcje = pack_sync::plan(m, &stan, &pack_sync::DiskProbe::new(&instancja));
-    let notatki = pack_sync::apply(m, &instancja, &mut stan, &akcje, &dl, postep.clone()).await?;
+    let mut notatki = pack_sync::apply(m, &instancja, &mut stan, &akcje, &dl, postep.clone()).await?;
+    // Po synchronizacji plików, bo `options.txt` mógł właśnie zostać zasiany.
+    if let Some(x) = chmurka_core::opcje_gry::zastosuj(&instancja, &m.opcje_gry, &mut stan)
+        .map_err(plik(&instancja.join("options.txt")))?
+    {
+        notatki.push(x);
+    }
     stan.save(&sciezka_stanu).map_err(plik(&sciezka_stanu))?;
     for x in notatki {
         let _ = n.send(Wiadomosc::Notatka(x));

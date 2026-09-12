@@ -9,6 +9,13 @@ use std::path::Path;
 pub struct State {
     #[serde(default)]
     pub written: BTreeMap<String, String>,
+    /// Odcisk zestawu wymuszonych ustawień gry, który już zastosowaliśmy.
+    ///
+    /// Dzięki temu paczka narzuca klawisze tylko wtedy, gdy utrzymujący je
+    /// zmieni, a nie przy każdym uruchomieniu — inaczej gracz, który przestawił
+    /// sobie klawisz, dostawałby go z powrotem po każdym starcie.
+    #[serde(default)]
+    pub opcje_odcisk: String,
 }
 
 impl State {

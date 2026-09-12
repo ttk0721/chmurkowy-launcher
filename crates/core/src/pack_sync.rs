@@ -275,6 +275,7 @@ mod tests {
             },
             mirror_dirs: vec!["mods".into()],
             narzedzia: Vec::new(),
+            opcje_gry: Default::default(),
             files: wpisy
                 .into_iter()
                 .map(|(p, h, pol)| FileEntry {
@@ -294,6 +295,7 @@ mod tests {
                 .iter()
                 .map(|(a, b)| (a.to_string(), b.to_string()))
                 .collect(),
+            ..State::new()
         }
     }
 
