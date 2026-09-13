@@ -170,27 +170,40 @@ pub fn rysuj(app: &mut App, ui: &mut egui::Ui) -> bool {
     // --- NAPRAWA ---
     ui.add_space(theme::S4);
     theme::naglowek_sekcji(ui, "NAPRAWA");
+    // Java leci razem z plikami gry. Przerwane rozpakowanie zostawia JRE bez
+    // `lib/jvm.cfg` — binarka jest, wiec launcher uznawal je za gotowe, a instalator
+    // NeoForge konczyl sie bledem INST-02. Komunikat tego bledu odsyla wlasnie tutaj,
+    // wiec naprawa musi obejmowac Jave, inaczej odsyla donikad.
+    let java = app.data().join("java");
     if super::super::przycisk_warunkowy(
         ui,
         "Napraw instalację",
-        mc.exists(),
+        mc.exists() || java.exists(),
         "Gra nie jest jeszcze zainstalowana — nie ma czego naprawiać.",
     )
     .clicked()
     {
-        match std::fs::remove_dir_all(&mc) {
-            Ok(()) => {
-                app.komunikat =
-                    Some("Pliki gry usunięte. Pobiorą się ponownie przy następnym starcie.".into());
-                app.log
-                    .push("Usunięto pliki gry na żądanie użytkownika.".into());
+        let mut bledy = Vec::new();
+        for (co, sciezka) in [("plików gry", &mc), ("Javy", &java)] {
+            if sciezka.exists() {
+                if let Err(e) = std::fs::remove_dir_all(sciezka) {
+                    bledy.push(format!("{co}: {e}"));
+                }
             }
-            Err(e) => app.komunikat = Some(format!("Nie udało się usunąć plików gry: {e}")),
+        }
+        if bledy.is_empty() {
+            app.komunikat = Some(
+                "Pliki gry i Java usunięte. Pobiorą się ponownie przy następnym starcie.".into(),
+            );
+            app.log
+                .push("Usunięto pliki gry i Javę na żądanie użytkownika.".into());
+        } else {
+            app.komunikat = Some(format!("Nie udało się usunąć — {}", bledy.join("; ")));
         }
     }
     ui.add_space(4.0);
     ui.label(theme::drobny(
-        "Pobiera grę od nowa. Światy i ustawienia zostają.",
+        "Pobiera grę i Javę od nowa. Światy i ustawienia zostają.",
     ));
 
     // --- KONTO ---

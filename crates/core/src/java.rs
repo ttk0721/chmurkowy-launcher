@@ -39,6 +39,8 @@ pub enum JavaError {
     Rozpakowanie(String),
     #[error("po rozpakowaniu nie znaleziono pliku wykonywalnego Javy w {0}")]
     BrakBinarki(String),
+    #[error("rozpakowana Java jest niepełna — brakuje lib/jvm.cfg w {0}")]
+    Niepelna(String),
     #[error("błąd operacji na pliku: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -77,7 +79,16 @@ pub async fn ensure(
     let katalog = root.join("java").join(major.to_string());
 
     if let Some(b) = znajdz_binarke(&katalog, os) {
-        return Ok(JavaInstall { java_bin: b });
+        if instalacja_kompletna(&b) {
+            return Ok(JavaInstall { java_bin: b });
+        }
+        // Niepelne JRE wyglada jak zainstalowane, wiec bez tego kasowania launcher
+        // przyjmowalby je przy kazdym kolejnym starcie i nigdy sam z tego nie wyszedl.
+        on(Progress::trwa(
+            Stage::Java,
+            "Java jest niepełna — pobieram od nowa…",
+        ));
+        std::fs::remove_dir_all(&katalog)?;
     }
 
     let rozszerzenie = if os == Os::Windows { "zip" } else { "tar.gz" };
@@ -97,13 +108,22 @@ pub async fn ensure(
     // Rozpakowanie ~180 MB potrafi zajac kilka sekund i nie da sie go zmierzyc
     // z zewnatrz — lepiej powiedziec, co sie dzieje, niz zostawic pasek w miejscu.
     on(Progress::trwa(Stage::Java, "Rozpakowuję Javę…"));
-    std::fs::create_dir_all(&katalog)?;
-    if os == Os::Windows {
-        rozpakuj_zip(&archiwum, &katalog)?;
-    } else {
-        rozpakuj_targz(&archiwum, &katalog)?;
-    }
+    // Rozpakowujemy obok, a na miejsce docelowe przenosimy dopiero kompletny wynik.
+    // Przy rozpakowywaniu wprost do celu przerwanie w polowie zostawia pol-JRE
+    // dokladnie tam, gdzie launcher szuka gotowej Javy.
+    let tymczasowy = root.join("java").join(format!("{major}.czesciowy"));
+    let _ = std::fs::remove_dir_all(&tymczasowy);
+    std::fs::create_dir_all(&tymczasowy)?;
+
+    let wynik = rozpakuj_i_sprawdz(&archiwum, &tymczasowy, os);
     let _ = std::fs::remove_file(&archiwum);
+    if let Err(e) = wynik {
+        let _ = std::fs::remove_dir_all(&tymczasowy);
+        return Err(e);
+    }
+
+    let _ = std::fs::remove_dir_all(&katalog);
+    std::fs::rename(&tymczasowy, &katalog)?;
 
     let bin = znajdz_binarke(&katalog, os)
         .ok_or_else(|| JavaError::BrakBinarki(katalog.display().to_string()))?;
@@ -130,6 +150,36 @@ pub fn znajdz_binarke(katalog: &Path, os: Os) -> Option<PathBuf> {
         }
     }
     None
+}
+
+/// Czy to pełne JRE, a nie resztka po przerwanym rozpakowywaniu.
+///
+/// Archiwum Adoptium rozpakowuje się alfabetycznie: `bin`, `conf`, `legal`,
+/// `lib`, `release`. `bin/javaw.exe` wypada więc jako jeden z pierwszych plików
+/// i sama jego obecność niczego nie dowodzi — JRE urwane w połowie ma binarkę,
+/// ale nie ma `lib/jvm.cfg`, przez co JVM nie wstaje w ogóle:
+/// „Error: could not open … \lib\jvm.cfg". Sprawdzamy więc dwie ostatnie
+/// pozycje z tej listy, bo one padają pierwsze przy urwanym rozpakowaniu.
+pub fn instalacja_kompletna(java_bin: &Path) -> bool {
+    let Some(dom) = java_bin.parent().and_then(|bin| bin.parent()) else {
+        return false;
+    };
+    dom.join("lib").join("jvm.cfg").is_file() && dom.join("release").is_file()
+}
+
+/// Rozpakowuje archiwum i potwierdza, że wyszło z tego pełne JRE.
+fn rozpakuj_i_sprawdz(archiwum: &Path, cel: &Path, os: Os) -> Result<(), JavaError> {
+    if os == Os::Windows {
+        rozpakuj_zip(archiwum, cel)?;
+    } else {
+        rozpakuj_targz(archiwum, cel)?;
+    }
+    let bin =
+        znajdz_binarke(cel, os).ok_or_else(|| JavaError::BrakBinarki(cel.display().to_string()))?;
+    if !instalacja_kompletna(&bin) {
+        return Err(JavaError::Niepelna(cel.display().to_string()));
+    }
+    Ok(())
 }
 
 fn rozpakuj_zip(archiwum: &Path, cel: &Path) -> Result<(), JavaError> {
@@ -166,6 +216,33 @@ mod tests {
             adoptium_url(21, Os::Linux, "x64"),
             "https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jre/hotspot/normal/eclipse"
         );
+    }
+
+    /// Odtwarza usterke zgloszona przez testera: rozpakowywanie stanelo miedzy
+    /// `legal` a `lib`, wiec binarka byla, a JVM nie mial `lib/jvm.cfg`.
+    /// Sama obecnosc binarki nie moze wystarczac za dowod gotowosci.
+    #[test]
+    fn urwane_jre_nie_uchodzi_za_kompletne() {
+        let tmp = std::env::temp_dir().join("chmurka-test-urwane-jre");
+        let _ = std::fs::remove_dir_all(&tmp);
+        let dom = tmp.join("jdk-21.0.12.1+1-jre");
+        for katalog in ["bin", "conf", "legal"] {
+            std::fs::create_dir_all(dom.join(katalog)).unwrap();
+        }
+        let bin = dom.join("bin").join("java");
+        std::fs::write(&bin, b"").unwrap();
+
+        assert!(
+            !instalacja_kompletna(&bin),
+            "JRE bez lib/jvm.cfg zostalo uznane za gotowe"
+        );
+
+        std::fs::create_dir_all(dom.join("lib")).unwrap();
+        std::fs::write(dom.join("lib").join("jvm.cfg"), b"-server KNOWN\n").unwrap();
+        std::fs::write(dom.join("release"), b"JAVA_VERSION=\"21\"\n").unwrap();
+        assert!(instalacja_kompletna(&bin), "pelne JRE zostalo odrzucone");
+
+        let _ = std::fs::remove_dir_all(&tmp);
     }
 
     #[test]

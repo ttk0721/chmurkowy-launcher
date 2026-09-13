@@ -392,8 +392,24 @@ fn z_javy(e: &JavaError) -> BladUzytkownika {
             "Java rozpakowała się niekompletnie",
             "Launcher rozpakował Javę, ale nie znalazł w niej programu, który uruchamia grę.",
             &[
-                "Usuń folder „data/java” z katalogu launchera.",
+                "Wejdź w Ustawienia i kliknij „Napraw instalację”.",
                 "Uruchom launcher ponownie — Java pobierze się od nowa.",
+            ],
+            s.clone(),
+        ),
+        // Ten blad zwykle nie dochodzi do gracza: niepelna Java jest kasowana
+        // i pobierana od nowa. Jesli jednak i druga proba wyjdzie urwana, to
+        // znak, ze cos systematycznie przerywa zapis — najczesciej antywirus
+        // albo brak miejsca.
+        JavaError::Niepelna(s) => BladUzytkownika::nowy(
+            "INST-01",
+            "Java pobrała się niekompletnie",
+            "Launcher rozpakował Javę, ale brakuje w niej plików potrzebnych do uruchomienia gry. \
+             Zwykle znaczy to, że coś przerwało zapisywanie plików na dysk.",
+            &[
+                "Sprawdź, czy na dysku jest co najmniej 1 GB wolnego miejsca.",
+                "Wyłącz na chwilę program antywirusowy — bywa, że kasuje pliki Javy w trakcie.",
+                "Wejdź w Ustawienia i kliknij „Napraw instalację”, potem uruchom launcher ponownie.",
             ],
             s.clone(),
         ),
