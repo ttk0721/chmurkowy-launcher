@@ -14,14 +14,25 @@ pub trait FileProbe {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     /// Pobierz plik o tym indeksie w `manifest.files`.
-    Download { index: usize },
-    Delete { path: String },
+    Download {
+        index: usize,
+    },
+    Delete {
+        path: String,
+    },
     /// Plik jest już właściwy — tylko zapamiętaj to w state.json.
-    Record { path: String, sha512: String },
+    Record {
+        path: String,
+        sha512: String,
+    },
     /// Gracz zmienił plik, zostawiamy jego wersję.
-    SkipModified { path: String },
+    SkipModified {
+        path: String,
+    },
     /// Plik istnieje, ale nie wiemy, kto go wgrał. Nie ruszamy.
-    SkipUnknown { path: String },
+    SkipUnknown {
+        path: String,
+    },
 }
 
 pub fn plan(m: &Manifest, st: &State, probe: &dyn FileProbe) -> Vec<Action> {
@@ -404,7 +415,11 @@ mod tests {
     #[test]
     fn smart_zostawia_nieznany_plik_bez_wpisu() {
         let m = manifest(vec![("config/a.toml", "NOWY", Policy::Smart)]);
-        let akcje = plan(&m, &State::new(), &Mapa::nowa(&[("config/a.toml", "CUDZE")]));
+        let akcje = plan(
+            &m,
+            &State::new(),
+            &Mapa::nowa(&[("config/a.toml", "CUDZE")]),
+        );
         assert_eq!(
             akcje,
             vec![Action::SkipUnknown {
@@ -424,7 +439,11 @@ mod tests {
         );
         // Istniejacy plik zostaje nietkniety, nawet jesli manifest ma inna tresc.
         assert_eq!(
-            plan(&m, &State::new(), &Mapa::nowa(&[("options.txt", "COKOLWIEK")])),
+            plan(
+                &m,
+                &State::new(),
+                &Mapa::nowa(&[("options.txt", "COKOLWIEK")])
+            ),
             vec![]
         );
     }

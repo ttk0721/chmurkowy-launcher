@@ -151,12 +151,7 @@ pub async fn zapewnij(
     Ok(())
 }
 
-fn rozpakuj(
-    archiwum: &Path,
-    cel: &Path,
-    format: &str,
-    nazwa: &str,
-) -> Result<(), NarzedzieError> {
+fn rozpakuj(archiwum: &Path, cel: &Path, format: &str, nazwa: &str) -> Result<(), NarzedzieError> {
     let blad = |e: String| NarzedzieError::Rozpakowanie(nazwa.to_string(), e);
 
     match format {
@@ -234,8 +229,14 @@ mod tests {
 
     fn narzedzie(plik: Option<&str>, _archiwum: Option<&str>) -> Narzedzie {
         let mut zrodla = BTreeMap::new();
-        zrodla.insert("linux-x64".to_string(), "https://example.test/l".to_string());
-        zrodla.insert("windows-x64".to_string(), "https://example.test/w".to_string());
+        zrodla.insert(
+            "linux-x64".to_string(),
+            "https://example.test/l".to_string(),
+        );
+        zrodla.insert(
+            "windows-x64".to_string(),
+            "https://example.test/w".to_string(),
+        );
         let mut pliki = BTreeMap::new();
         if let Some(p) = plik {
             pliki.insert("linux-x64".to_string(), p.to_string());
@@ -318,7 +319,9 @@ mod tests {
         );
         // Pojedyncza binarka nie jest archiwum.
         assert_eq!(
-            Narzedzie::format_archiwum("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux"),
+            Narzedzie::format_archiwum(
+                "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux"
+            ),
             None
         );
     }

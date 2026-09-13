@@ -15,7 +15,9 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
             ui.horizontal(|ui| {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
-                        .add(egui::Button::new(egui::RichText::new("Ustawienia").size(13.0)))
+                        .add(egui::Button::new(
+                            egui::RichText::new("Ustawienia").size(13.0),
+                        ))
                         .clicked()
                     {
                         app.widok = Widok::Ustawienia;

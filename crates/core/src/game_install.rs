@@ -273,24 +273,21 @@ pub async fn ensure_loader(
         // zatrzymywał go na zawsze, a razem z nim cały launcher. Trzy
         // podejścia i przełączenie na IPv4 nie ruszały ani razu, bo pierwsze
         // podejście się nie kończyło.
-        let wyjscie = match tokio::time::timeout(
-            crate::limity::INSTALATOR,
-            dziecko.wait_with_output(),
-        )
-        .await
-        {
-            Ok(w) => w.map_err(InstallError::Uruchomienie)?,
-            Err(_) => {
-                nieudane = Some((
-                    -1,
-                    format!(
-                        "instalator nie skończył w {} minut i został zatrzymany",
-                        crate::limity::INSTALATOR.as_secs() / 60
-                    ),
-                ));
-                continue;
-            }
-        };
+        let wyjscie =
+            match tokio::time::timeout(crate::limity::INSTALATOR, dziecko.wait_with_output()).await
+            {
+                Ok(w) => w.map_err(InstallError::Uruchomienie)?,
+                Err(_) => {
+                    nieudane = Some((
+                        -1,
+                        format!(
+                            "instalator nie skończył w {} minut i został zatrzymany",
+                            crate::limity::INSTALATOR.as_secs() / 60
+                        ),
+                    ));
+                    continue;
+                }
+            };
 
         if wyjscie.status.success() {
             nieudane = None;
@@ -469,7 +466,10 @@ mod tests {
         let kat = tempfile::tempdir().unwrap();
         let vanilla = kat.path().join("1.21.1.json");
         std::fs::write(&vanilla, "{}").unwrap();
-        assert!(!instalacja_kompletna(&kat.path().join("brak.json"), &vanilla));
+        assert!(!instalacja_kompletna(
+            &kat.path().join("brak.json"),
+            &vanilla
+        ));
     }
 
     #[test]

@@ -28,7 +28,10 @@ pub fn rysuj(app: &mut App, ctx: &egui::Context) {
 
             ui.horizontal(|ui| {
                 if ui
-                    .add(theme::przycisk_glowny("Spróbuj ponownie").min_size(egui::vec2(200.0, 44.0)))
+                    .add(
+                        theme::przycisk_glowny("Spróbuj ponownie")
+                            .min_size(egui::vec2(200.0, 44.0)),
+                    )
                     .clicked()
                 {
                     app.blad_z_kodem = None;

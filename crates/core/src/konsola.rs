@@ -168,9 +168,7 @@ mod tests {
     fn trzymamy_tylko_ogon() {
         let kat = tempfile::tempdir().unwrap();
         let p = kat.path().join("game.log");
-        let duzo: String = (0..ILE_LINII * 3)
-            .map(|i| format!("linia {i}\n"))
-            .collect();
+        let duzo: String = (0..ILE_LINII * 3).map(|i| format!("linia {i}\n")).collect();
         zapisz(&p, &duzo);
         let mut k = Konsola::nowa(p);
         k.odswiez();

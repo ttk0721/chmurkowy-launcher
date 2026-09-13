@@ -68,7 +68,11 @@ fn lista(app: &mut App, ui: &mut egui::Ui) {
         let aktywne = wybrane.as_deref() == Some(klucz.as_str());
 
         egui::Frame::NONE
-            .fill(if aktywne { theme::PANEL_JASNY } else { theme::PANEL })
+            .fill(if aktywne {
+                theme::PANEL_JASNY
+            } else {
+                theme::PANEL
+            })
             .stroke(egui::Stroke::new(
                 1.0_f32,
                 if aktywne { theme::AKCENT } else { theme::OBRYS },
@@ -93,7 +97,10 @@ fn lista(app: &mut App, ui: &mut egui::Ui) {
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if ui
-                            .add(theme::przycisk_zwykly("Zapomnij").min_size(egui::vec2(100.0, 36.0)))
+                            .add(
+                                theme::przycisk_zwykly("Zapomnij")
+                                    .min_size(egui::vec2(100.0, 36.0)),
+                            )
                             .on_hover_text("Usuwa konto z launchera. Światy i pliki gry zostają.")
                             .clicked()
                         {

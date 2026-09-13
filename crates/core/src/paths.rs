@@ -70,17 +70,26 @@ mod tests {
 
     #[test]
     fn odrzuca_wyjscie_w_gore() {
-        assert!(matches!(validate_rel("../secret"), Err(PathError::Escapes(_))));
+        assert!(matches!(
+            validate_rel("../secret"),
+            Err(PathError::Escapes(_))
+        ));
         assert!(matches!(
             validate_rel("mods/../../secret"),
             Err(PathError::Escapes(_))
         ));
-        assert!(matches!(validate_rel("mods/.."), Err(PathError::Escapes(_))));
+        assert!(matches!(
+            validate_rel("mods/.."),
+            Err(PathError::Escapes(_))
+        ));
     }
 
     #[test]
     fn odrzuca_sciezki_absolutne() {
-        assert!(matches!(validate_rel("/etc/passwd"), Err(PathError::Absolute(_))));
+        assert!(matches!(
+            validate_rel("/etc/passwd"),
+            Err(PathError::Absolute(_))
+        ));
         assert!(matches!(
             validate_rel("C:/Windows/system32"),
             Err(PathError::Absolute(_))

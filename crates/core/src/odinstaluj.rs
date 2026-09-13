@@ -77,10 +77,7 @@ pub fn zaplanuj(exe: &Path, katalog_danych: &Path, zakres: Zakres) -> Plan {
         // więc radzimy sobie sami.
         do_usuniecia.push(exe.to_path_buf());
         if let Some(dane) = crate::miejsca::katalog_wspoldzielony() {
-            do_usuniecia.push(
-                dane.join("applications")
-                    .join("chmurkowy-launcher.desktop"),
-            );
+            do_usuniecia.push(dane.join("applications").join("chmurkowy-launcher.desktop"));
             do_usuniecia.push(
                 dane.join("icons")
                     .join("hicolor")

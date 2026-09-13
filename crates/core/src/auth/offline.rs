@@ -42,7 +42,10 @@ mod tests {
     fn odtwarza_javowe_nameuuidfrombytes() {
         // Wartosci wyliczone z algorytmu Javy UUID.nameUUIDFromBytes
         // dla ciagu "OfflinePlayer:<nick>" — tak serwery licza UUID w trybie offline.
-        assert_eq!(offline_uuid("Notch"), "b50ad385-829d-3141-a216-7e7d7539ba7f");
+        assert_eq!(
+            offline_uuid("Notch"),
+            "b50ad385-829d-3141-a216-7e7d7539ba7f"
+        );
         assert_eq!(
             offline_uuid("TestGracz"),
             "2849380d-0c09-3dd1-87a1-a00a3f22c477"
@@ -61,10 +64,7 @@ mod tests {
             "3",
             "czwarty blok musi zaczynac sie od wersji 3"
         );
-        assert!(
-            matches!(&u[19..20], "8" | "9" | "a" | "b"),
-            "wariant IETF"
-        );
+        assert!(matches!(&u[19..20], "8" | "9" | "a" | "b"), "wariant IETF");
     }
 
     #[test]

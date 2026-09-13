@@ -107,7 +107,11 @@ fn obsluz_upuszczone(app: &mut App, ctx: &egui::Context) {
 fn strefa_upuszczania(ui: &mut egui::Ui, ctx: &egui::Context) {
     let nad_oknem = ctx.input(|i| !i.raw.hovered_files.is_empty());
     let (obrys, tlo, tekst) = if nad_oknem {
-        (theme::AKCENT, theme::PANEL_JASNY, "Upuść — dodam we właściwe miejsce")
+        (
+            theme::AKCENT,
+            theme::PANEL_JASNY,
+            "Upuść — dodam we właściwe miejsce",
+        )
     } else {
         (
             theme::OBRYS,
@@ -170,7 +174,10 @@ fn sekcja_zasobow(app: &mut App, ui: &mut egui::Ui) {
                 // Kolejność ma znaczenie tylko wśród włączonych paczek.
                 if wlaczona {
                     if ui
-                        .add_enabled(i > 0, egui::Button::new(egui::RichText::new("wyżej").size(11.0)))
+                        .add_enabled(
+                            i > 0,
+                            egui::Button::new(egui::RichText::new("wyżej").size(11.0)),
+                        )
                         .on_hover_text("Wcześniej na liście ładowania")
                         .clicked()
                     {
@@ -178,7 +185,10 @@ fn sekcja_zasobow(app: &mut App, ui: &mut egui::Ui) {
                         zmienione = true;
                     }
                     if ui
-                        .add_enabled(i + 1 < ile, egui::Button::new(egui::RichText::new("niżej").size(11.0)))
+                        .add_enabled(
+                            i + 1 < ile,
+                            egui::Button::new(egui::RichText::new("niżej").size(11.0)),
+                        )
                         .on_hover_text("Później na liście ładowania")
                         .clicked()
                     {

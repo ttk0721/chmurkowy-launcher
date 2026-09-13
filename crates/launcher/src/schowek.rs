@@ -34,7 +34,9 @@ pub fn kopiuj(tekst: &str) -> Result<(), String> {
 
 fn sprobuj(tekst: &str) -> Result<(), String> {
     let mut schowek = arboard::Clipboard::new().map_err(|e| e.to_string())?;
-    schowek.set_text(tekst.to_string()).map_err(|e| e.to_string())
+    schowek
+        .set_text(tekst.to_string())
+        .map_err(|e| e.to_string())
 }
 
 /// Zdanie dla gracza po próbie kopiowania. Przy niepowodzeniu mówi, co robić
