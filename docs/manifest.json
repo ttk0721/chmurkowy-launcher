@@ -6585,10 +6585,10 @@
     {
       "path": "config/ftbchunks-client.snbt",
       "policy": "smart",
-      "sha512": "46003aafaf350d2ebd824f7a4df2b802c0023f64ca553580ab73e549542b1af80ad4ad9ad3e27c132cd2606c71fbff228013ff1f7b15478dadb6acacedb1f512",
-      "size": 7712,
+      "sha512": "0416238f15c1f9143617b23e880621b39ab0f83da83eeafa7388a4c998234f011ca47ee2d0a3ee5fd9333782092d007331bf960347eb914b1f54ea08030e8ddb",
+      "size": 8872,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/46/46003aafaf350d2ebd824f7a4df2b802c0023f64ca553580ab73e549542b1af80ad4ad9ad3e27c132cd2606c71fbff228013ff1f7b15478dadb6acacedb1f512"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/04/0416238f15c1f9143617b23e880621b39ab0f83da83eeafa7388a4c998234f011ca47ee2d0a3ee5fd9333782092d007331bf960347eb914b1f54ea08030e8ddb"
       ]
     },
     {
@@ -6612,10 +6612,10 @@
     {
       "path": "options.txt",
       "policy": "seed",
-      "sha512": "8912260ef537bfd82614ec7c417eda198138c1c9e8dd87fe866d354653ca39841abcd40ed92b70865023a24be89dff6e44b80fa44422301b0a4ff9945ffd0d54",
+      "sha512": "fc4d3d42aaa68db886738bc9845c703f35ad4d9ee567db5fc499d226e190b265481c2621a1ff5ba721c2db28bd732bd8abef30f6f07da782a8585016fe0433de",
       "size": 15873,
       "urls": [
-        "https://ttk0721.github.io/chmurkowy-launcher/files/89/8912260ef537bfd82614ec7c417eda198138c1c9e8dd87fe866d354653ca39841abcd40ed92b70865023a24be89dff6e44b80fa44422301b0a4ff9945ffd0d54"
+        "https://ttk0721.github.io/chmurkowy-launcher/files/fc/fc4d3d42aaa68db886738bc9845c703f35ad4d9ee567db5fc499d226e190b265481c2621a1ff5ba721c2db28bd732bd8abef30f6f07da782a8585016fe0433de"
       ]
     }
   ],
@@ -6624,10 +6624,10 @@
     "major": 21
   },
   "launcher": {
-    "latest_version": "0.4.33",
+    "latest_version": "0.4.34",
     "urls": {
-      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.33/ChmurkowyLauncher-linux-x64",
-      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.33/ChmurkowyLauncher-windows-x64.exe"
+      "linux-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.34/ChmurkowyLauncher-linux-x64",
+      "windows-x64": "https://github.com/ttk0721/chmurkowy-launcher/releases/download/v0.4.34/ChmurkowyLauncher-windows-x64.exe"
     }
   },
   "memory": {
